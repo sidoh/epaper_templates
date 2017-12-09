@@ -1,5 +1,9 @@
 #include <Region.h>
 
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
 #ifndef _BITMAP_REGION
 #define _BITMAP_REGION
 

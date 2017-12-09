@@ -7,9 +7,13 @@
 #include <BitmapRegion.h>
 
 #include <VariableDictionary.h>
-#include <LinkedList.h>
+#include <DoublyLinkedList.h>
 #include <Settings.h>
 #include <VariableFormatters.h>
+
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
 
 #ifndef _DRIVER_H
 #define _DRIVER_H
@@ -66,7 +70,7 @@ private:
   String templateFilename;
   Settings& settings;
 
-  LinkedList<std::shared_ptr<Region>> regions;
+  DoublyLinkedList<std::shared_ptr<Region>> regions;
 
   bool dirty;
   bool shouldFullUpdate;

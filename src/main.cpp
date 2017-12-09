@@ -1,3 +1,4 @@
+#include <ESPAsyncWebServer.h>
 #include <Arduino.h>
 
 #include <GxEPD.h>
@@ -6,22 +7,34 @@
 #include <GxIO/GxIO.cpp>
 
 #include <TimeLib.h>
-#include <NtpClientLib.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 #include <Timezone.h>
 
 #include <DisplayTemplateDriver.h>
 #include <WebServer.h>
 #include <MqttClient.h>
 
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
+#if defined(ESP8266)
 GxIO_Class io(SPI, SS, D3, D4);
 GxEPD_Class display(io);
+#elif defined(ESP32)
+GxIO_Class io(SPI, SS, 17, 16);
+GxEPD_Class display(io, 16, 4);
+#endif
 
 Settings settings;
-// Config config;
 
 DisplayTemplateDriver driver(&display, settings);
 WebServer webServer(driver, settings);
 MqttClient* mqttClient = NULL;
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 
 uint8_t lastSecond = 60;
 
@@ -52,18 +65,29 @@ void applySettings() {
 
 void setup() {
   Serial.begin(115200);
-  SPIFFS.begin();
+
+#if defined(ESP8266)
+  if (! SPIFFS.begin()) {
+#elif defined(ESP32)
+  if (! SPIFFS.begin(true)) {
+#endif
+    Serial.println(F("Failed to mount SPIFFS!"));
+  }
 
   Settings::load(settings);
   settings.onUpdate(applySettings);
 
+#if defined(ESP8266)
   WiFi.hostname(settings.hostname);
   WiFi.begin();
+#elif defined(ESP32)
+  WiFi.begin();
+  WiFi.setHostname(settings.hostname.c_str());
+#endif
+
   WiFi.waitForConnectResult();
 
-  NTP.begin("pool.ntp.org", 0, false);
-  NTP.setInterval(63);
-
+  timeClient.begin();
   webServer.begin();
   driver.init();
 
@@ -74,13 +98,11 @@ void setup() {
 }
 
 void loop() {
-  if (timeStatus() == timeSet && lastSecond != second()) {
+  if (timeClient.update() && lastSecond != second()) {
     lastSecond = second();
-    driver.updateVariable("timestamp", String(now()));
-    Serial.println(ESP.getFreeHeap());
+    driver.updateVariable("timestamp", String(timeClient.getEpochTime()));
   }
 
-  webServer.loop();
   driver.loop();
 
   if (mqttClient != NULL) {

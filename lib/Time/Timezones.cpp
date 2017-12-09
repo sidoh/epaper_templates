@@ -50,6 +50,9 @@ Timezone& TimezonesClass::getTimezone(const String& tzName) {
   if (hasTimezone(tzName)) {
     return *timezonesByName[tzName];
   }
+
+  Serial.println(F("WARN - couldn't find specified timezone.  Returning default."));
+
   return DEFAULT_TIMEZONE;
 }
 

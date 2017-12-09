@@ -41,7 +41,7 @@ void DisplayTemplateDriver::scheduleFullUpdate() {
 }
 
 void DisplayTemplateDriver::clearDirtyRegions() {
-  ListNode<std::shared_ptr<Region>>* curr = regions.getHead();
+  DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   while (curr != NULL) {
     std::shared_ptr<Region> region = curr->data;
@@ -52,7 +52,7 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 }
 
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
-  ListNode<std::shared_ptr<Region>>* curr = regions.getHead();
+  DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   while (curr != NULL) {
     std::shared_ptr<Region> region = curr->data;
@@ -78,7 +78,7 @@ void DisplayTemplateDriver::fullUpdate() {
 void DisplayTemplateDriver::updateVariable(const String& key, const String& value) {
   vars.set(key, value);
 
-  ListNode<std::shared_ptr<Region>>* curr = regions.getHead();
+  DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   while (curr != NULL) {
     std::shared_ptr<Region> region = curr->data;

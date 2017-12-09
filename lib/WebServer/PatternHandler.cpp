@@ -1,16 +1,19 @@
 #include <PatternHandler.h>
+#include <ArduinoJson.h>
 
 PatternHandler::PatternHandler(
-    const String& pattern,
-    const HTTPMethod method,
-    const PatternHandler::TPatternHandlerFn fn)
-  : method(method),
-    fn(fn),
-    _pattern(new char[pattern.length() + 1]),
+    const char* pattern,
+    const WebRequestMethod method,
+    PatternHandler::TPatternHandlerFn fn,
+    PatternHandler::TPatternHandlerBodyFn bodyFn
+) : method(method),
+    _pattern(new char[strlen(pattern) + 1]),
     patternTokens(NULL)
 {
-  strcpy(_pattern, pattern.c_str());
-  patternTokens = new TokenIterator(_pattern, pattern.length(), '/');
+  strcpy(_pattern, pattern);
+  patternTokens = new TokenIterator(_pattern, strlen(pattern), '/');
+  this->_fn = fn;
+  this->_bodyFn = bodyFn;
 }
 
 PatternHandler::~PatternHandler() {
@@ -18,13 +21,13 @@ PatternHandler::~PatternHandler() {
   delete patternTokens;
 }
 
-bool PatternHandler::canHandle(HTTPMethod requestMethod, String requestUri) {
-  if (this->method != HTTP_ANY && requestMethod != this->method) {
+bool PatternHandler::canHandle(AsyncWebServerRequest* request) {
+  if (this->method != HTTP_ANY && request->method() != this->method) {
     return false;
   }
 
   bool canHandle = true;
-
+  const String& requestUri = request->url();
   char requestUriCopy[requestUri.length() + 1];
   strcpy(requestUriCopy, requestUri.c_str());
   TokenIterator requestTokens(requestUriCopy, requestUri.length(), '/');
@@ -48,15 +51,24 @@ bool PatternHandler::canHandle(HTTPMethod requestMethod, String requestUri) {
   return canHandle;
 }
 
-bool PatternHandler::handle(ESP8266WebServer& server, HTTPMethod requestMethod, String requestUri) {
-  if (! canHandle(requestMethod, requestUri)) {
-    return false;
+void PatternHandler::handleRequest(AsyncWebServerRequest *request) {
+  if (_fn) {
+    const String& requestUri = request->url();
+    char requestUriCopy[requestUri.length()];
+    strcpy(requestUriCopy, requestUri.c_str());
+    TokenIterator requestTokens(requestUriCopy, requestUri.length(), '/');
+    UrlTokenBindings bindings(*patternTokens, requestTokens);
+    _fn(&bindings, request);
   }
+}
 
-  char requestUriCopy[requestUri.length()];
-  strcpy(requestUriCopy, requestUri.c_str());
-  TokenIterator requestTokens(requestUriCopy, requestUri.length(), '/');
-
-  UrlTokenBindings bindings(*patternTokens, requestTokens);
-  fn(&bindings);
+void PatternHandler::handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  if (_bodyFn) {
+    const String& requestUri = request->url();
+    char requestUriCopy[requestUri.length()];
+    strcpy(requestUriCopy, requestUri.c_str());
+    TokenIterator requestTokens(requestUriCopy, requestUri.length(), '/');
+    UrlTokenBindings bindings(*patternTokens, requestTokens);
+    _bodyFn(&bindings, request, data, len, index, total);
+  }
 }

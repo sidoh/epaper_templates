@@ -9,92 +9,99 @@ static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 
 WebServer::WebServer(DisplayTemplateDriver& driver, Settings& settings)
   : driver(driver),
-    settings(settings)
+    settings(settings),
+    server(AsyncWebServer(80))
 { }
 
 void WebServer::begin() {
-  on("/", HTTP_GET, handleServeFile(INDEX_FILENAME, TEXT_HTML));
-  on("/index.html", HTTP_POST, sendSuccess(), handleUpdateFile(INDEX_FILENAME));
-  on("/variables", HTTP_PUT, [this]() { handleUpdateVariables(); });
+  on("/variables", HTTP_PUT, handleUpdateVariables());
   on("/variables", HTTP_GET, handleServeFile(VariableDictionary::FILENAME, APPLICATION_JSON));
 
-  on("/templates", HTTP_GET, handleListTemplates());
-  on("/templates", HTTP_POST, [this]() { sendSuccess(); }, handleCreateTemplate());
+  onUpload("/templates", HTTP_POST, handleCreateFile(TEMPLATES_DIRECTORY));
   onPattern("/templates/:filename", HTTP_DELETE, handleDeleteTemplate());
   onPattern("/templates/:filename", HTTP_GET, handleShowTemplate());
   onPattern("/templates/:filename", HTTP_PUT, handleUpdateTemplate());
+  on("/templates", HTTP_GET, handleListDirectory(TEMPLATES_DIRECTORY));
 
-  on("/bitmaps", HTTP_GET, handleListBitmaps());
-  on("/bitmaps", HTTP_POST, [this]() { sendSuccess(); }, handleCreateBitmap());
+  onUpload("/bitmaps", HTTP_POST, handleCreateFile(BITMAPS_DIRECTORY));
   onPattern("/bitmaps/:filename", HTTP_DELETE, handleDeleteBitmap());
   onPattern("/bitmaps/:filename", HTTP_GET, handleShowBitmap());
+  on("/bitmaps", HTTP_GET, handleListDirectory(BITMAPS_DIRECTORY));
 
   on("/settings", HTTP_GET, handleListSettings());
   on("/settings", HTTP_PUT, handleUpdateSettings());
 
   on("/about", HTTP_GET, handleAbout());
 
+  on("/", HTTP_GET, handleServeFile(INDEX_FILENAME, TEXT_HTML));
+  onUpload("/index.html", HTTP_POST, handleUpdateFile(INDEX_FILENAME));
+
   server.begin();
 }
 
-void WebServer::loop() {
-  server.handleClient();
-}
-
-ESP8266WebServer::THandlerFunction WebServer::handleAbout() {
-  return [this]() {
+ArRequestHandlerFunction WebServer::handleAbout() {
+  return [this](AsyncWebServerRequest* request) {
     // Measure before allocating buffers
     uint32_t freeHeap = ESP.getFreeHeap();
 
-    StaticJsonBuffer<50> buffer;
+    StaticJsonBuffer<150> buffer;
     JsonObject& res = buffer.createObject();
 
+    res["version"] = QUOTE(EPAPER_TEMPLATES_VERSION);
+    res["variant"] = QUOTE(FIRMWARE_VARIANT);
     res["free_heap"] = freeHeap;
+    res["sdk_version"] = ESP.getSdkVersion();
 
     String body;
     res.printTo(body);
-    server.send(200, APPLICATION_JSON, body);
+
+    request->send(200, APPLICATION_JSON, body);
   };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::sendSuccess() {
-  return [this]() {
-    server.send(200, APPLICATION_JSON, "true");
+ArRequestHandlerFunction WebServer::sendSuccess() {
+  return [this](AsyncWebServerRequest* request) {
+    request->send(200, APPLICATION_JSON, "true");
   };
 }
 
-void WebServer::handleUpdateVariables() {
-  DynamicJsonBuffer buffer;
-  JsonObject& vars = buffer.parseObject(server.arg("plain"));
+ArBodyHandlerFunction WebServer::handleUpdateVariables() {
+  return [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+    DynamicJsonBuffer buffer;
+    JsonObject& vars = buffer.parseObject(data);
 
-  for (JsonObject::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
-    driver.updateVariable(itr->key, itr->value);
-  }
+    if (! vars.success()) {
+      request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
+      return;
+    }
 
-  server.send(200, "application/json", "true");
+    for (JsonObject::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
+      driver.updateVariable(itr->key, itr->value);
+    }
+
+    request->send_P(200, APPLICATION_JSON, PSTR("true"));
+  };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleServeFile(
+ArRequestHandlerFunction WebServer::handleServeFile(
   const char* filename,
   const char* contentType,
   const char* defaultText) {
 
-  return [this, filename, contentType, defaultText]() {
-    if (!serveFile(filename, contentType)) {
+  return [this, filename, contentType, defaultText](AsyncWebServerRequest* request) {
+    if (!serveFile(request, filename, contentType)) {
       if (defaultText) {
-        server.send(200, contentType, defaultText);
+        request->send(200, contentType, defaultText);
       } else {
-        server.send(404);
+        request->send(404);
       }
     }
   };
 }
 
-bool WebServer::serveFile(const char* file, const char* contentType) {
+bool WebServer::serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType) {
   if (SPIFFS.exists(file)) {
-    File f = SPIFFS.open(file, "r");
-    server.streamFile(f, contentType);
-    f.close();
+    request->send(SPIFFS, file, contentType);
     return true;
   }
 
@@ -106,80 +113,78 @@ bool WebServer::serveFile(const char* file, const char* contentType) {
 // ---------
 
 PatternHandler::TPatternHandlerFn WebServer::handleShowBitmap() {
-  return [this](const UrlTokenBindings* bindings) {
+  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
-      String path = String(BITMAP_DIRECTORY_PREFIX) + filename;
+      String path = String(BITMAPS_DIRECTORY) + "/" + filename;
 
-      if (SPIFFS.exists(path)) {
-        File file = SPIFFS.open(path, "r");
-        server.streamFile(file, "application/octet-stream");
-        file.close();
-      } else {
-        server.send(404, TEXT_PLAIN);
-      }
+      request->send(SPIFFS, path, "application/octet-stream");
     } else {
-      server.send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
+      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
     }
   };
 }
 
 PatternHandler::TPatternHandlerFn WebServer::handleDeleteBitmap() {
-  return [this](const UrlTokenBindings* bindings) {
+  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
-      String path = String(BITMAP_DIRECTORY_PREFIX) + filename;
+      String path = String(BITMAPS_DIRECTORY) + "/" + filename;
 
       if (SPIFFS.exists(path)) {
         if (SPIFFS.remove(path)) {
-          server.send_P(200, TEXT_PLAIN, PSTR("success"));
+          request->send_P(200, TEXT_PLAIN, PSTR("success"));
         } else {
-          server.send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
+          request->send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
         }
       } else {
-        server.send(404, TEXT_PLAIN);
+        request->send(404, TEXT_PLAIN);
       }
     } else {
-      server.send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
+      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
     }
   };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleListBitmaps() {
-  return [this]() {
+ArRequestHandlerFunction WebServer::handleListDirectory(const char* dirName) {
+  return [this, dirName](AsyncWebServerRequest* request) {
     DynamicJsonBuffer buffer;
     JsonArray& responseObj = buffer.createArray();
 
-    Dir bitmapDir = SPIFFS.openDir(BITMAP_DIRECTORY_PREFIX);
+#if defined(ESP8266)
+    Dir dir = SPIFFS.openDir(dirName);
 
-    while (bitmapDir.next()) {
+    while (dir.next()) {
       JsonObject& file = buffer.createObject();
-      file["name"] = bitmapDir.fileName();
-      file["size"] = bitmapDir.fileSize();
+      file["name"] = dir.fileName();
+      file["size"] = dir.fileSize();
       responseObj.add(file);
     }
+#elif defined(ESP32)
+    File dir = SPIFFS.open(dirName);
+
+    if (!dir || !dir.isDirectory()) {
+      Serial.print(F("Path is not a directory - "));
+      Serial.println(dirName);
+
+      request->send_P(500, TEXT_PLAIN, PSTR("Expected path to be a directory, but wasn't"));
+      return;
+    }
+
+    while (File dirFile = dir.openNextFile()) {
+      JsonObject& file = buffer.createObject();
+
+      file["name"] = String(dirFile.name());
+      file["size"] = dirFile.size();
+
+      responseObj.add(file);
+    }
+#endif
 
     String response;
     responseObj.printTo(response);
 
-    server.send(200, APPLICATION_JSON, response);
-  };
-}
-
-ESP8266WebServer::THandlerFunction WebServer::handleCreateBitmap() {
-  return [this]() {
-    HTTPUpload& upload = server.upload();
-
-    if (upload.status == UPLOAD_FILE_START) {
-      String filename = String(BITMAP_DIRECTORY_PREFIX) + upload.filename;
-      updateFile = SPIFFS.open(filename, "w");
-    } else if(upload.status == UPLOAD_FILE_WRITE){
-      if (updateFile.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Serial.println(F("Error creating bitmap - write failed"));
-      }
-    } else if (upload.status == UPLOAD_FILE_END) {
-      updateFile.close();
-    }
+    request->send(200, APPLICATION_JSON, response);
   };
 }
 
@@ -188,101 +193,95 @@ ESP8266WebServer::THandlerFunction WebServer::handleCreateBitmap() {
 // ---------
 
 PatternHandler::TPatternHandlerFn WebServer::handleShowTemplate() {
-  return [this](const UrlTokenBindings* bindings) {
+  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
-      String path = String(TEMPLATE_DIRECTORY_PREFIX) + filename;
-
-      if (SPIFFS.exists(path)) {
-        File file = SPIFFS.open(path, "r");
-        server.streamFile(file, APPLICATION_JSON);
-        file.close();
-
-        server.send(200, APPLICATION_JSON);
-      } else {
-        server.send(404, TEXT_PLAIN);
-      }
+      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
+      request->send(SPIFFS, path, APPLICATION_JSON);
     } else {
-      server.send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
+      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
     }
   };
 }
 
-PatternHandler::TPatternHandlerFn WebServer::handleUpdateTemplate() {
-  return [this](const UrlTokenBindings* bindings) {
+PatternHandler::TPatternHandlerBodyFn WebServer::handleUpdateTemplate() {
+  return [this](
+    const UrlTokenBindings* bindings,
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  ) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
-      String path = String(TEMPLATE_DIRECTORY_PREFIX) + filename;
-      handleUpdateJsonFile(path);
+      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
+      handleUpdateJsonFile(path, request, data, len);
     }
   };
 }
 
 PatternHandler::TPatternHandlerFn WebServer::handleDeleteTemplate() {
-  return [this](const UrlTokenBindings* bindings) {
+  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
-      String path = String(BITMAP_DIRECTORY_PREFIX) + filename;
+      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
 
       if (SPIFFS.exists(path)) {
         if (SPIFFS.remove(path)) {
-          server.send_P(200, TEXT_PLAIN, PSTR("success"));
+          request->send_P(200, TEXT_PLAIN, PSTR("success"));
         } else {
-          server.send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
+          request->send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
         }
       } else {
-        server.send(404, TEXT_PLAIN);
+        request->send(404, TEXT_PLAIN);
       }
     } else {
-      server.send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
+      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
     }
   };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleListTemplates() {
-  return [this]() {
-    DynamicJsonBuffer buffer;
-    JsonArray& responseObj = buffer.createArray();
+ArUploadHandlerFunction WebServer::handleCreateFile(const char* filePrefix) {
+  return [this, filePrefix](
+    AsyncWebServerRequest *request,
+    const String& filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  ) {
+    static File updateFile;
 
-    Dir bitmapDir = SPIFFS.openDir(TEMPLATE_DIRECTORY_PREFIX);
+    if (index == 0) {
+      String path = String(filePrefix) + "/" + filename;
+      updateFile = SPIFFS.open(path, "w");
 
-    while (bitmapDir.next()) {
-      JsonObject& file = buffer.createObject();
-      file["name"] = bitmapDir.fileName();
-      file["size"] = bitmapDir.fileSize();
-      responseObj.add(file);
-    }
-
-    String response;
-    responseObj.printTo(response);
-
-    server.send(200, APPLICATION_JSON, response);
-  };
-}
-
-ESP8266WebServer::THandlerFunction WebServer::handleCreateTemplate() {
-  return [this]() {
-    HTTPUpload& upload = server.upload();
-
-    if (upload.status == UPLOAD_FILE_START) {
-      String filename = String(TEMPLATE_DIRECTORY_PREFIX) + upload.filename;
-      updateFile = SPIFFS.open(filename, "w");
-    } else if(upload.status == UPLOAD_FILE_WRITE){
-      if (updateFile.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Serial.println(F("Error creating template - write failed"));
+      if (!updateFile) {
+        Serial.println(F("Failed to open file"));
+        request->send(500);
+        return;
       }
-    } else if (upload.status == UPLOAD_FILE_END) {
+    }
+
+    if (!updateFile || updateFile.write(data, len) != len) {
+      Serial.println(F("Failed to write to file"));
+      request->send(500);
+    }
+
+    if (updateFile && isFinal) {
       updateFile.close();
+      request->send(200);
     }
   };
 }
 
-void WebServer::handleUpdateJsonFile(const String& path) {
+void WebServer::handleUpdateJsonFile(const String& path, AsyncWebServerRequest* request, uint8_t* data, size_t len) {
   DynamicJsonBuffer requestBuffer;
-  JsonObject& request = requestBuffer.parseObject(server.arg("plain"));
+  JsonObject& body = requestBuffer.parseObject(data);
 
-  if (! request.success()) {
-    server.send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
+  if (! body.success()) {
+    request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
     return;
   }
 
@@ -294,11 +293,11 @@ void WebServer::handleUpdateJsonFile(const String& path) {
     file.close();
 
     if (! tmpl.success()) {
-      server.send_P(500, TEXT_PLAIN, PSTR("Failed to load template file"));
+      request->send_P(500, TEXT_PLAIN, PSTR("Failed to load persisted file"));
       return;
     }
 
-    for (JsonObject::iterator itr = request.begin(); itr != request.end(); ++itr) {
+    for (JsonObject::iterator itr = body.begin(); itr != body.end(); ++itr) {
       tmpl[itr->key] = itr->value;
     }
 
@@ -306,59 +305,64 @@ void WebServer::handleUpdateJsonFile(const String& path) {
     tmpl.printTo(file);
     file.close();
 
-    String body;
-    tmpl.printTo(body);
-    server.send(200, APPLICATION_JSON, body);
+    String response;
+    tmpl.printTo(response);
+    request->send(200, APPLICATION_JSON, response);
   } else {
-    server.send(404, TEXT_PLAIN);
+    request->send(404, TEXT_PLAIN);
   }
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleUpdateSettings() {
-  return [this]() {
+ArBodyHandlerFunction WebServer::handleUpdateSettings() {
+  return [this](
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  ) {
     DynamicJsonBuffer buffer;
-    JsonObject& req = buffer.parse(server.arg("plain"));
+    JsonObject& req = buffer.parse(data);
 
     if (! req.success()) {
-      server.send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
+      request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
       return;
     }
 
     settings.patch(req);
     settings.save();
 
-    server.send(200);
+    request->send(200);
   };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleListSettings() {
-  return [this]() {
-    server.send(200, APPLICATION_JSON, settings.toJson());
+ArRequestHandlerFunction WebServer::handleListSettings() {
+  return [this](AsyncWebServerRequest* request) {
+    request->send(200, APPLICATION_JSON, settings.toJson());
   };
 }
 
-ESP8266WebServer::THandlerFunction WebServer::handleUpdateFile(const char* filename) {
-  return [this, filename]() {
-    HTTPUpload& upload = server.upload();
-
-    if (upload.status == UPLOAD_FILE_START) {
+ArUploadHandlerFunction WebServer::handleUpdateFile(const char* filename) {
+  return [this, filename](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool isFinal) {
+    if (index == 0) {
       updateFile = SPIFFS.open(filename, "w");
-    } else if(upload.status == UPLOAD_FILE_WRITE){
-      if (updateFile.write(upload.buf, upload.currentSize) != upload.currentSize) {
+    } else if (! isFinal) {
+      if (updateFile.write(data, len) != len) {
         Serial.println(F("Error updating web file"));
       }
-    } else if (upload.status == UPLOAD_FILE_END) {
+    } else {
       updateFile.close();
+      request->send_P(200, TEXT_PLAIN, PSTR("success"));
     }
   };
 }
 
-bool WebServer::isAuthenticated() {
+bool WebServer::isAuthenticated(AsyncWebServerRequest* request) {
   if (settings.hasAuthSettings()) {
-    if (server.authenticate(settings.adminUsername.c_str(), settings.adminPassword.c_str())) {
+    if (request->authenticate(settings.adminUsername.c_str(), settings.adminPassword.c_str())) {
       return true;
     } else {
-      server.send_P(403, TEXT_PLAIN, PSTR("Authentication required"));
+      request->send_P(403, TEXT_PLAIN, PSTR("Authentication required"));
       return false;
     }
   } else {
@@ -366,38 +370,139 @@ bool WebServer::isAuthenticated() {
   }
 }
 
-void WebServer::onPattern(const String& pattern, const HTTPMethod method, PatternHandler::TPatternHandlerFn fn) {
-  PatternHandler::TPatternHandlerFn authedFn = [this, fn](const UrlTokenBindings* b) {
-    if (isAuthenticated()) {
-      fn(b);
+void WebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn) {
+  PatternHandler::TPatternHandlerFn authedFn = [this, fn](const UrlTokenBindings* b, AsyncWebServerRequest* request) {
+    if (isAuthenticated(request)) {
+      fn(b, request);
     }
   };
 
-  server.addHandler(new PatternHandler(pattern, method, authedFn));
+  server.addHandler(new PatternHandler(pattern.c_str(), method, authedFn, NULL));
 }
 
-void WebServer::on(const String& path, const HTTPMethod method, ESP8266WebServer::THandlerFunction fn) {
-  ESP8266WebServer::THandlerFunction authedFn = [this, fn]() {
-    if (isAuthenticated()) {
-      fn();
+void WebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn) {
+  PatternHandler::TPatternHandlerBodyFn authedFn = [this, fn](
+    const UrlTokenBindings* bindings,
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  ) {
+    if (isAuthenticated(request)) {
+      fn(bindings, request, data, len, index, total);
     }
   };
 
-  server.on(path, method, authedFn);
+  server.addHandler(new PatternHandler(pattern.c_str(), method, NULL, authedFn));
 }
 
-void WebServer::on(const String& path, const HTTPMethod method, ESP8266WebServer::THandlerFunction fn, ESP8266WebServer::THandlerFunction uploadFn) {
-  ESP8266WebServer::THandlerFunction authedFn = [this, fn]() {
-    if (isAuthenticated()) {
-      fn();
+void WebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
+  ArRequestHandlerFunction authedFn = [this, fn](AsyncWebServerRequest* request) {
+    if (isAuthenticated(request)) {
+      fn(request);
     }
   };
 
-  ESP8266WebServer::THandlerFunction authedUploadFn = [this, uploadFn]() {
-    if (isAuthenticated()) {
-      uploadFn();
+  server.on(path.c_str(), method, authedFn);
+}
+
+void WebServer::on(const String& path, const WebRequestMethod method, ArBodyHandlerFunction fn) {
+  ArBodyHandlerFunction authedFn = [this, fn](
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  ) {
+    if (isAuthenticated(request)) {
+      fn(request, data, len, index, total);
     }
   };
 
-  server.on(path, method, authedFn, authedUploadFn);
+  server.addHandler(new WebServer::BodyHandler(path.c_str(), method, authedFn));
+}
+
+void WebServer::onUpload(const String& path, const WebRequestMethod method, ArUploadHandlerFunction fn) {
+  ArUploadHandlerFunction authedFn = [this, fn](
+    AsyncWebServerRequest *request,
+    const String& filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  ) {
+    if (isAuthenticated(request)) {
+      fn(request, filename, index, data, len, isFinal);
+    }
+  };
+
+  server.addHandler(new WebServer::UploadHandler(path.c_str(), method, authedFn));
+}
+
+WebServer::UploadHandler::UploadHandler(
+  const char* uri,
+  const WebRequestMethod method,
+  ArUploadHandlerFunction handler
+) : uri(new char[strlen(uri) + 1]),
+    method(method),
+    handler(handler)
+{
+  strcpy(this->uri, uri);
+}
+
+WebServer::UploadHandler::~UploadHandler() {
+  delete uri;
+}
+
+bool WebServer::UploadHandler::canHandle(AsyncWebServerRequest *request) {
+  if (this->method != HTTP_ANY && this->method != request->method()) {
+    return false;
+  }
+
+  return request->url() == this->uri;
+}
+
+void WebServer::UploadHandler::handleUpload(
+  AsyncWebServerRequest *request,
+  const String &filename,
+  size_t index,
+  uint8_t *data,
+  size_t len,
+  bool isFinal
+) {
+  handler(request, filename, index, data, len, isFinal);
+}
+
+WebServer::BodyHandler::BodyHandler(
+  const char* uri,
+  const WebRequestMethod method,
+  ArBodyHandlerFunction handler
+) : uri(new char[strlen(uri) + 1]),
+    method(method),
+    handler(handler)
+{
+  strcpy(this->uri, uri);
+}
+
+WebServer::BodyHandler::~BodyHandler() {
+  delete uri;
+}
+
+bool WebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
+  if (this->method != HTTP_ANY && this->method != request->method()) {
+    return false;
+  }
+
+  return request->url() == this->uri;
+}
+
+void WebServer::BodyHandler::handleBody(
+  AsyncWebServerRequest *request,
+  uint8_t *data,
+  size_t len,
+  size_t index,
+  size_t total
+) {
+  handler(request, data, len, index, total);
 }

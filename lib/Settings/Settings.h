@@ -4,15 +4,19 @@
 #include <Timezones.h>
 #include <StringStream.h>
 
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
 
-#ifndef BITMAP_DIRECTORY_PREFIX
-#define BITMAP_DIRECTORY_PREFIX "/bitmaps/"
+#ifndef BITMAPS_DIRECTORY
+#define BITMAPS_DIRECTORY "/bitmaps"
 #endif
 
-#ifndef TEMPLATE_DIRECTORY_PREFIX
-#define TEMPLATE_DIRECTORY_PREFIX "/templates/"
+#ifndef TEMPLATES_DIRECTORY
+#define TEMPLATES_DIRECTORY "/templates"
 #endif
 
 #define XQUOTE(x) #x
@@ -22,8 +26,8 @@
 #define FIRMWARE_VARIANT unknown
 #endif
 
-#ifndef MILIGHT_HUB_VERSION
-#define MILIGHT_HUB_VERSION unknown
+#ifndef EPAPER_TEMPLATES_VERSION
+#define EPAPER_TEMPLATES_VERSION unknown
 #endif
 
 #ifndef MILIGHT_MAX_STATE_ITEMS

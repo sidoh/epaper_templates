@@ -34,7 +34,11 @@ bool VariableDictionary::containsKey(const String &key) {
 
 void VariableDictionary::set(const String &key, const String &value) {
   dict->set(key, value);
-  save();
+
+  // Don't save timestamp, as it's updated every second
+  if (key != "timestamp") {
+    save();
+  }
 }
 
 String VariableDictionary::get(const String &key) {

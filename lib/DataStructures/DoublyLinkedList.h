@@ -1,58 +1,58 @@
 /*
   ********* Adapted from: *********
-  https://github.com/ivanseidel/LinkedList
+  https://github.com/ivanseidel/DoublyLinkedList
   Created by Ivan Seidel Gomes, March, 2013.
   Released into the public domain.
   *********************************
 
   Changes:
-    - public access to ListNode (allows for splicing for LRU)
+    - public access to DoublyLinkedListNode (allows for splicing for LRU)
     - doubly-linked
     - remove caching stuff in favor of standard linked list iterating
     - remove sorting
 */
 
-#ifndef LinkedList_h
-#define LinkedList_h
+#ifndef _DOUBLY_LINKED_LIST_H
+#define _DOUBLY_LINKED_LIST_H
 
 #include <stddef.h>
 
 template<class T>
-struct ListNode {
+struct DoublyLinkedListNode {
   T data;
-  ListNode<T> *next;
-  ListNode<T> *prev;
+  DoublyLinkedListNode<T> *next;
+  DoublyLinkedListNode<T> *prev;
 };
 
 template <typename T>
-class LinkedList {
+class DoublyLinkedList {
 
 protected:
   int _size;
-  ListNode<T> *root;
-  ListNode<T>  *last;
+  DoublyLinkedListNode<T> *root;
+  DoublyLinkedListNode<T>  *last;
 
 public:
-  LinkedList();
-  ~LinkedList();
+  DoublyLinkedList();
+  ~DoublyLinkedList();
 
   /*
-    Returns current size of LinkedList
+    Returns current size of DoublyLinkedList
   */
   virtual int size() const;
   /*
     Adds a T object in the specified index;
-    Unlink and link the LinkedList correcly;
+    Unlink and link the DoublyLinkedList correcly;
     Increment _size
   */
   virtual bool add(int index, T);
   /*
-    Adds a T object in the end of the LinkedList;
+    Adds a T object in the end of the DoublyLinkedList;
     Increment _size;
   */
   virtual bool add(T);
   /*
-    Adds a T object in the start of the LinkedList;
+    Adds a T object in the start of the DoublyLinkedList;
     Increment _size;
   */
   virtual bool unshift(T);
@@ -87,17 +87,17 @@ public:
   */
   virtual void clear();
 
-  ListNode<T>* getNode(int index);
-  virtual void spliceToFront(ListNode<T>* node);
-  ListNode<T>* getHead() { return root; }
-  ListNode<T>* getTail() { return last; }
+  DoublyLinkedListNode<T>* getNode(int index);
+  virtual void spliceToFront(DoublyLinkedListNode<T>* node);
+  DoublyLinkedListNode<T>* getHead() { return root; }
+  DoublyLinkedListNode<T>* getTail() { return last; }
   T getLast() const { return last == NULL ? T() : last->data; }
 
 };
 
 
 template<typename T>
-void LinkedList<T>::spliceToFront(ListNode<T>* node) {
+void DoublyLinkedList<T>::spliceToFront(DoublyLinkedListNode<T>* node) {
   // Node is already root
   if (node->prev == NULL) {
     return;
@@ -116,9 +116,9 @@ void LinkedList<T>::spliceToFront(ListNode<T>* node) {
   root = node;
 }
 
-// Initialize LinkedList with false values
+// Initialize DoublyLinkedList with false values
 template<typename T>
-LinkedList<T>::LinkedList()
+DoublyLinkedList<T>::DoublyLinkedList()
 {
   root=NULL;
   last=NULL;
@@ -127,9 +127,9 @@ LinkedList<T>::LinkedList()
 
 // Clear Nodes and free Memory
 template<typename T>
-LinkedList<T>::~LinkedList()
+DoublyLinkedList<T>::~DoublyLinkedList()
 {
-  ListNode<T>* tmp;
+  DoublyLinkedListNode<T>* tmp;
   while(root!=NULL)
   {
     tmp=root;
@@ -145,10 +145,10 @@ LinkedList<T>::~LinkedList()
 */
 
 template<typename T>
-ListNode<T>* LinkedList<T>::getNode(int index){
+DoublyLinkedListNode<T>* DoublyLinkedList<T>::getNode(int index){
 
   int _pos = 0;
-  ListNode<T>* current = root;
+  DoublyLinkedListNode<T>* current = root;
 
   while(_pos < index && current){
     current = current->next;
@@ -156,16 +156,16 @@ ListNode<T>* LinkedList<T>::getNode(int index){
     _pos++;
   }
 
-  return false;
+  return NULL;
 }
 
 template<typename T>
-int LinkedList<T>::size() const{
+int DoublyLinkedList<T>::size() const{
   return _size;
 }
 
 template<typename T>
-bool LinkedList<T>::add(int index, T _t){
+bool DoublyLinkedList<T>::add(int index, T _t){
 
   if(index >= _size)
     return add(_t);
@@ -173,8 +173,8 @@ bool LinkedList<T>::add(int index, T _t){
   if(index == 0)
     return unshift(_t);
 
-  ListNode<T> *tmp = new ListNode<T>(),
-         *_prev = getNode(index-1);
+  DoublyLinkedListNode<T> *tmp = new DoublyLinkedListNode<T>();
+  DoublyLinkedListNode<T> *_prev = getNode(index-1);
   tmp->data = _t;
   tmp->next = _prev->next;
   _prev->next = tmp;
@@ -185,9 +185,9 @@ bool LinkedList<T>::add(int index, T _t){
 }
 
 template<typename T>
-bool LinkedList<T>::add(T _t){
+bool DoublyLinkedList<T>::add(T _t){
 
-  ListNode<T> *tmp = new ListNode<T>();
+  DoublyLinkedListNode<T> *tmp = new DoublyLinkedListNode<T>();
   tmp->data = _t;
   tmp->next = NULL;
 
@@ -207,12 +207,12 @@ bool LinkedList<T>::add(T _t){
 }
 
 template<typename T>
-bool LinkedList<T>::unshift(T _t){
+bool DoublyLinkedList<T>::unshift(T _t){
 
   if(_size == 0)
     return add(_t);
 
-  ListNode<T> *tmp = new ListNode<T>();
+  DoublyLinkedListNode<T> *tmp = new DoublyLinkedListNode<T>();
   tmp->next = root;
   root->prev = tmp;
   tmp->data = _t;
@@ -224,7 +224,7 @@ bool LinkedList<T>::unshift(T _t){
 }
 
 template<typename T>
-bool LinkedList<T>::set(int index, T _t){
+bool DoublyLinkedList<T>::set(int index, T _t){
   // Check if index position is in bounds
   if(index < 0 || index >= _size)
     return false;
@@ -234,12 +234,12 @@ bool LinkedList<T>::set(int index, T _t){
 }
 
 template<typename T>
-T LinkedList<T>::pop(){
+T DoublyLinkedList<T>::pop(){
   if(_size <= 0)
     return T();
 
   if(_size >= 2){
-    ListNode<T> *tmp = last->prev;
+    DoublyLinkedListNode<T> *tmp = last->prev;
     T ret = tmp->next->data;
     delete(tmp->next);
     tmp->next = NULL;
@@ -258,12 +258,12 @@ T LinkedList<T>::pop(){
 }
 
 template<typename T>
-T LinkedList<T>::shift(){
+T DoublyLinkedList<T>::shift(){
   if(_size <= 0)
     return T();
 
   if(_size > 1){
-    ListNode<T> *_next = root->next;
+    DoublyLinkedListNode<T> *_next = root->next;
     T ret = root->data;
     delete(root);
     root = _next;
@@ -278,7 +278,7 @@ T LinkedList<T>::shift(){
 }
 
 template<typename T>
-T LinkedList<T>::remove(int index){
+T DoublyLinkedList<T>::remove(int index){
   if (index < 0 || index >= _size)
   {
     return T();
@@ -292,8 +292,8 @@ T LinkedList<T>::remove(int index){
     return pop();
   }
 
-  ListNode<T> *tmp = getNode(index - 1);
-  ListNode<T> *toDelete = tmp->next;
+  DoublyLinkedListNode<T> *tmp = getNode(index - 1);
+  DoublyLinkedListNode<T> *toDelete = tmp->next;
   T ret = toDelete->data;
   tmp->next = tmp->next->next;
   delete(toDelete);
@@ -303,14 +303,14 @@ T LinkedList<T>::remove(int index){
 
 
 template<typename T>
-T LinkedList<T>::get(int index){
-  ListNode<T> *tmp = getNode(index);
+T DoublyLinkedList<T>::get(int index){
+  DoublyLinkedListNode<T> *tmp = getNode(index);
 
   return (tmp ? tmp->data : T());
 }
 
 template<typename T>
-void LinkedList<T>::clear(){
+void DoublyLinkedList<T>::clear(){
   while(size() > 0)
     shift();
 }

@@ -50,7 +50,7 @@ private:
 
   bool connect();
   void subscribe();
-  void publishCallback(char* topic, byte* payload, int length);
+  void publishCallback(char* topic, uint8_t* payload, unsigned int length);
 };
 
 #endif

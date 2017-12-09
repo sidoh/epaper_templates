@@ -1,64 +1,110 @@
+#include <ESPAsyncWebServer.h>
 #include <FS.h>
-#include <ESP8266WebServer.h>
 #include <DisplayTemplateDriver.h>
 #include <PatternHandler.h>
 #include <Settings.h>
 
-#ifndef _WEB_SERVER_H
-#define _WEB_SERVER_H
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
+#ifndef _WEB_SERVER2_H
+#define _WEB_SERVER2_H
 
 class WebServer {
 public:
   WebServer(DisplayTemplateDriver& driver, Settings& settings);
 
   void begin();
-  void loop();
 
 private:
-  ESP8266WebServer server;
+  class BodyHandler : public AsyncWebHandler {
+  public:
+    BodyHandler(const char* uri, const WebRequestMethod method, ArBodyHandlerFunction handler);
+    ~BodyHandler();
+
+    virtual bool isRequestHandlerTrivial() { return false; }
+    virtual bool canHandle(AsyncWebServerRequest* request);
+    virtual void handleBody(
+      AsyncWebServerRequest *request,
+      uint8_t *data,
+      size_t len,
+      size_t index,
+      size_t total
+    );
+
+  private:
+    char* uri;
+    const WebRequestMethod method;
+    ArBodyHandlerFunction handler;
+  };
+
+  class UploadHandler : public AsyncWebHandler {
+  public:
+    UploadHandler(const char* uri, const WebRequestMethod method, ArUploadHandlerFunction handler);
+    ~UploadHandler();
+
+    virtual bool isRequestHandlerTrivial() { return false; }
+    virtual bool canHandle(AsyncWebServerRequest* request);
+    virtual void handleUpload(
+      AsyncWebServerRequest *request,
+      const String& filename,
+      size_t index,
+      uint8_t *data,
+      size_t len,
+      bool isFinal
+    );
+
+  private:
+    char* uri;
+    const WebRequestMethod method;
+    ArUploadHandlerFunction handler;
+  };
+
+  AsyncWebServer server;
   File updateFile;
   DisplayTemplateDriver& driver;
   Settings& settings;
 
-  void handleUpdateVariables();
-  ESP8266WebServer::THandlerFunction sendSuccess();
+  ArBodyHandlerFunction handleUpdateVariables();
+  ArRequestHandlerFunction sendSuccess();
 
-  ESP8266WebServer::THandlerFunction handleAbout();
+  ArRequestHandlerFunction handleAbout();
+  ArRequestHandlerFunction handleListDirectory(const char* dir);
+  ArUploadHandlerFunction  handleCreateFile(const char* filePrefix);
 
   // CRUD handlers for Bitmaps
-  ESP8266WebServer::THandlerFunction handleListBitmaps();
-  ESP8266WebServer::THandlerFunction handleCreateBitmap();
-  PatternHandler::TPatternHandlerFn  handleDeleteBitmap();
-  PatternHandler::TPatternHandlerFn  handleShowBitmap();
+  PatternHandler::TPatternHandlerFn handleDeleteBitmap();
+  PatternHandler::TPatternHandlerFn handleShowBitmap();
 
   // CRUD handlers for Templates
-  ESP8266WebServer::THandlerFunction handleListTemplates();
-  ESP8266WebServer::THandlerFunction handleCreateTemplate();
-  PatternHandler::TPatternHandlerFn  handleDeleteTemplate();
-  PatternHandler::TPatternHandlerFn  handleShowTemplate();
-  PatternHandler::TPatternHandlerFn  handleUpdateTemplate();
+  PatternHandler::TPatternHandlerFn     handleDeleteTemplate();
+  PatternHandler::TPatternHandlerFn     handleShowTemplate();
+  PatternHandler::TPatternHandlerBodyFn handleUpdateTemplate();
 
-  ESP8266WebServer::THandlerFunction handleUpdateSettings();
-  ESP8266WebServer::THandlerFunction handleListSettings();
+  ArBodyHandlerFunction    handleUpdateSettings();
+  ArRequestHandlerFunction handleListSettings();
 
-  ESP8266WebServer::THandlerFunction handleUpdateFile(const char* filename);
-  ESP8266WebServer::THandlerFunction handleServeFile(
+  ArUploadHandlerFunction handleUpdateFile(const char* filename);
+  ArRequestHandlerFunction handleServeFile(
     const char* filename,
     const char* contentType,
     const char* defaultText = ""
   );
-  bool serveFile(const char* file, const char* contentType);
-  void handleUpdateJsonFile(const String& file);
+  bool serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType);
+  void handleUpdateJsonFile(const String& file, AsyncWebServerRequest* request, uint8_t* data, size_t len);
 
   // Checks if auth is enabled, and requires appropriate username/password if so
-  bool isAuthenticated();
+  bool isAuthenticated(AsyncWebServerRequest* request);
 
   // Support for routes with tokens like a/:id/:id2. Injects auth handling.
-  void onPattern(const String& pattern, const HTTPMethod method, PatternHandler::TPatternHandlerFn fn);
+  void onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn);
+  void onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn);
 
   // Injects auth handling
-  void on(const String& pattern, const HTTPMethod method, ESP8266WebServer::THandlerFunction fn);
-  void on(const String& pattern, const HTTPMethod method, ESP8266WebServer::THandlerFunction fn, ESP8266WebServer::THandlerFunction uploadFn);
+  void on(const String& pattern, const WebRequestMethod method, ArRequestHandlerFunction fn);
+  void on(const String& pattern, const WebRequestMethod method, ArBodyHandlerFunction fn);
+  void onUpload(const String& pattern, const WebRequestMethod method, ArUploadHandlerFunction uploadFn);
 };
 
 #endif

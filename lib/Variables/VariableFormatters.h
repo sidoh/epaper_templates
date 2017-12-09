@@ -10,7 +10,7 @@ class VariableFormatter {
 public:
   virtual String format(const String& value) const = 0;
 
-  ~VariableFormatter() { Serial.println("~VF"); }
+  ~VariableFormatter() { }
 
   static std::shared_ptr<const VariableFormatter> buildFormatter(const JsonObject& args);
 };

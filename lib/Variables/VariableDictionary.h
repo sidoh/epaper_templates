@@ -1,5 +1,9 @@
 #include <ArduinoJson.h>
 
+#if defined(ESP32)
+#include <SPIFFS.h>
+#endif
+
 #ifndef VARIABLE_DICTIONARY
 #define VARIABLE_DICTIONARY
 

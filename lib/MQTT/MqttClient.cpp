@@ -38,7 +38,7 @@ void MqttClient::onVariableUpdate(TVariableUpdateFn fn) {
 void MqttClient::begin() {
   mqttClient->setServer(this->domain.c_str(), port);
   mqttClient->setCallback(
-    [this](char* topic, byte* payload, int length) {
+    [this](char* topic, uint8_t* payload, unsigned int length) {
       this->publishCallback(topic, payload, length);
     }
   );
@@ -47,7 +47,12 @@ void MqttClient::begin() {
 
 bool MqttClient::connect() {
   char nameBuffer[30];
+
+#if defined(ESP8266)
   sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP.getChipId());
+#elif defined(ESP32)
+  sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP.getEfuseMac());
+#endif
 
 #ifdef MQTT_DEBUG
     Serial.println(F("MqttClient - connecting"));
@@ -100,7 +105,7 @@ void MqttClient::subscribe() {
   mqttClient->subscribe(topic.c_str());
 }
 
-void MqttClient::publishCallback(char* topic, byte* payload, int length) {
+void MqttClient::publishCallback(char* topic, uint8_t* payload, unsigned int length) {
   char cstrPayload[length + 1];
   cstrPayload[length] = 0;
   memcpy(cstrPayload, payload, sizeof(byte)*length);
