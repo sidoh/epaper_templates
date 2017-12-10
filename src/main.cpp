@@ -63,6 +63,14 @@ void applySettings() {
   }
 }
 
+#if defined(ESP32)
+void onWifiEvent(WiFiEvent_t event) {
+  if (event == SYSTEM_EVENT_STA_START) {
+    WiFi.setHostname(settings.hostname.c_str());
+  }
+}
+#endif
+
 void setup() {
   Serial.begin(115200);
 
@@ -81,8 +89,8 @@ void setup() {
   WiFi.hostname(settings.hostname);
   WiFi.begin();
 #elif defined(ESP32)
+  WiFi.onEvent(onWifiEvent);
   WiFi.begin();
-  WiFi.setHostname(settings.hostname.c_str());
 #endif
 
   WiFi.waitForConnectResult();
