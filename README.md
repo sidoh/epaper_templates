@@ -206,6 +206,38 @@ Example:
 
 The [examples directory][examples] has a few sample templates.
 
+### Managing templates
+
+Templates can be managed via the REST API:
+
+```
+$ curl -X POST -F 'image=@data/path/to/template.json' http://epaper-display/templates
+$ curl http://epaper-display/templates
+[{"name":"/templates/template.json","size":3527}]
+$ curl -X DELETE http://epaper-display/templates/template.json
+```
+
+### Selecting a template
+
+```
+$ curl -X PUT -H'Content-Type:application/json' \
+  -d '{"template_path":"/templates/template.json"}' \
+  http://epaper-display/settings
+```
+
+## REST API
+
+The following RESTful routes are available:
+
+1. `/variables` - GET, PUT.
+1. `/templates` - GET, POST.
+1. `/templates/:template_name` - GET, DELETE, PUT
+1. `/bitmaps` - GET, POST.
+1. `/bitmaps/:bitmap_name` - GET, DELETE.
+1. `/settings` - GET, PUT.
+1. `/about` - GET.
+1. `/` - GET.
+
 [info-license]:   https://github.com/sidoh/epaper_templates/blob/master/LICENSE
 [shield-license]: https://img.shields.io/badge/license-MIT-blue.svg
 [examples]:       https://github.com/sidoh/epaper_templates/examples
