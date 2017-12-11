@@ -62,7 +62,6 @@ private:
   };
 
   AsyncWebServer server;
-  File updateFile;
   DisplayTemplateDriver& driver;
   Settings& settings;
 
