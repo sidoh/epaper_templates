@@ -165,7 +165,7 @@ They are referenced via filenames, and can be managed through the REST API:
 ```
 $ curl -X POST -F 'my-bitmap.bin=@path/to/bitmap.bin' http://epaper-display/bitmaps
 $ curl -v http://epaper-display/bitmaps
-[{"name":"/bitmaps/bitmap.bin","size":512}]
+[{"name":"/b/bitmap.bin","size":512}]
 $ curl -X DELETE http://epaper-display/bitmaps/bitmap.bin
 ```
 
@@ -180,7 +180,7 @@ Example:
       "w": 64,
       "h": 64,
       "color": "black",
-      "static": "/bitmaps/bitmap.bin"
+      "static": "/b/bitmap.bin"
     },
     {
       "x": 100,
@@ -190,7 +190,7 @@ Example:
       "variable": "my_variable",
       "formatter": "cases",
       "args": {
-        "prefix": "/bitmaps/",
+        "prefix": "/b/",
         "default": "unknown.bin",
         "cases": {
           "sunny": "sunny.bin",
@@ -213,7 +213,7 @@ Templates can be managed via the REST API:
 ```
 $ curl -X POST -F 'image=@data/path/to/template.json' http://epaper-display/templates
 $ curl http://epaper-display/templates
-[{"name":"/templates/template.json","size":3527}]
+[{"name":"/t/template.json","size":3527}]
 $ curl -X DELETE http://epaper-display/templates/template.json
 ```
 
