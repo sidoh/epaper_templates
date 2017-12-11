@@ -458,6 +458,10 @@ void EpaperWebServer::UploadHandler::handleUpload(
   handler(request, filename, index, data, len, isFinal);
 }
 
+void EpaperWebServer::UploadHandler::handleRequest(AsyncWebServerRequest* request) {
+  request->send(200);
+}
+
 EpaperWebServer::BodyHandler::BodyHandler(
   const char* uri,
   const WebRequestMethod method,
@@ -479,6 +483,10 @@ bool EpaperWebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
   }
 
   return request->url() == this->uri;
+}
+
+void EpaperWebServer::BodyHandler::handleRequest(AsyncWebServerRequest* request) {
+  request->send(200);
 }
 
 void EpaperWebServer::BodyHandler::handleBody(
