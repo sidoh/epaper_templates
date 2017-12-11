@@ -84,7 +84,7 @@ void DisplayTemplateDriver::updateVariable(const String& key, const String& valu
     std::shared_ptr<Region> region = curr->data;
 
     if (region->getVariableName() == key) {
-      this->dirty = this->dirty || region->updateValue(value);
+      this->dirty = region->updateValue(value) || this->dirty;
     }
 
     curr = curr->next;
