@@ -34,7 +34,6 @@ void EpaperWebServer::begin() {
   on("/about", HTTP_GET, handleAbout());
 
   on("/", HTTP_GET, handleServeFile(INDEX_FILENAME, TEXT_HTML));
-  onUpload("/index.html", HTTP_POST, handleUpdateFile(INDEX_FILENAME));
 
   server.begin();
 }
@@ -339,21 +338,6 @@ ArBodyHandlerFunction EpaperWebServer::handleUpdateSettings() {
 ArRequestHandlerFunction EpaperWebServer::handleListSettings() {
   return [this](AsyncWebServerRequest* request) {
     request->send(200, APPLICATION_JSON, settings.toJson());
-  };
-}
-
-ArUploadHandlerFunction EpaperWebServer::handleUpdateFile(const char* filename) {
-  return [this, filename](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool isFinal) {
-    if (index == 0) {
-      updateFile = SPIFFS.open(filename, "w");
-    } else if (! isFinal) {
-      if (updateFile.write(data, len) != len) {
-        Serial.println(F("Error updating web file"));
-      }
-    } else {
-      updateFile.close();
-      request->send_P(200, TEXT_PLAIN, PSTR("success"));
-    }
   };
 }
 
