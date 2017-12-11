@@ -5,6 +5,10 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 [![release](http://github-release-version.herokuapp.com/github/sidoh/epaper_templates/release.svg?style=flat)](https://github.com/sidoh/epaper_templates/releases/latest)
 [![License][shield-license]][info-license]
 
+## Demo
+
+[<img src="https://i.imgur.com/Y0VtqgG.gif" width="400" />](https://youtu.be/fBfWT8LcDsM)
+
 ## Requirements
 
 1. ESP8266/ESP32.  The entire display frame is buffered in memory, so ESP32 may be a more suitable for large displays.
