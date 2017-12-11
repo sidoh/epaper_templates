@@ -9,11 +9,11 @@
 #define _SETTINGS_H
 
 #ifndef BITMAPS_DIRECTORY
-#define BITMAPS_DIRECTORY "/bitmaps"
+#define BITMAPS_DIRECTORY "/b"
 #endif
 
 #ifndef TEMPLATES_DIRECTORY
-#define TEMPLATES_DIRECTORY "/templates"
+#define TEMPLATES_DIRECTORY "/t"
 #endif
 
 #define XQUOTE(x) #x

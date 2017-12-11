@@ -144,7 +144,7 @@
       "variable": "weather",
       "formatter": "cases",
       "args": {
-        "prefix": "/bitmaps/",
+        "prefix": "/b/",
         "cases": {
           "01d": "010-sun.bin",
           "01n": "011-moon.bin",
