@@ -254,7 +254,7 @@ ArUploadHandlerFunction EpaperWebServer::handleCreateFile(const char* filePrefix
 
     if (index == 0) {
       String path = String(filePrefix) + "/" + filename;
-      updateFile = SPIFFS.open(path, "w");
+      updateFile = SPIFFS.open(path, FILE_WRITE);
 
       if (!updateFile) {
         Serial.println(F("Failed to open file"));

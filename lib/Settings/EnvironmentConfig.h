@@ -13,3 +13,7 @@
 #if defined(ESP32)
 #include <SPIFFS.h>
 #endif
+
+#if defined(ESP8266)
+#define FILE_WRITE "w"
+#endif
