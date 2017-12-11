@@ -23,15 +23,16 @@ private:
     BodyHandler(const char* uri, const WebRequestMethod method, ArBodyHandlerFunction handler);
     ~BodyHandler();
 
-    virtual bool isRequestHandlerTrivial() { return false; }
-    virtual bool canHandle(AsyncWebServerRequest* request);
+    virtual bool isRequestHandlerTrivial() override { return false; }
+    virtual bool canHandle(AsyncWebServerRequest* request) override;
+    virtual void handleRequest(AsyncWebServerRequest* request) override;
     virtual void handleBody(
       AsyncWebServerRequest *request,
       uint8_t *data,
       size_t len,
       size_t index,
       size_t total
-    );
+    ) override;
 
   private:
     char* uri;
@@ -44,8 +45,9 @@ private:
     UploadHandler(const char* uri, const WebRequestMethod method, ArUploadHandlerFunction handler);
     ~UploadHandler();
 
-    virtual bool isRequestHandlerTrivial() { return false; }
-    virtual bool canHandle(AsyncWebServerRequest* request);
+    virtual bool isRequestHandlerTrivial() override { return false; }
+    virtual bool canHandle(AsyncWebServerRequest* request) override;
+    virtual void handleRequest(AsyncWebServerRequest* request) override;
     virtual void handleUpload(
       AsyncWebServerRequest *request,
       const String& filename,
@@ -53,7 +55,7 @@ private:
       uint8_t *data,
       size_t len,
       bool isFinal
-    );
+    ) override;
 
   private:
     char* uri;
