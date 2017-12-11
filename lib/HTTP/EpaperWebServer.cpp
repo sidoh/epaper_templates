@@ -1,4 +1,4 @@
-#include <WebServer.h>
+#include <EpaperWebServer.h>
 
 static const char INDEX_FILENAME[] = "/index.html";
 static const char TEXT_HTML[] = "text/html";
@@ -7,13 +7,13 @@ static const char APPLICATION_JSON[] = "application/json";
 
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 
-WebServer::WebServer(DisplayTemplateDriver& driver, Settings& settings)
+EpaperWebServer::EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings)
   : driver(driver),
     settings(settings),
     server(AsyncWebServer(80))
 { }
 
-void WebServer::begin() {
+void EpaperWebServer::begin() {
   on("/variables", HTTP_PUT, handleUpdateVariables());
   on("/variables", HTTP_GET, handleServeFile(VariableDictionary::FILENAME, APPLICATION_JSON));
 
@@ -39,7 +39,7 @@ void WebServer::begin() {
   server.begin();
 }
 
-ArRequestHandlerFunction WebServer::handleAbout() {
+ArRequestHandlerFunction EpaperWebServer::handleAbout() {
   return [this](AsyncWebServerRequest* request) {
     // Measure before allocating buffers
     uint32_t freeHeap = ESP.getFreeHeap();
@@ -59,13 +59,13 @@ ArRequestHandlerFunction WebServer::handleAbout() {
   };
 }
 
-ArRequestHandlerFunction WebServer::sendSuccess() {
+ArRequestHandlerFunction EpaperWebServer::sendSuccess() {
   return [this](AsyncWebServerRequest* request) {
     request->send(200, APPLICATION_JSON, "true");
   };
 }
 
-ArBodyHandlerFunction WebServer::handleUpdateVariables() {
+ArBodyHandlerFunction EpaperWebServer::handleUpdateVariables() {
   return [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
     DynamicJsonBuffer buffer;
     JsonObject& vars = buffer.parseObject(data);
@@ -83,7 +83,7 @@ ArBodyHandlerFunction WebServer::handleUpdateVariables() {
   };
 }
 
-ArRequestHandlerFunction WebServer::handleServeFile(
+ArRequestHandlerFunction EpaperWebServer::handleServeFile(
   const char* filename,
   const char* contentType,
   const char* defaultText) {
@@ -99,7 +99,7 @@ ArRequestHandlerFunction WebServer::handleServeFile(
   };
 }
 
-bool WebServer::serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType) {
+bool EpaperWebServer::serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType) {
   if (SPIFFS.exists(file)) {
     request->send(SPIFFS, file, contentType);
     return true;
@@ -112,7 +112,7 @@ bool WebServer::serveFile(AsyncWebServerRequest* request, const char* file, cons
 // CRUD handlers for bitmaps
 // ---------
 
-PatternHandler::TPatternHandlerFn WebServer::handleShowBitmap() {
+PatternHandler::TPatternHandlerFn EpaperWebServer::handleShowBitmap() {
   return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
@@ -125,7 +125,7 @@ PatternHandler::TPatternHandlerFn WebServer::handleShowBitmap() {
   };
 }
 
-PatternHandler::TPatternHandlerFn WebServer::handleDeleteBitmap() {
+PatternHandler::TPatternHandlerFn EpaperWebServer::handleDeleteBitmap() {
   return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
@@ -146,7 +146,7 @@ PatternHandler::TPatternHandlerFn WebServer::handleDeleteBitmap() {
   };
 }
 
-ArRequestHandlerFunction WebServer::handleListDirectory(const char* dirName) {
+ArRequestHandlerFunction EpaperWebServer::handleListDirectory(const char* dirName) {
   return [this, dirName](AsyncWebServerRequest* request) {
     DynamicJsonBuffer buffer;
     JsonArray& responseObj = buffer.createArray();
@@ -192,7 +192,7 @@ ArRequestHandlerFunction WebServer::handleListDirectory(const char* dirName) {
 // CRUD handlers for templates
 // ---------
 
-PatternHandler::TPatternHandlerFn WebServer::handleShowTemplate() {
+PatternHandler::TPatternHandlerFn EpaperWebServer::handleShowTemplate() {
   return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
@@ -204,7 +204,7 @@ PatternHandler::TPatternHandlerFn WebServer::handleShowTemplate() {
   };
 }
 
-PatternHandler::TPatternHandlerBodyFn WebServer::handleUpdateTemplate() {
+PatternHandler::TPatternHandlerBodyFn EpaperWebServer::handleUpdateTemplate() {
   return [this](
     const UrlTokenBindings* bindings,
     AsyncWebServerRequest* request,
@@ -221,7 +221,7 @@ PatternHandler::TPatternHandlerBodyFn WebServer::handleUpdateTemplate() {
   };
 }
 
-PatternHandler::TPatternHandlerFn WebServer::handleDeleteTemplate() {
+PatternHandler::TPatternHandlerFn EpaperWebServer::handleDeleteTemplate() {
   return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
@@ -242,7 +242,7 @@ PatternHandler::TPatternHandlerFn WebServer::handleDeleteTemplate() {
   };
 }
 
-ArUploadHandlerFunction WebServer::handleCreateFile(const char* filePrefix) {
+ArUploadHandlerFunction EpaperWebServer::handleCreateFile(const char* filePrefix) {
   return [this, filePrefix](
     AsyncWebServerRequest *request,
     const String& filename,
@@ -276,7 +276,7 @@ ArUploadHandlerFunction WebServer::handleCreateFile(const char* filePrefix) {
   };
 }
 
-void WebServer::handleUpdateJsonFile(const String& path, AsyncWebServerRequest* request, uint8_t* data, size_t len) {
+void EpaperWebServer::handleUpdateJsonFile(const String& path, AsyncWebServerRequest* request, uint8_t* data, size_t len) {
   DynamicJsonBuffer requestBuffer;
   JsonObject& body = requestBuffer.parseObject(data);
 
@@ -313,7 +313,7 @@ void WebServer::handleUpdateJsonFile(const String& path, AsyncWebServerRequest* 
   }
 }
 
-ArBodyHandlerFunction WebServer::handleUpdateSettings() {
+ArBodyHandlerFunction EpaperWebServer::handleUpdateSettings() {
   return [this](
     AsyncWebServerRequest* request,
     uint8_t* data,
@@ -336,13 +336,13 @@ ArBodyHandlerFunction WebServer::handleUpdateSettings() {
   };
 }
 
-ArRequestHandlerFunction WebServer::handleListSettings() {
+ArRequestHandlerFunction EpaperWebServer::handleListSettings() {
   return [this](AsyncWebServerRequest* request) {
     request->send(200, APPLICATION_JSON, settings.toJson());
   };
 }
 
-ArUploadHandlerFunction WebServer::handleUpdateFile(const char* filename) {
+ArUploadHandlerFunction EpaperWebServer::handleUpdateFile(const char* filename) {
   return [this, filename](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool isFinal) {
     if (index == 0) {
       updateFile = SPIFFS.open(filename, "w");
@@ -357,7 +357,7 @@ ArUploadHandlerFunction WebServer::handleUpdateFile(const char* filename) {
   };
 }
 
-bool WebServer::isAuthenticated(AsyncWebServerRequest* request) {
+bool EpaperWebServer::isAuthenticated(AsyncWebServerRequest* request) {
   if (settings.hasAuthSettings()) {
     if (request->authenticate(settings.adminUsername.c_str(), settings.adminPassword.c_str())) {
       return true;
@@ -370,7 +370,7 @@ bool WebServer::isAuthenticated(AsyncWebServerRequest* request) {
   }
 }
 
-void WebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn) {
+void EpaperWebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn) {
   PatternHandler::TPatternHandlerFn authedFn = [this, fn](const UrlTokenBindings* b, AsyncWebServerRequest* request) {
     if (isAuthenticated(request)) {
       fn(b, request);
@@ -380,7 +380,7 @@ void WebServer::onPattern(const String& pattern, const WebRequestMethod method, 
   server.addHandler(new PatternHandler(pattern.c_str(), method, authedFn, NULL));
 }
 
-void WebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn) {
+void EpaperWebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn) {
   PatternHandler::TPatternHandlerBodyFn authedFn = [this, fn](
     const UrlTokenBindings* bindings,
     AsyncWebServerRequest* request,
@@ -397,7 +397,7 @@ void WebServer::onPattern(const String& pattern, const WebRequestMethod method, 
   server.addHandler(new PatternHandler(pattern.c_str(), method, NULL, authedFn));
 }
 
-void WebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
+void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
   ArRequestHandlerFunction authedFn = [this, fn](AsyncWebServerRequest* request) {
     if (isAuthenticated(request)) {
       fn(request);
@@ -407,7 +407,7 @@ void WebServer::on(const String& path, const WebRequestMethod method, ArRequestH
   server.on(path.c_str(), method, authedFn);
 }
 
-void WebServer::on(const String& path, const WebRequestMethod method, ArBodyHandlerFunction fn) {
+void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArBodyHandlerFunction fn) {
   ArBodyHandlerFunction authedFn = [this, fn](
     AsyncWebServerRequest* request,
     uint8_t* data,
@@ -420,10 +420,10 @@ void WebServer::on(const String& path, const WebRequestMethod method, ArBodyHand
     }
   };
 
-  server.addHandler(new WebServer::BodyHandler(path.c_str(), method, authedFn));
+  server.addHandler(new EpaperWebServer::BodyHandler(path.c_str(), method, authedFn));
 }
 
-void WebServer::onUpload(const String& path, const WebRequestMethod method, ArUploadHandlerFunction fn) {
+void EpaperWebServer::onUpload(const String& path, const WebRequestMethod method, ArUploadHandlerFunction fn) {
   ArUploadHandlerFunction authedFn = [this, fn](
     AsyncWebServerRequest *request,
     const String& filename,
@@ -437,10 +437,10 @@ void WebServer::onUpload(const String& path, const WebRequestMethod method, ArUp
     }
   };
 
-  server.addHandler(new WebServer::UploadHandler(path.c_str(), method, authedFn));
+  server.addHandler(new EpaperWebServer::UploadHandler(path.c_str(), method, authedFn));
 }
 
-WebServer::UploadHandler::UploadHandler(
+EpaperWebServer::UploadHandler::UploadHandler(
   const char* uri,
   const WebRequestMethod method,
   ArUploadHandlerFunction handler
@@ -451,11 +451,11 @@ WebServer::UploadHandler::UploadHandler(
   strcpy(this->uri, uri);
 }
 
-WebServer::UploadHandler::~UploadHandler() {
+EpaperWebServer::UploadHandler::~UploadHandler() {
   delete uri;
 }
 
-bool WebServer::UploadHandler::canHandle(AsyncWebServerRequest *request) {
+bool EpaperWebServer::UploadHandler::canHandle(AsyncWebServerRequest *request) {
   if (this->method != HTTP_ANY && this->method != request->method()) {
     return false;
   }
@@ -463,7 +463,7 @@ bool WebServer::UploadHandler::canHandle(AsyncWebServerRequest *request) {
   return request->url() == this->uri;
 }
 
-void WebServer::UploadHandler::handleUpload(
+void EpaperWebServer::UploadHandler::handleUpload(
   AsyncWebServerRequest *request,
   const String &filename,
   size_t index,
@@ -474,7 +474,7 @@ void WebServer::UploadHandler::handleUpload(
   handler(request, filename, index, data, len, isFinal);
 }
 
-WebServer::BodyHandler::BodyHandler(
+EpaperWebServer::BodyHandler::BodyHandler(
   const char* uri,
   const WebRequestMethod method,
   ArBodyHandlerFunction handler
@@ -485,11 +485,11 @@ WebServer::BodyHandler::BodyHandler(
   strcpy(this->uri, uri);
 }
 
-WebServer::BodyHandler::~BodyHandler() {
+EpaperWebServer::BodyHandler::~BodyHandler() {
   delete uri;
 }
 
-bool WebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
+bool EpaperWebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
   if (this->method != HTTP_ANY && this->method != request->method()) {
     return false;
   }
@@ -497,7 +497,7 @@ bool WebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
   return request->url() == this->uri;
 }
 
-void WebServer::BodyHandler::handleBody(
+void EpaperWebServer::BodyHandler::handleBody(
   AsyncWebServerRequest *request,
   uint8_t *data,
   size_t len,

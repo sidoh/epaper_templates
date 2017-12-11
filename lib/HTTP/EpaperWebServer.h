@@ -8,12 +8,12 @@
 #include <SPIFFS.h>
 #endif
 
-#ifndef _WEB_SERVER2_H
-#define _WEB_SERVER2_H
+#ifndef _WEB_SERVER_H
+#define _WEB_SERVER_H
 
-class WebServer {
+class EpaperWebServer {
 public:
-  WebServer(DisplayTemplateDriver& driver, Settings& settings);
+  EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings);
 
   void begin();
 

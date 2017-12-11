@@ -7,7 +7,8 @@ Settings::Settings()
   : fullRefreshPeriod(3600000),
     hostname("epaper-display"),
     onUpdateFn(NULL),
-    timezoneName(TimezonesClass::DEFAULT_TIMEZONE_NAME)
+    timezoneName(TimezonesClass::DEFAULT_TIMEZONE_NAME),
+    setupApPassword("waveshare")
 { }
 
 Settings::~Settings() { }
@@ -38,6 +39,7 @@ void Settings::patch(JsonObject& parsedSettings) {
     this->setIfPresent(parsedSettings, "hostname", hostname);
     this->setIfPresent(parsedSettings, "template_path", templatePath);
     this->setIfPresent(parsedSettings, "timezone", timezoneName);
+    this->setIfPresent(parsedSettings, "setupApPassword", setupApPassword);
 
     if (this->onUpdateFn != NULL) {
       this->onUpdateFn();
@@ -82,6 +84,7 @@ void Settings::serialize(Stream& stream, const bool prettyPrint) {
   root["hostname"] = this->hostname;
   root["template_path"] = this->templatePath;
   root["timezone"] = this->timezoneName;
+  root["setup_ap_password"] = this->setupApPassword;
 
   if (prettyPrint) {
     root.prettyPrintTo(stream);

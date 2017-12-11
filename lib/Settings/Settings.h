@@ -1,12 +1,9 @@
+#include <EnvironmentConfig.h>
 #include <functional>
 #include <ArduinoJson.h>
 #include <Timezone.h>
 #include <Timezones.h>
 #include <StringStream.h>
-
-#if defined(ESP32)
-#include <SPIFFS.h>
-#endif
 
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
@@ -76,6 +73,7 @@ public:
   unsigned long fullRefreshPeriod;
   String hostname;
   String templatePath;
+  String setupApPassword;
 
 protected:
   template <typename T>

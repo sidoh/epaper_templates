@@ -1,23 +1,21 @@
-#include <ESPAsyncWebServer.h>
 #include <Arduino.h>
+#include <EnvironmentConfig.h>
 
 #include <GxEPD.h>
 #include <GxGDEW042T2/GxGDEW042T2.cpp>
 #include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
 #include <GxIO/GxIO.cpp>
 
+#include <WiFiManager.h>
+#include <ESPAsyncWebServer.h>
 #include <TimeLib.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Timezone.h>
 
 #include <DisplayTemplateDriver.h>
-#include <WebServer.h>
+#include <EpaperWebServer.h>
 #include <MqttClient.h>
-
-#if defined(ESP32)
-#include <SPIFFS.h>
-#endif
 
 #if defined(ESP8266)
 GxIO_Class io(SPI, SS, D3, D4);
@@ -30,7 +28,7 @@ GxEPD_Class display(io, 16, 4);
 Settings settings;
 
 DisplayTemplateDriver driver(&display, settings);
-WebServer webServer(driver, settings);
+EpaperWebServer webServer(driver, settings);
 MqttClient* mqttClient = NULL;
 
 WiFiUDP ntpUDP;
@@ -85,15 +83,17 @@ void setup() {
   Settings::load(settings);
   settings.onUpdate(applySettings);
 
+  WiFiManager wifiManager;
+
 #if defined(ESP8266)
   WiFi.hostname(settings.hostname);
-  WiFi.begin();
 #elif defined(ESP32)
   WiFi.onEvent(onWifiEvent);
-  WiFi.begin();
 #endif
 
-  WiFi.waitForConnectResult();
+  char setupSsid[20];
+  sprintf(setupSsid, "epaper_%d", ESP_CHIP_ID());
+  wifiManager.autoConnect(setupSsid, settings.setupApPassword.c_str());
 
   timeClient.begin();
   webServer.begin();

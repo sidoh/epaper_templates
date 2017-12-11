@@ -1,3 +1,4 @@
+#include <EnvironmentConfig.h>
 #include <FS.h>
 #include <GxEPD.h>
 #include <gfxfont.h>

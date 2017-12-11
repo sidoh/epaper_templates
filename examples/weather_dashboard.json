@@ -1,0 +1,172 @@
+{
+  "background_color": "white",
+  "lines": [
+    {"x1": 260, "y1": 0, "x2": 260, "y2": 70},
+    {"x1": 0, "y1": 70, "x2": 400, "y2": 70},
+    {"x1": 0, "y1": 200, "x2": 400, "y2": 200},
+    {"x1": 200, "y1": 200, "x2": 200, "y2": 300}
+  ],
+  "text": [
+    {
+      "x": 10,
+      "y": 45,
+      "font": "FreeMonoBold24pt7b",
+      "variable": "timestamp",
+      "formatter": "Time",
+      "args": {
+        "timezone": "PT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 280,
+      "y": 25,
+      "font": "FreeSansBold9pt7b",
+      "variable": "timestamp",
+      "formatter": "Time",
+      "args": {
+        "timezone": "PT",
+        "format": "%A"
+      }
+    },
+    {
+      "x": 280,
+      "y": 50,
+      "font": "FreeSans9pt7b",
+      "variable": "timestamp",
+      "formatter": "Time",
+      "args": {
+        "timezone": "PT",
+        "format": "%m/%d/%Y"
+      }
+    },
+    {
+      "x": 10,
+      "y": 220,
+      "font": "FreeSansBold9pt7b",
+      "static": "Outside"
+    },
+    {
+      "x": 120,
+      "y": 220,
+      "font": "FreeSans9pt7b",
+      "variable": "outside_temp_updated_at",
+      "formatter": "Time",
+      "args": {
+        "timezone": "PT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 10,
+      "y": 275,
+      "font": "FreeMonoBold24pt7b",
+      "variable": "outside_temp"
+    },
+    {
+      "x": 210,
+      "y": 220,
+      "font": "FreeSansBold9pt7b",
+      "static": "Inside"
+    },
+    {
+      "x": 320,
+      "y": 220,
+      "font": "FreeSans9pt7b",
+      "variable": "inside_temp_updated_at",
+      "formatter": "Time",
+      "args": {
+        "timezone": "PT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 210,
+      "y": 275,
+      "font": "FreeMonoBold24pt7b",
+      "variable": "inside_temp"
+    },
+    {
+      "x": 10,
+      "y": 170,
+      "font": "FreeSansBold9pt7b",
+      "static": "High"
+    },
+    {
+      "x": 10,
+      "y": 190,
+      "font": "FreeSansBold9pt7b",
+      "static": "Low"
+    },
+    {
+      "x": 65,
+      "y": 170,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_high"
+    },
+    {
+      "x": 65,
+      "y": 190,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_low"
+    },
+    {
+      "x": 150,
+      "y": 100,
+      "font": "FreeSansBold9pt7b",
+      "static": "Temp"
+    },
+    {
+      "x": 210,
+      "y": 100,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_temp"
+    },
+    {
+      "x": 120,
+      "y": 125,
+      "font": "FreeSansBold9pt7b",
+      "static": "Humidity"
+    },
+    {
+      "x": 210,
+      "y": 125,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_humidity"
+    }
+  ],
+  "bitmaps": [
+    {
+      "x": 10,
+      "y": 80,
+      "w": 64,
+      "h": 64,
+      "variable": "weather",
+      "formatter": "cases",
+      "args": {
+        "prefix": "/bitmaps/",
+        "cases": {
+          "01d": "010-sun.bin",
+          "01n": "011-moon.bin",
+          "02d": "007-cloudy-1.bin",
+          "02n": "008-cloudy.bin",
+          "03d": "003-clouds.bin",
+          "03n": "003-clouds.bin",
+          "04d": "003-clouds.bin",
+          "04n": "003-clouds.bin",
+          "09d": "004-rain.bin",
+          "09n": "004-rain.bin",
+          "10d": "004-rain.bin",
+          "10n": "004-rain.bin",
+          "11d": "006-storm.bin",
+          "11n": "006-storm.bin",
+          "13d": "009-snow.bin",
+          "13n": "009-snow.bin",
+          "50d": "002-clouds-1.bin",
+          "50n": "002-clouds-1.bin"
+        },
+        "default": "001-signs.bin"
+      }
+    }
+  ]
+}
