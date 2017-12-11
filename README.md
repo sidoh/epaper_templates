@@ -90,7 +90,7 @@ Simple map from key to value.  Particularly useful for variable bitmaps:
       "variable": "my_variable",
       "formatter": "cases",
       "args": {
-        "prefix": "/bitmaps/",
+        "prefix": "/b/",
         "default": "unknown.bin",
         "cases": {
           "sunny": "sunny.bin",
