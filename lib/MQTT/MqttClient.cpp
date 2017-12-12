@@ -3,6 +3,25 @@
 #include <Settings.h>
 #include <TokenIterator.h>
 #include <UrlTokenBindings.h>
+#include <functional>
+#include <map>
+
+using namespace std::placeholders;
+
+#if defined(ESP32)
+// Structure borrowed from:
+// https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/FreeRTOSTimer.cpp
+static std::map<void *, MqttClient *> timersMap;
+
+void MqttClient::internalCallback(TimerHandle_t xTimer) {
+	MqttClient* client = timersMap.at(xTimer);
+	client->connect();
+}
+#elif defined(ESP8266)
+void MqttClient::internalCallback(MqttClient* client) {
+  client->connect();
+}
+#endif
 
 MqttClient::MqttClient(
   String domain,
@@ -21,14 +40,16 @@ MqttClient::MqttClient(
   this->topicPatternBuffer = new char[topicPattern.length() + 1];
   strcpy(this->topicPatternBuffer, this->topicPattern.c_str());
   this->topicPatternTokens = new TokenIterator(this->topicPatternBuffer, topicPattern.length(), '/');
-
-  this->mqttClient = new PubSubClient(tcpClient);
 }
 
 MqttClient::~MqttClient() {
-  mqttClient->disconnect();
   delete this->topicPatternTokens;
   delete this->topicPatternBuffer;
+
+  #if defined(ESP32)
+  xTimerDelete(reconnectTimer, portMAX_DELAY);
+  timersMap.erase(reconnectTimer);
+  #endif
 }
 
 void MqttClient::onVariableUpdate(TVariableUpdateFn fn) {
@@ -36,83 +57,88 @@ void MqttClient::onVariableUpdate(TVariableUpdateFn fn) {
 }
 
 void MqttClient::begin() {
-  mqttClient->setServer(this->domain.c_str(), port);
-  mqttClient->setCallback(
-    [this](char* topic, uint8_t* payload, unsigned int length) {
-      this->publishCallback(topic, payload, length);
-    }
+  #if defined(ESP32)
+  reconnectTimer = xTimerCreate(
+    "mqttTimer",
+    pdMS_TO_TICKS(2000),
+    pdFALSE,
+    (void*)0,
+    internalCallback
   );
-  reconnect();
-}
+  timersMap.insert(std::make_pair(reconnectTimer, this));
+  #endif
 
-bool MqttClient::connect() {
+  // Setup callbacks
+  mqttClient.onConnect(std::bind(&MqttClient::connectCallback, this, _1));
+  mqttClient.onDisconnect(std::bind(&MqttClient::disconnectCallback, this, _1));
+  mqttClient.onMessage(std::bind(&MqttClient::messageCallback, this, _1, _2, _3, _4, _5, _6));
+
+  // Configure client
   char nameBuffer[30];
+  sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP_CHIP_ID());
 
-#if defined(ESP8266)
-  sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP.getChipId());
-#elif defined(ESP32)
-  sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP.getEfuseMac());
-#endif
+  mqttClient.setClientId(nameBuffer);
+  if (this->username.length() > 0) {
+    mqttClient.setCredentials(this->username.c_str(), this->password.c_str());
+  }
+  mqttClient.setServer(this->domain.c_str(), this->port);
 
-#ifdef MQTT_DEBUG
+  connect();
+}
+
+void MqttClient::connect() {
+  #ifdef MQTT_DEBUG
     Serial.println(F("MqttClient - connecting"));
-#endif
+  #endif
 
-  if (username.length() > 0) {
-    return mqttClient->connect(
-      nameBuffer,
-      username.c_str(),
-      password.c_str()
-    );
-  } else {
-    return mqttClient->connect(nameBuffer);
+  mqttClient.connect();
+}
+
+void MqttClient::disconnectCallback(AsyncMqttClientDisconnectReason reason) {
+  #ifdef MQTT_DEBUG
+    Serial.println(F("MqttClient - disconnected"));
+  #endif
+
+  if (WiFi.isConnected()) {
+    #if defined(ESP8266)
+    reconnectTimer.once(2, internalCallback, this);
+    #elif defined(ESP32)
+    xTimerStart(reconnectTimer, 0);
+    #endif
   }
 }
 
-void MqttClient::reconnect() {
-  if (lastConnectAttempt > 0 && (millis() - lastConnectAttempt) < MQTT_CONNECTION_ATTEMPT_FREQUENCY) {
-    return;
-  }
-
-  if (! mqttClient->connected()) {
-    if (connect()) {
-      subscribe();
-
-#ifdef MQTT_DEBUG
-      Serial.println(F("MqttClient - Successfully connected to MQTT server"));
-#endif
-    } else {
-      Serial.println(F("ERROR: Failed to connect to MQTT server"));
-    }
-  }
-
-  lastConnectAttempt = millis();
-}
-
-void MqttClient::handleClient() {
-  reconnect();
-  mqttClient->loop();
-}
-
-void MqttClient::subscribe() {
+void MqttClient::connectCallback(bool sessionPresent) {
   String topic = this->topicPattern;
   topic.replace(String(":") + MQTT_TOPIC_VARIABLE_NAME_TOKEN, "+");
 
-#ifdef MQTT_DEBUG
-  printf("MqttClient - subscribing to topic: %s\n", topic.c_str());
-#endif
+  #ifdef MQTT_DEBUG
+    printf_P(PSTR("MqttClient - subscribing to topic: %s\n"), topic.c_str());
+  #endif
 
-  mqttClient->subscribe(topic.c_str());
+  mqttClient.subscribe(topic.c_str(), 0);
 }
 
-void MqttClient::publishCallback(char* topic, uint8_t* payload, unsigned int length) {
-  char cstrPayload[length + 1];
-  cstrPayload[length] = 0;
-  memcpy(cstrPayload, payload, sizeof(byte)*length);
+void MqttClient::messageCallback(
+  char* topic,
+  char* payload,
+  AsyncMqttClientMessageProperties properties,
+  size_t len,
+  size_t index,
+  size_t total
+) {
+  if (index > 0) {
+    Serial.println(F("MqttClient - WARNING: got unsupported second call to messageCallback"));
+    return;
+  }
 
-#ifdef MQTT_DEBUG
-  printf("MqttClient - Got message on topic: %s\n%s\n", topic, cstrPayload);
-#endif
+  char payloadCopy[len + 1];
+  memcpy(payloadCopy, payload, len);
+  payloadCopy[len] = 0;
+
+  #ifdef MQTT_DEBUG
+    printf_P(PSTR("MqttClient - Got message on topic: %s\n%s\n"), topic, payloadCopy);
+  #endif
 
   if (this->variableUpdateCallback != NULL) {
     TokenIterator topicItr(topic, strlen(topic), '/');
@@ -120,7 +146,8 @@ void MqttClient::publishCallback(char* topic, uint8_t* payload, unsigned int len
 
     if (urlTokens.hasBinding(MQTT_TOPIC_VARIABLE_NAME_TOKEN)) {
       const char* variable = urlTokens.get(MQTT_TOPIC_VARIABLE_NAME_TOKEN);
-      this->variableUpdateCallback(variable, cstrPayload);
+
+      this->variableUpdateCallback(variable, payloadCopy);
     }
   }
 }

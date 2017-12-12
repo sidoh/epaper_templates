@@ -112,8 +112,4 @@ void loop() {
   }
 
   driver.loop();
-
-  if (mqttClient != NULL) {
-    mqttClient->handleClient();
-  }
 }

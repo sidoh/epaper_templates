@@ -1,6 +1,16 @@
-#include <WiFiClient.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include <TokenIterator.h>
+
+#if defined(ESP8266)
+#include <Ticker.h>
+#include <ESP8266WiFi.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+extern "C" {
+	#include "freertos/FreeRTOS.h"
+	#include "freertos/timers.h"
+}
+#endif
 
 #ifndef _MQTT_CLIENT_H
 #define _MQTT_CLIENT_H
@@ -26,13 +36,17 @@ public:
   ~MqttClient();
 
   void begin();
-  void handleClient();
-  void reconnect();
   void onVariableUpdate(TVariableUpdateFn fn);
 
 private:
-  WiFiClient tcpClient;
-  PubSubClient* mqttClient;
+  AsyncMqttClient mqttClient;
+  #if defined(ESP8266)
+  Ticker reconnectTimer;
+  static void internalCallback(MqttClient* client);
+  #elif defined(ESP32)
+  TimerHandle_t reconnectTimer;
+  static void internalCallback(TimerHandle_t xTimer);
+  #endif
 
   uint16_t port;
   String domain;
@@ -48,9 +62,18 @@ private:
   char* topicPatternBuffer;
   TokenIterator* topicPatternTokens;
 
-  bool connect();
-  void subscribe();
-  void publishCallback(char* topic, uint8_t* payload, unsigned int length);
+  void connect();
+
+  void messageCallback(
+    char* topic,
+    char* payload,
+    AsyncMqttClientMessageProperties properties,
+    size_t len,
+    size_t index,
+    size_t total
+  );
+  void connectCallback(bool sessionPresent);
+  void disconnectCallback(AsyncMqttClientDisconnectReason reason);
 };
 
 #endif
