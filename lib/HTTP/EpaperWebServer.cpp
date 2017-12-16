@@ -16,11 +16,16 @@ static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings)
   : driver(driver),
     settings(settings),
+    port(settings.webPort),
     server(AsyncWebServer(settings.webPort))
 { }
 
 EpaperWebServer::~EpaperWebServer() {
   server.reset();
+}
+
+uint16_t EpaperWebServer::getPort() const {
+  return port;
 }
 
 void EpaperWebServer::begin() {

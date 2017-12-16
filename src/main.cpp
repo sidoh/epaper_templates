@@ -37,6 +37,7 @@ MqttClient* mqttClient = NULL;
 
 // Don't attempt to reconnect to wifi if we've never connected
 volatile bool hasConnected = false; 
+volatile bool shouldRestart = false;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
@@ -58,11 +59,6 @@ void applySettings() {
     mqttClient = NULL;
   }
 
-  if (webServer != NULL) {
-    delete webServer;
-    webServer = NULL;
-  }
-
   if (settings.mqttServer().length() > 0) {
     mqttClient = new MqttClient(
       settings.mqttServer(),
@@ -81,8 +77,13 @@ void applySettings() {
     driver.setTemplate(settings.templatePath);
   }
 
-  webServer = new EpaperWebServer(driver, settings);
-  webServer->begin();
+  if (webServer == NULL) {
+    webServer = new EpaperWebServer(driver, settings);
+    webServer->begin();
+  // Get stupid exceptions when trying to tear down old webserver.  Easier to just restart.
+  } else if (settings.webPort != webServer->getPort()) {
+    shouldRestart = true;
+  }
 }
 
 void updateWiFiState(WiFiState state) {
@@ -203,6 +204,10 @@ void setup() {
 }
 
 void loop() {
+  if (shouldRestart) {
+    ESP.restart();
+  }
+  
   if (timeClient.update() && lastSecond != second()) {
     lastSecond = second();
     driver.updateVariable("timestamp", String(timeClient.getEpochTime()));

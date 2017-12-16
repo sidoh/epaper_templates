@@ -17,6 +17,7 @@ public:
   ~EpaperWebServer();
 
   void begin();
+  uint16_t getPort() const;
 
 private:
   class BodyHandler : public AsyncWebHandler {
@@ -69,6 +70,7 @@ private:
   AsyncWebServer server;
   DisplayTemplateDriver& driver;
   Settings& settings;
+  uint16_t port;
 
   ArBodyHandlerFunction handleUpdateVariables();
   ArRequestHandlerFunction sendSuccess();
