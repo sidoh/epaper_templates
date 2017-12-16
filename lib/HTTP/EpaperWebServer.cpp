@@ -1,5 +1,10 @@
 #include <EpaperWebServer.h>
+
+#if defined(ESP8266)
+#include <Updater.h>
+#elif defined(ESP32)
 #include <Update.h>
+#endif
 
 static const char INDEX_FILENAME[] = "/index.html";
 static const char TEXT_HTML[] = "text/html";
@@ -46,7 +51,7 @@ void EpaperWebServer::begin() {
 
 ArRequestHandlerFunction EpaperWebServer::handleOtaSuccess() {
   return [this](AsyncWebServerRequest* request) {
-    request->send_P(200, PSTR(TEXT_PLAIN), PSTR("Update successful.  Device will now reboot.\n\n"));
+    request->send_P(200, TEXT_PLAIN, PSTR("Update successful.  Device will now reboot.\n\n"));
 
     delay(1000);
 
@@ -74,13 +79,18 @@ ArUploadHandlerFunction EpaperWebServer::handleOtaUpdate() {
     if (Update.size() > 0) {
       if (Update.write(data, len) != len) {
         Update.printError(Serial);
+
+#if defined(ESP32)
         Update.abort();
+#endif
       }
 
       if (isFinal) {
         if (!Update.end(true)) {
           Update.printError(Serial);
+#if defined(ESP32)
           Update.abort();
+#endif
         }
       }
     }
