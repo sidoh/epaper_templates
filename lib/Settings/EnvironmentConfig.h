@@ -9,6 +9,17 @@
   #define ESP_CHIP_ID() (static_cast<uint32_t>(ESP.getEfuseMac()))
 #endif
 
+#if defined(ESP8266)
+#include <Ticker.h>
+#include <ESP8266WiFi.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+extern "C" {
+	#include "freertos/FreeRTOS.h"
+	#include "freertos/timers.h"
+}
+#endif
+
 // ESP32 needs to include a SPIFFS library.  ESP8266 has it baked into FS.h
 #if defined(ESP32)
 #include <SPIFFS.h>

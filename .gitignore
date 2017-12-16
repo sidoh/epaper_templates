@@ -4,3 +4,4 @@
 .gcc-flags.json
 data
 .vscode
+.vscode/c_cpp_properties.json

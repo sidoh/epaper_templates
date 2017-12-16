@@ -49,9 +49,6 @@ public:
   void setTemplate(const String& filename);
   const String& getTemplateFilename();
 
-  // Relaods and parses the template file from flash.
-  void loadTemplate();
-
   // Performs a full update of the display.  Applies the template and refreshes
   // the entire screen.
   void fullUpdate();
@@ -70,6 +67,7 @@ private:
   VariableDictionary vars;
   String templateFilename;
   Settings& settings;
+  String newTemplate;
 
   DoublyLinkedList<std::shared_ptr<Region>> regions;
 
@@ -83,6 +81,7 @@ private:
   void flushDirtyRegions(bool screenUpdates);
   void clearDirtyRegions();
   void printError(const char* message);
+  void loadTemplate(const String& templateFilename);
 
   void renderLines(JsonArray& lines);
   void renderTexts(JsonArray& text);

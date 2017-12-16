@@ -1,4 +1,5 @@
 #include <EpaperWebServer.h>
+#include <Update.h>
 
 static const char INDEX_FILENAME[] = "/index.html";
 static const char TEXT_HTML[] = "text/html";
@@ -10,8 +11,12 @@ static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings)
   : driver(driver),
     settings(settings),
-    server(AsyncWebServer(80))
+    server(AsyncWebServer(settings.webPort))
 { }
+
+EpaperWebServer::~EpaperWebServer() {
+  server.reset();
+}
 
 void EpaperWebServer::begin() {
   on("/variables", HTTP_PUT, handleUpdateVariables());
@@ -32,10 +37,54 @@ void EpaperWebServer::begin() {
   on("/settings", HTTP_PUT, handleUpdateSettings());
 
   on("/about", HTTP_GET, handleAbout());
+  onUpload("/firmware", HTTP_POST, handleOtaSuccess(), handleOtaUpdate());
 
   on("/", HTTP_GET, handleServeFile(INDEX_FILENAME, TEXT_HTML));
 
   server.begin();
+}
+
+ArRequestHandlerFunction EpaperWebServer::handleOtaSuccess() {
+  return [this](AsyncWebServerRequest* request) {
+    request->send_P(200, PSTR(TEXT_PLAIN), PSTR("Update successful.  Device will now reboot.\n\n"));
+
+    delay(1000);
+
+    ESP.restart();
+  };
+}
+
+ArUploadHandlerFunction EpaperWebServer::handleOtaUpdate() {
+  return [this](
+    AsyncWebServerRequest *request,
+    const String& filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  ) {
+    if (index == 0) {
+      if (request->contentLength() > 0) {
+        Update.begin(request->contentLength());
+      } else {
+        Serial.println(F("OTA Update: ERROR - Content-Length header required, but not present."));
+      }
+    }
+
+    if (Update.size() > 0) {
+      if (Update.write(data, len) != len) {
+        Update.printError(Serial);
+        Update.abort();
+      }
+
+      if (isFinal) {
+        if (!Update.end(true)) {
+          Update.printError(Serial);
+          Update.abort();
+        }
+      }
+    }
+  };
 }
 
 ArRequestHandlerFunction EpaperWebServer::handleAbout() {
@@ -424,16 +473,48 @@ void EpaperWebServer::onUpload(const String& path, const WebRequestMethod method
   server.addHandler(new EpaperWebServer::UploadHandler(path.c_str(), method, authedFn));
 }
 
+void EpaperWebServer::onUpload(const String& path, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction fn) {
+  ArUploadHandlerFunction authedFn = [this, fn](
+    AsyncWebServerRequest *request,
+    const String& filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  ) {
+    if (isAuthenticated(request)) {
+      fn(request, filename, index, data, len, isFinal);
+    }
+  };
+
+  ArRequestHandlerFunction authedOnCompleteFn = [this, onCompleteFn](AsyncWebServerRequest* request) {
+    if (isAuthenticated(request)) {
+      onCompleteFn(request);
+    }
+  };
+
+  server.addHandler(new EpaperWebServer::UploadHandler(path.c_str(), method, authedOnCompleteFn, authedFn));
+}
+
+EpaperWebServer::UploadHandler::UploadHandler(
+  const char* uri,
+  const WebRequestMethod method,
+  ArRequestHandlerFunction onCompleteFn,
+  ArUploadHandlerFunction handler
+) : uri(new char[strlen(uri) + 1]),
+    method(method),
+    handler(handler),
+    onCompleteFn(onCompleteFn)
+{
+  strcpy(this->uri, uri);
+}
+
 EpaperWebServer::UploadHandler::UploadHandler(
   const char* uri,
   const WebRequestMethod method,
   ArUploadHandlerFunction handler
-) : uri(new char[strlen(uri) + 1]),
-    method(method),
-    handler(handler)
-{
-  strcpy(this->uri, uri);
-}
+) : UploadHandler(uri, method, NULL, handler)
+{ }
 
 EpaperWebServer::UploadHandler::~UploadHandler() {
   delete uri;
@@ -459,7 +540,11 @@ void EpaperWebServer::UploadHandler::handleUpload(
 }
 
 void EpaperWebServer::UploadHandler::handleRequest(AsyncWebServerRequest* request) {
-  request->send(200);
+  if (onCompleteFn == NULL) {
+    request->send(200);
+  } else {
+    onCompleteFn(request);
+  }
 }
 
 EpaperWebServer::BodyHandler::BodyHandler(

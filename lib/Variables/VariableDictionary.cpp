@@ -5,21 +5,45 @@ static const char DEFAULT_VALUE[] = "";
 const char VariableDictionary::FILENAME[] = "/variables.json";
 
 VariableDictionary::VariableDictionary()
-  : dict(&buffer.createObject())
 { }
 
 void VariableDictionary::load() {
-  buffer.clear();
+  this->vars.clear();
 
   File f = SPIFFS.open(FILENAME, "r");
-  dict = &buffer.parseObject(f);
+  DynamicJsonBuffer buffer;
+  JsonObject& obj = buffer.parseObject(f);
   f.close();
+
+  if (! obj.success()) {
+    Serial.println(F("WARN - VariableDictionary: couldn't parse variables file"));
+  }
+
+  for (JsonObject::iterator itr = obj.begin(); itr != obj.end(); ++itr) {
+    this->vars[itr->key] = itr->value.as<const char*>();
+  }
 }
 
 void VariableDictionary::save() {
-  File f = SPIFFS.open(FILENAME, "w");
-  dict->printTo(f);
+  // For conversion to json
+  DynamicJsonBuffer buffer;
+  JsonObject& obj = buffer.createObject();
+
+  for (std::map<String, String>::iterator itr = vars.begin(); itr != vars.end(); ++itr) { 
+    obj[itr->first] = itr->second;
+  }
+
+  char tmpName[50];
+  sprintf(tmpName, "%s_tmp", FILENAME);
+  File f = SPIFFS.open(tmpName, "w");
+  obj.printTo(f);
   f.close();
+
+  SPIFFS.remove(FILENAME);
+
+  if (!SPIFFS.rename(tmpName, FILENAME)) {
+    Serial.println(F("VariableDictionary - WARN: could not move tmp file over"));
+  }
 }
 
 void VariableDictionary::registerVariable(const String& key) {
@@ -29,11 +53,11 @@ void VariableDictionary::registerVariable(const String& key) {
 }
 
 bool VariableDictionary::containsKey(const String &key) {
-  return dict->containsKey(key);
+  return this->vars.count(key) > 0;
 }
 
 void VariableDictionary::set(const String &key, const String &value) {
-  dict->set(key, value);
+  this->vars[key] = value;
 
   // Don't save timestamp, as it's updated every second
   if (key != "timestamp") {
@@ -42,8 +66,8 @@ void VariableDictionary::set(const String &key, const String &value) {
 }
 
 String VariableDictionary::get(const String &key) {
-  if (dict->containsKey(key)) {
-    return dict->get<const char*>(key);
+  if (containsKey(key)) {
+    return this->vars[key];
   } else {
     return DEFAULT_VALUE;
   }

@@ -1,5 +1,6 @@
 #include <EnvironmentConfig.h>
 #include <ArduinoJson.h>
+#include <map>
 
 #ifndef VARIABLE_DICTIONARY
 #define VARIABLE_DICTIONARY
@@ -19,8 +20,7 @@ public:
   void load();
 
 private:
-  DynamicJsonBuffer buffer;
-  JsonObject* dict;
+  std::map<String, String> vars;
 };
 
 #endif

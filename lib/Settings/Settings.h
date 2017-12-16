@@ -63,6 +63,7 @@ public:
 
   String adminUsername;
   String adminPassword;
+  uint16_t webPort;
 
   String mqttServer();
   uint16_t mqttPort();
@@ -70,10 +71,14 @@ public:
   String mqttUsername;
   String mqttPassword;
   String mqttVariablesTopicPattern;
+
   unsigned long fullRefreshPeriod;
-  String hostname;
   String templatePath;
+
+  String hostname;
   String setupApPassword;
+  String wifiSsid;
+  String wifiPassword;
 
 protected:
   template <typename T>

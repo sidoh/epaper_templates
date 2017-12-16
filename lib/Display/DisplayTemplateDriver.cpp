@@ -18,6 +18,21 @@ void DisplayTemplateDriver::init() {
 }
 
 void DisplayTemplateDriver::loop() {
+  if (newTemplate.length() > 0) {
+    // Delete regions so we don't have unused regions hanging around
+    regions.clear();
+
+    // Always schedule a full update.  Even if template is the same, it could've
+    // changed.
+    scheduleFullUpdate();
+
+    loadTemplate(newTemplate);
+
+    // Clear template to indicate that it's been loaded
+    this->templateFilename = newTemplate;
+    this->newTemplate = "";
+  }
+
   if (shouldFullUpdate || dirty) {
     time_t now = millis();
 
@@ -92,22 +107,14 @@ void DisplayTemplateDriver::updateVariable(const String& key, const String& valu
 }
 
 void DisplayTemplateDriver::setTemplate(const String& templateFilename) {
-  // Delete regions so we don't have unused regions hanging around
-  regions.clear();
-
-  // Always schedule a full update.  Even if template is the same, it could've
-  // changed.
-  scheduleFullUpdate();
-
-  this->templateFilename = templateFilename;
-  loadTemplate();
+  this->newTemplate = templateFilename;
 }
 
 const String& DisplayTemplateDriver::getTemplateFilename() {
   return templateFilename;
 }
 
-void DisplayTemplateDriver::loadTemplate() {
+void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   if (! SPIFFS.exists(templateFilename)) {
     Serial.println(F("WARN - template file does not exist"));
     printError("Template file does not exist");

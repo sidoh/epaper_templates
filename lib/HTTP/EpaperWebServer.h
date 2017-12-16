@@ -14,6 +14,7 @@
 class EpaperWebServer {
 public:
   EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings);
+  ~EpaperWebServer();
 
   void begin();
 
@@ -43,6 +44,7 @@ private:
   class UploadHandler : public AsyncWebHandler {
   public:
     UploadHandler(const char* uri, const WebRequestMethod method, ArUploadHandlerFunction handler);
+    UploadHandler(const char* uri, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction handler);
     ~UploadHandler();
 
     virtual bool isRequestHandlerTrivial() override { return false; }
@@ -61,6 +63,7 @@ private:
     char* uri;
     const WebRequestMethod method;
     ArUploadHandlerFunction handler;
+    ArRequestHandlerFunction onCompleteFn;
   };
 
   AsyncWebServer server;
@@ -70,7 +73,12 @@ private:
   ArBodyHandlerFunction handleUpdateVariables();
   ArRequestHandlerFunction sendSuccess();
 
+  // Special routes
   ArRequestHandlerFunction handleAbout();
+  ArUploadHandlerFunction  handleOtaUpdate();
+  ArRequestHandlerFunction handleOtaSuccess();
+
+  // General helpers
   ArRequestHandlerFunction handleListDirectory(const char* dir);
   ArUploadHandlerFunction  handleCreateFile(const char* filePrefix);
 
@@ -106,6 +114,7 @@ private:
   void on(const String& pattern, const WebRequestMethod method, ArRequestHandlerFunction fn);
   void on(const String& pattern, const WebRequestMethod method, ArBodyHandlerFunction fn);
   void onUpload(const String& pattern, const WebRequestMethod method, ArUploadHandlerFunction uploadFn);
+  void onUpload(const String& pattern, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction uploadFn);
 };
 
 #endif

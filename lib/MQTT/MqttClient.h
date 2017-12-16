@@ -1,16 +1,6 @@
 #include <AsyncMqttClient.h>
 #include <TokenIterator.h>
-
-#if defined(ESP8266)
-#include <Ticker.h>
-#include <ESP8266WiFi.h>
-#elif defined(ESP32)
-#include <WiFi.h>
-extern "C" {
-	#include "freertos/FreeRTOS.h"
-	#include "freertos/timers.h"
-}
-#endif
+#include <EnvironmentConfig.h>
 
 #ifndef _MQTT_CLIENT_H
 #define _MQTT_CLIENT_H
@@ -64,6 +54,7 @@ private:
 
   void connect();
 
+  void onWifiConnected();
   void messageCallback(
     char* topic,
     char* payload,

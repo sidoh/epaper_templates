@@ -46,6 +46,8 @@ MqttClient::~MqttClient() {
   delete this->topicPatternTokens;
   delete this->topicPatternBuffer;
 
+  mqttClient.disconnect();
+
   #if defined(ESP32)
   xTimerDelete(reconnectTimer, portMAX_DELAY);
   timersMap.erase(reconnectTimer);
@@ -99,13 +101,11 @@ void MqttClient::disconnectCallback(AsyncMqttClientDisconnectReason reason) {
     Serial.println(F("MqttClient - disconnected"));
   #endif
 
-  if (WiFi.isConnected()) {
-    #if defined(ESP8266)
-    reconnectTimer.once(2, internalCallback, this);
-    #elif defined(ESP32)
-    xTimerStart(reconnectTimer, 0);
-    #endif
-  }
+  #if defined(ESP8266)
+  reconnectTimer.once(2, internalCallback, this);
+  #elif defined(ESP32)
+  xTimerStart(reconnectTimer, 0);
+  #endif
 }
 
 void MqttClient::connectCallback(bool sessionPresent) {
