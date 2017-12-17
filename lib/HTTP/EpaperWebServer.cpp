@@ -13,7 +13,7 @@ static const char APPLICATION_JSON[] = "application/json";
 
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 
-EpaperWebServer::EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings)
+EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
   : driver(driver),
     settings(settings),
     port(settings.webPort),
@@ -139,7 +139,7 @@ ArBodyHandlerFunction EpaperWebServer::handleUpdateVariables() {
     }
 
     for (JsonObject::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
-      driver.updateVariable(itr->key, itr->value);
+      driver->updateVariable(itr->key, itr->value);
     }
 
     request->send_P(200, APPLICATION_JSON, PSTR("true"));

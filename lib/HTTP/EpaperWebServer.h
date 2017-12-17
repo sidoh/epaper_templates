@@ -13,7 +13,7 @@
 
 class EpaperWebServer {
 public:
-  EpaperWebServer(DisplayTemplateDriver& driver, Settings& settings);
+  EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings);
   ~EpaperWebServer();
 
   void begin();
@@ -68,7 +68,7 @@ private:
   };
 
   AsyncWebServer server;
-  DisplayTemplateDriver& driver;
+  DisplayTemplateDriver*& driver;
   Settings& settings;
   uint16_t port;
 

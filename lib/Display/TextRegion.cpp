@@ -1,16 +1,21 @@
 #include <TextRegion.h>
 
+#define BB_COORD(c, d) (((c) >= 0) ? (c) : (d))
+
 TextRegion::TextRegion(
   const String& variable,
   uint16_t x,
   uint16_t y,
-  uint16_t w,
-  uint16_t h,
+  int16_t fixedBbX,
+  int16_t fixedBbY,
+  int16_t fixedBbW,
+  int16_t fixedBbH,
   uint16_t color,
   const GFXfont* font,
   std::shared_ptr<const VariableFormatter> formatter
-) : Region(variable, x, y, w, h, color, formatter), font(font),
-    bbX(x), bbY(y),
+) : Region(variable, x, y, 0, 0, color, formatter), font(font),
+    bbX(x), bbY(y), 
+    fixedBbX(fixedBbX), fixedBbY(fixedBbY), fixedBbW(fixedBbW), fixedBbH(fixedBbH),
     prevX(x), prevY(y), prevW(w), prevH(h)
 { }
 
@@ -50,8 +55,8 @@ void TextRegion::render(GxEPD* display) {
 }
 
 void TextRegion::getBoundingBox(uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h) {
-  x = _min(this->bbX, this->prevX);
-  y = _min(this->bbY, this->prevY);
-  w = _max(this->w, this->prevW);
-  h = _max(this->h, this->prevH);
+  x = BB_COORD(fixedBbX, _min(this->bbX, this->prevX));
+  y = BB_COORD(fixedBbY, _min(this->bbY, this->prevY));
+  w = BB_COORD(fixedBbW, _max(this->w, this->prevW));
+  h = BB_COORD(fixedBbH, _max(this->h, this->prevH));
 }

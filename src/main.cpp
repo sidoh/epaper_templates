@@ -17,13 +17,8 @@
 #include <EpaperWebServer.h>
 #include <MqttClient.h>
 
-#if defined(ESP8266)
-GxIO_Class io(SPI, SS, D3, D4);
-GxEPD_Class display(io);
-#elif defined(ESP32)
-GxIO_Class io(SPI, SS, 17, 16);
-GxEPD_Class display(io, 16, 4);
-#endif
+GxIO_Class* io = NULL;
+GxEPD_Class* display = NULL;
 
 enum class WiFiState {
   CONNECTED, DISCONNECTED
@@ -31,7 +26,7 @@ enum class WiFiState {
 
 Settings settings;
 
-DisplayTemplateDriver driver(&display, settings);
+DisplayTemplateDriver* driver = NULL;
 EpaperWebServer* webServer = NULL;
 MqttClient* mqttClient = NULL;
 
@@ -43,6 +38,27 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 
 uint8_t lastSecond = 60;
+
+void initDisplay() {
+  if (io != NULL) {
+    delete io;
+    io = NULL;
+  }
+  io = new GxIO_Class(SPI, SS, settings.dcPin, settings.rstPin);
+
+  if (display != NULL) {
+    delete display;
+    display = NULL;
+  }
+  display = new GxEPD_Class(*io, settings.rstPin, settings.busyPin);
+
+  if (driver != NULL) {
+    delete driver;
+    driver = NULL;
+  }
+  driver = new DisplayTemplateDriver(display, settings);
+  driver->init();
+}
 
 void applySettings() {
   Serial.println(F("Applying settings"));
@@ -68,13 +84,13 @@ void applySettings() {
       settings.mqttPassword
     );
     mqttClient->onVariableUpdate([](const String& variable, const String& value) {
-      driver.updateVariable(variable, value);
+      driver->updateVariable(variable, value);
     });
     mqttClient->begin();
   }
 
   if (settings.templatePath.length() > 0) {
-    driver.setTemplate(settings.templatePath);
+    driver->setTemplate(settings.templatePath);
   }
 
   if (webServer == NULL) {
@@ -90,7 +106,7 @@ void updateWiFiState(WiFiState state) {
   const char varName[] = "wifi_state";
   const String varValue = state == WiFiState::CONNECTED ? "connected" : "disconnected";
 
-  driver.updateVariable(varName, varValue);
+  driver->updateVariable(varName, varValue);
 }
 
 #if defined(ESP32)
@@ -169,9 +185,7 @@ void setup() {
 
   Settings::load(settings);
   settings.onUpdate(applySettings);
-
-  driver.init();
-  updateWiFiState(WiFiState::DISCONNECTED);
+  initDisplay();
 
   WiFiManager wifiManager;
 
@@ -207,11 +221,11 @@ void loop() {
   if (shouldRestart) {
     ESP.restart();
   }
-  
+
   if (timeClient.update() && lastSecond != second()) {
     lastSecond = second();
-    driver.updateVariable("timestamp", String(timeClient.getEpochTime()));
+    driver->updateVariable("timestamp", String(timeClient.getEpochTime()));
   }
 
-  driver.loop();
+  driver->loop();
 }

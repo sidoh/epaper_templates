@@ -10,8 +10,10 @@ public:
     const String& variable,
     uint16_t x,
     uint16_t y,
-    uint16_t w,
-    uint16_t h,
+    int16_t fixedBbX,
+    int16_t fixedBbY,
+    int16_t fixedBbW,
+    int16_t fixedBbH,
     uint16_t color,
     const GFXfont* font,
     std::shared_ptr<const VariableFormatter> formatter
@@ -28,6 +30,13 @@ protected:
   // is the position we set the cursor at.
   uint16_t bbX;
   uint16_t bbY;
+
+  // Users can optionally manually specify a bounding rectangle.  If the values are
+  // negative, use computed values.
+  int16_t fixedBbX;
+  int16_t fixedBbY;
+  int16_t fixedBbW;
+  int16_t fixedBbH;
 
   // Previous bounding box coordinates
   uint16_t prevX;

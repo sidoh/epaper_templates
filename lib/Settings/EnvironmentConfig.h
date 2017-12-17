@@ -28,3 +28,14 @@ extern "C" {
 #if defined(ESP8266)
 #define FILE_WRITE "w"
 #endif
+
+// Default pin configs
+#if defined(ESP8266)
+#define EPD_DEFAULT_DC_PIN D3
+#define EPD_DEFAULT_RST_PIN D4
+#define EPD_DEFAULT_BUSY_PIN 4
+#elif defined(ESP32)
+#define EPD_DEFAULT_DC_PIN 17
+#define EPD_DEFAULT_RST_PIN 16
+#define EPD_DEFAULT_BUSY_PIN 7
+#endif

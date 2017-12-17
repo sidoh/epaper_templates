@@ -1,6 +1,8 @@
 #include <FS.h>
 #include <DisplayTemplateDriver.h>
 
+#define JSON_VAL_OR_DEFAULT(json, key, d) (json.containsKey(key) ? json[key] : d)
+
 DisplayTemplateDriver::DisplayTemplateDriver(
   GxEPD* display,
   Settings& settings
@@ -246,13 +248,26 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(const JsonObject&
 }
 
 std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(const JsonObject& spec) {
+  int16_t bbx = -1, bby = -1, bbw = -1, bbh = -1;
+
+  if (spec.containsKey("update_rect")) {
+    JsonObject& updateParams = spec["update_rect"];
+
+    bbx = JSON_VAL_OR_DEFAULT(updateParams, "x", -1);
+    bby = JSON_VAL_OR_DEFAULT(updateParams, "y", -1);
+    bbw = JSON_VAL_OR_DEFAULT(updateParams, "w", -1);
+    bbh = JSON_VAL_OR_DEFAULT(updateParams, "h", -1);
+  }
+
   std::shared_ptr<Region> region(
     new TextRegion(
       spec.get<const char*>("variable"),
       spec.get<uint16_t>("x"),
       spec.get<uint16_t>("y"),
-      0, // width and height are unknown until rendered
-      0, // ^
+      bbx,
+      bby,
+      bbw,
+      bbh,
       extractColor(spec),
       parseFont(spec.get<const char*>("font")),
       VariableFormatter::buildFormatter(spec)

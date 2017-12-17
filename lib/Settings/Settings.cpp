@@ -9,7 +9,10 @@ Settings::Settings()
     onUpdateFn(NULL),
     timezoneName(TimezonesClass::DEFAULT_TIMEZONE_NAME),
     setupApPassword("waveshare"),
-    webPort(80)
+    webPort(80),
+    dcPin(EPD_DEFAULT_DC_PIN),
+    rstPin(EPD_DEFAULT_RST_PIN),
+    busyPin(EPD_DEFAULT_BUSY_PIN)
 { }
 
 Settings::~Settings() { }
@@ -37,8 +40,13 @@ void Settings::patch(JsonObject& parsedSettings) {
     this->setIfPresent(parsedSettings, "mqtt.username", mqttUsername);
     this->setIfPresent(parsedSettings, "mqtt.password", mqttPassword);
     this->setIfPresent(parsedSettings, "mqtt.variables_topic_pattern", mqttVariablesTopicPattern);
+
     this->setIfPresent(parsedSettings, "display.full_refresh_period", fullRefreshPeriod);
     this->setIfPresent(parsedSettings, "display.template_path", templatePath);
+    this->setIfPresent(parsedSettings, "display.dc_pin", dcPin);
+    this->setIfPresent(parsedSettings, "display.rst_pin", rstPin);
+    this->setIfPresent(parsedSettings, "display.busy_pin", busyPin);
+
     this->setIfPresent(parsedSettings, "local.timezone", timezoneName);
 
     this->setIfPresent(parsedSettings, "wifi.setup_ap_password", setupApPassword);
@@ -90,6 +98,9 @@ void Settings::serialize(Stream& stream, const bool prettyPrint) {
 
   root["display.full_refresh_period"] = this->fullRefreshPeriod;
   root["display.template_path"] = this->templatePath;
+  root["display.dc_pin"] = this->dcPin;
+  root["display.rst_pin"] = this->rstPin;
+  root["display.busy_pin"] = this->busyPin;
 
   root["local.timezone"] = this->timezoneName;
 

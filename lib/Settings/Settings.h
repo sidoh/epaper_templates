@@ -74,6 +74,9 @@ public:
 
   unsigned long fullRefreshPeriod;
   String templatePath;
+  uint8_t dcPin;
+  uint8_t rstPin;
+  uint8_t busyPin;
 
   String hostname;
   String setupApPassword;
