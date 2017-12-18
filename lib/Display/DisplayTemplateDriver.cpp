@@ -71,20 +71,63 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
+  // Render everything first
+  while (curr != NULL) {
+    std::shared_ptr<Region> region = curr->data;
+
+    if (region->isDirty()) {
+      region->render(display);
+    }
+
+    curr = curr->next;
+  }
+
+  // Can skip partial updates if we don't need to update the screen
+  if (! updateScreen) {
+    return;
+  }
+
+  // Issue partial updates to bounding boxes
+  // This is crappy and O(n^2), but shouldn't matter unless there are shitlaods of regions.
+  DoublyLinkedList<Rectangle> flushedRegions;
+
+  curr = regions.getHead();
   while (curr != NULL) {
     std::shared_ptr<Region> region = curr->data;
 
     if (region->isDirty()) {
       region->clearDirty();
-      region->render(display);
 
-      if (updateScreen) {
-        region->updateScreen(display);
+      Rectangle bb = region->getBoundingBox();
+
+      if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
+        display->updateWindow(bb.x, bb.y, bb.w, bb.h);
+        flushedRegions.add(bb);
       }
     }
 
     curr = curr->next;
   }
+}
+
+bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others) {
+  DoublyLinkedListNode<Rectangle>* curr = others.getHead();
+
+  while (curr != NULL) {
+    Rectangle other = curr->data;
+
+    if (r.x >= other.x 
+      && r.y >= other.y
+      && (r.x + r.w) <= (other.x + other.w)
+      && (r.y + r.h) <= (other.y + other.h)
+    ) {
+      return true;
+    }
+
+    curr = curr->next;
+  }
+
+  return false;
 }
 
 void DisplayTemplateDriver::fullUpdate() {

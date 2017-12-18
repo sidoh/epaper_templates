@@ -94,6 +94,8 @@ private:
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);
   const uint16_t extractColor(const JsonObject& spec);
+
+  static bool regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others);
 };
 
 #endif

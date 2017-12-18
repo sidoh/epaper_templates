@@ -33,24 +33,23 @@ bool Region::updateValue(const String &value) {
     return false;
   }
 
-  printf("--> formatted: %s\n", newValue.c_str());
-
   this->variableValue = newValue;
   this->dirty = true;
 
   return true;
 }
 
-void Region::updateScreen(GxEPD *display) {
-  uint16_t x, y, w, h;
-  getBoundingBox(x, y, w, h);
-
-  display->updateWindow(x, y, w, h);
+Rectangle Region::updateScreen(GxEPD *display) {
+  Rectangle r = getBoundingBox();
+  display->updateWindow(r.x, r.y, r.w, r.h);
+  return r;
 }
 
-void Region::getBoundingBox(uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h) {
-  x = this->x;
-  y = this->y;
-  w = this->w;
-  h = this->h;
+Rectangle Region::getBoundingBox() {
+  return {
+    .x = this->x, 
+    .y = this->y, 
+    .w = this->w, 
+    .h = this->h
+  };
 }

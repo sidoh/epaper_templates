@@ -7,6 +7,10 @@
 #ifndef _REGIONS_H
 #define _REGIONS_H
 
+struct Rectangle {
+  uint16_t x, y, w, h;
+};
+
 class Region {
 public:
   Region(
@@ -23,11 +27,11 @@ public:
   virtual bool updateValue(const String& value);
   virtual void render(GxEPD* display) = 0;
 
-  virtual void updateScreen(GxEPD* display);
+  virtual Rectangle updateScreen(GxEPD* display);
   virtual bool isDirty() const;
   virtual void clearDirty();
   virtual const String& getVariableName() const;
-  virtual void getBoundingBox(uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h);
+  virtual Rectangle getBoundingBox();
 
 protected:
   const String variable;

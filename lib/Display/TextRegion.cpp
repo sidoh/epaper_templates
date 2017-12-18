@@ -1,6 +1,6 @@
 #include <TextRegion.h>
 
-#define BB_COORD(c, d) (((c) >= 0) ? (c) : (d))
+#define BB_COORD(c, d) (static_cast<uint16_t>(((c) >= 0) ? (c) : (d)))
 
 TextRegion::TextRegion(
   const String& variable,
@@ -50,13 +50,13 @@ void TextRegion::render(GxEPD* display) {
   this->bbY = y1;
   this->w = w;
   this->h = h;
-
-  this->dirty = false;
 }
 
-void TextRegion::getBoundingBox(uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h) {
-  x = BB_COORD(fixedBbX, _min(this->bbX, this->prevX));
-  y = BB_COORD(fixedBbY, _min(this->bbY, this->prevY));
-  w = BB_COORD(fixedBbW, _max(this->w, this->prevW));
-  h = BB_COORD(fixedBbH, _max(this->h, this->prevH));
+Rectangle TextRegion::getBoundingBox() {
+  return {
+    .x = BB_COORD(fixedBbX, _min(this->bbX, this->prevX)),
+    .y = BB_COORD(fixedBbY, _min(this->bbY, this->prevY)),
+    .w = BB_COORD(fixedBbW, _max(this->w, this->prevW)),
+    .h = BB_COORD(fixedBbH, _max(this->h, this->prevH))
+  };
 }

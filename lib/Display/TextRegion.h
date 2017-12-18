@@ -21,7 +21,7 @@ public:
   ~TextRegion();
 
   virtual void render(GxEPD* display);
-  virtual void getBoundingBox(uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h);
+  virtual Rectangle getBoundingBox();
 
 protected:
   const GFXfont* font;
