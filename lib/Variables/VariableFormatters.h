@@ -46,4 +46,13 @@ protected:
   String prefix;
 };
 
+class RoundingVariableFormatter : public VariableFormatter {
+public:
+  RoundingVariableFormatter(uint8_t digits);
+
+  virtual String format(const String& value) const;
+private:
+  uint8_t digits;
+};
+
 #endif
