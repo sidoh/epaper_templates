@@ -14,6 +14,9 @@
 
 #if defined(ESP32)
 #include <SPIFFS.h>
+extern "C" {
+  #include "freertos/semphr.h"
+}
 #endif
 
 #ifndef _DRIVER_H
@@ -74,6 +77,10 @@ private:
   bool dirty;
   bool shouldFullUpdate;
   time_t lastFullUpdate;
+
+#if defined(ESP32)
+  SemaphoreHandle_t mutex;
+#endif
 
   const uint16_t defaultColor = GxEPD_BLACK;
   const GFXfont* defaultFont = &FreeSans9pt7b;

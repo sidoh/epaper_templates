@@ -12,7 +12,15 @@ DisplayTemplateDriver::DisplayTemplateDriver(
     shouldFullUpdate(false),
     lastFullUpdate(0),
     settings(settings)
-{ }
+{ 
+#if defined(ESP32)
+  mutex = xSemaphoreCreateMutex();
+
+  if (mutex == NULL) {
+    Serial.println(F("ERROR: could not create mutex"));
+  }
+#endif
+}
 
 void DisplayTemplateDriver::init() {
   display->init();
@@ -58,6 +66,10 @@ void DisplayTemplateDriver::scheduleFullUpdate() {
 }
 
 void DisplayTemplateDriver::clearDirtyRegions() {
+#if defined(ESP32)
+  xSemaphoreTake(mutex, portMAX_DELAY);
+#endif
+
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   while (curr != NULL) {
@@ -66,9 +78,17 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 
     curr = curr->next;
   }
+
+#if defined(ESP32)
+  xSemaphoreGive(mutex);
+#endif
 }
 
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
+#if defined(ESP32)
+  xSemaphoreTake(mutex, portMAX_DELAY);
+#endif
+
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   // Render everything first
@@ -76,6 +96,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
     std::shared_ptr<Region> region = curr->data;
 
     if (region->isDirty()) {
+      printf("Rendering %s\n", region->getVariableName().c_str());
       region->render(display);
     }
 
@@ -83,31 +104,33 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
   }
 
   // Can skip partial updates if we don't need to update the screen
-  if (! updateScreen) {
-    return;
-  }
+  if (updateScreen) {
+    // Issue partial updates to bounding boxes
+    // This is crappy and O(n^2), but shouldn't matter unless there are shitlaods of regions.
+    DoublyLinkedList<Rectangle> flushedRegions;
 
-  // Issue partial updates to bounding boxes
-  // This is crappy and O(n^2), but shouldn't matter unless there are shitlaods of regions.
-  DoublyLinkedList<Rectangle> flushedRegions;
+    curr = regions.getHead();
+    while (curr != NULL) {
+      std::shared_ptr<Region> region = curr->data;
 
-  curr = regions.getHead();
-  while (curr != NULL) {
-    std::shared_ptr<Region> region = curr->data;
+      if (region->isDirty()) {
+        region->clearDirty();
 
-    if (region->isDirty()) {
-      region->clearDirty();
+        Rectangle bb = region->getBoundingBox();
 
-      Rectangle bb = region->getBoundingBox();
-
-      if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-        display->updateWindow(bb.x, bb.y, bb.w, bb.h);
-        flushedRegions.add(bb);
+        if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
+          display->updateWindow(bb.x, bb.y, bb.w, bb.h);
+          flushedRegions.add(bb);
+        }
       }
-    }
 
-    curr = curr->next;
+      curr = curr->next;
+    }
   }
+
+#if defined(ESP32)
+  xSemaphoreGive(mutex);
+#endif
 }
 
 bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others) {
@@ -136,6 +159,10 @@ void DisplayTemplateDriver::fullUpdate() {
 }
 
 void DisplayTemplateDriver::updateVariable(const String& key, const String& value) {
+#if defined(ESP32)
+  xSemaphoreTake(mutex, portMAX_DELAY);
+#endif
+
   vars.set(key, value);
 
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
@@ -149,6 +176,10 @@ void DisplayTemplateDriver::updateVariable(const String& key, const String& valu
 
     curr = curr->next;
   }
+
+#if defined(ESP32)
+  xSemaphoreGive(mutex);
+#endif
 }
 
 void DisplayTemplateDriver::setTemplate(const String& templateFilename) {
