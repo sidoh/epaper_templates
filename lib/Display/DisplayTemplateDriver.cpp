@@ -28,6 +28,10 @@ void DisplayTemplateDriver::init() {
 }
 
 void DisplayTemplateDriver::loop() {
+#if defined(ESP32)
+  xSemaphoreTake(mutex, portMAX_DELAY);
+#endif
+
   if (newTemplate.length() > 0) {
     // Delete regions so we don't have unused regions hanging around
     regions.clear();
@@ -59,6 +63,9 @@ void DisplayTemplateDriver::loop() {
 
     dirty = false;
   }
+#if defined(ESP32)
+  xSemaphoreGive(mutex);
+#endif
 }
 
 void DisplayTemplateDriver::scheduleFullUpdate() {
@@ -66,10 +73,6 @@ void DisplayTemplateDriver::scheduleFullUpdate() {
 }
 
 void DisplayTemplateDriver::clearDirtyRegions() {
-#if defined(ESP32)
-  xSemaphoreTake(mutex, portMAX_DELAY);
-#endif
-
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   while (curr != NULL) {
@@ -78,17 +81,9 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 
     curr = curr->next;
   }
-
-#if defined(ESP32)
-  xSemaphoreGive(mutex);
-#endif
 }
 
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
-#if defined(ESP32)
-  xSemaphoreTake(mutex, portMAX_DELAY);
-#endif
-
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
 
   // Render everything first
@@ -127,10 +122,6 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
       curr = curr->next;
     }
   }
-
-#if defined(ESP32)
-  xSemaphoreGive(mutex);
-#endif
 }
 
 bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others) {
@@ -219,16 +210,19 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 
   display->fillScreen(parseColor(tmpl["background_color"]));
 
+  const JsonObject& formatters = tmpl["formatters"];
+  VariableFormatterFactory formatterFactory(formatters);
+
   if (tmpl.containsKey("lines")) {
     renderLines(tmpl["lines"]);
   }
 
   if (tmpl.containsKey("bitmaps")) {
-    renderBitmaps(tmpl["bitmaps"]);
+    renderBitmaps(formatterFactory, tmpl["bitmaps"]);
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(tmpl["text"]);
+    renderTexts(formatterFactory, tmpl["text"]);
   }
 }
 
@@ -248,7 +242,7 @@ void DisplayTemplateDriver::renderBitmap(const String &filename, uint16_t x, uin
   display->drawBitmap(bits, x, y, w, h, color);
 }
 
-void DisplayTemplateDriver::renderBitmaps(ArduinoJson::JsonArray &bitmaps) {
+void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFactory, ArduinoJson::JsonArray &bitmaps) {
   for (size_t i = 0; i < bitmaps.size(); i++) {
     JsonObject& bitmap = bitmaps[i];
 
@@ -264,13 +258,13 @@ void DisplayTemplateDriver::renderBitmaps(ArduinoJson::JsonArray &bitmaps) {
 
     if (bitmap.containsKey("variable")) {
       const String& variable = bitmap["variable"];
-      std::shared_ptr<Region> region = addBitmapRegion(bitmap);
+      std::shared_ptr<Region> region = addBitmapRegion(formatterFactory, bitmap);
       region->updateValue(vars.get(variable));
     }
   }
 }
 
-void DisplayTemplateDriver::renderTexts(ArduinoJson::JsonArray &texts) {
+void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFactory, ArduinoJson::JsonArray &texts) {
   for (size_t i = 0; i < texts.size(); i++) {
     JsonObject& text = texts[i];
 
@@ -291,7 +285,7 @@ void DisplayTemplateDriver::renderTexts(ArduinoJson::JsonArray &texts) {
 
     if (text.containsKey("variable")) {
       const String& variable = text.get<const char*>("variable");
-      std::shared_ptr<Region> region = addTextRegion(text);
+      std::shared_ptr<Region> region = addTextRegion(formatterFactory, text);
       region->updateValue(vars.get(variable));
     }
   }
@@ -304,7 +298,7 @@ void DisplayTemplateDriver::renderLines(ArduinoJson::JsonArray &lines) {
   }
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(const JsonObject& spec) {
+std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec) {
   std::shared_ptr<Region> region(
     new BitmapRegion(
       spec.get<const char*>("variable"),
@@ -313,7 +307,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(const JsonObject&
       spec["w"],
       spec["h"],
       extractColor(spec),
-      VariableFormatter::buildFormatter(spec)
+      formatterFactory.create(spec)
     )
   );
   regions.add(region);
@@ -321,7 +315,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(const JsonObject&
   return region;
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(const JsonObject& spec) {
+std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec) {
   int16_t bbx = -1, bby = -1, bbw = -1, bbh = -1;
 
   if (spec.containsKey("update_rect")) {
@@ -344,7 +338,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(const JsonObject& s
       bbh,
       extractColor(spec),
       parseFont(spec.get<const char*>("font")),
-      VariableFormatter::buildFormatter(spec)
+      formatterFactory.create(spec)
     )
   );
   regions.add(region);

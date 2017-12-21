@@ -91,12 +91,12 @@ private:
   void loadTemplate(const String& templateFilename);
 
   void renderLines(JsonArray& lines);
-  void renderTexts(JsonArray& text);
-  void renderBitmaps(JsonArray& bitmaps);
+  void renderTexts(VariableFormatterFactory& formatterFactory, JsonArray& text);
+  void renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray& bitmaps);
   void renderBitmap(const String& filename, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 
-  std::shared_ptr<Region> addTextRegion(const JsonObject& spec);
-  std::shared_ptr<Region> addBitmapRegion(const JsonObject& spec);
+  std::shared_ptr<Region> addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec);
+  std::shared_ptr<Region> addBitmapRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);

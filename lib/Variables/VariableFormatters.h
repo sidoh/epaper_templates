@@ -11,8 +11,6 @@ public:
   virtual String format(const String& value) const = 0;
 
   ~VariableFormatter() { }
-
-  static std::shared_ptr<const VariableFormatter> buildFormatter(const JsonObject& args);
 };
 
 class IdentityVariableFormatter : public VariableFormatter {
@@ -54,5 +52,20 @@ public:
 private:
   uint8_t digits;
 };
+
+class VariableFormatterFactory {
+public:
+  VariableFormatterFactory(const JsonObject& referenceFormatters);
+
+  std::shared_ptr<const VariableFormatter> create(const JsonObject& spec);
+
+private:
+  std::map<String, std::shared_ptr<const VariableFormatter>> internedFormatters;
+  const JsonObject& referenceFormatters;
+
+  std::shared_ptr<const VariableFormatter> _createInternal(const JsonObject& spec, bool allowReference);
+  std::shared_ptr<const VariableFormatter> defaultFormatter;
+};
+
 
 #endif
