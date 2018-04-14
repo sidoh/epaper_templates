@@ -213,6 +213,8 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   const JsonObject& formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
+  const JsonObject& updateRects = tmpl["update_rects"];
+
   if (tmpl.containsKey("lines")) {
     renderLines(tmpl["lines"]);
   }
@@ -222,7 +224,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(formatterFactory, tmpl["text"]);
+    renderTexts(formatterFactory, updateRects, tmpl["text"]);
   }
 }
 
@@ -264,7 +266,7 @@ void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFac
   }
 }
 
-void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFactory, ArduinoJson::JsonArray &texts) {
+void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, ArduinoJson::JsonArray &texts) {
   for (size_t i = 0; i < texts.size(); i++) {
     JsonObject& text = texts[i];
 
@@ -285,7 +287,7 @@ void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFacto
 
     if (text.containsKey("variable")) {
       const String& variable = text.get<const char*>("variable");
-      std::shared_ptr<Region> region = addTextRegion(formatterFactory, text);
+      std::shared_ptr<Region> region = addTextRegion(formatterFactory, updateRects, text);
       region->updateValue(vars.get(variable));
     }
   }
@@ -315,11 +317,14 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatter
   return region;
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec) {
+std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, const JsonObject& spec) {
   int16_t bbx = -1, bby = -1, bbw = -1, bbh = -1;
 
   if (spec.containsKey("update_rect")) {
-    JsonObject& updateParams = spec["update_rect"];
+    JsonObject& updateParams =
+      spec.is<const char*>("update_rect") 
+        ? updateRects[spec.get<const char*>("update_rect")] 
+        : spec["update_rect"];
 
     bbx = JSON_VAL_OR_DEFAULT(updateParams, "x", -1);
     bby = JSON_VAL_OR_DEFAULT(updateParams, "y", -1);
