@@ -212,6 +212,14 @@ void setup() {
   wifiManager.setSaveConfigCallback(wifiManagerConfigSaved);
   wifiManager.autoConnect(setupSsid, settings.setupApPassword.c_str());
 
+  if (settings.mdnsName.length() > 0) {
+    if (! MDNS.begin(settings.mdnsName.c_str())) {
+      Serial.println(F("Error setting up MDNS responder"));
+    } else {
+      MDNS.addService("http", "tcp", 80);
+    }
+  }
+
   timeClient.begin();
 
   applySettings();

@@ -82,6 +82,7 @@ public:
   String setupApPassword;
   String wifiSsid;
   String wifiPassword;
+  String mdnsName;
 
 protected:
   template <typename T>

@@ -9,6 +9,7 @@ Settings::Settings()
     onUpdateFn(NULL),
     timezoneName(TimezonesClass::DEFAULT_TIMEZONE_NAME),
     setupApPassword("waveshare"),
+    mdnsName("epaper-display"),
     webPort(80),
     dcPin(EPD_DEFAULT_DC_PIN),
     rstPin(EPD_DEFAULT_RST_PIN),
@@ -36,6 +37,7 @@ void Settings::patch(JsonObject& parsedSettings) {
     this->setIfPresent<String>(parsedSettings, "web.admin_username", adminUsername);
     this->setIfPresent(parsedSettings, "web.admin_password", adminPassword);
     this->setIfPresent(parsedSettings, "web.port", webPort);
+    this->setIfPresent(parsedSettings, "web.mdns_name", mdnsName);
     this->setIfPresent(parsedSettings, "mqtt.server", _mqttServer);
     this->setIfPresent(parsedSettings, "mqtt.username", mqttUsername);
     this->setIfPresent(parsedSettings, "mqtt.password", mqttPassword);
@@ -90,6 +92,7 @@ void Settings::serialize(Stream& stream, const bool prettyPrint) {
   root["web.admin_username"] = this->adminUsername;
   root["web.admin_password"] = this->adminPassword;
   root["web.port"] = this->webPort;
+  root["web.mdns_name"] = this->mdnsName;
 
   root["mqtt.server"] = this->_mqttServer;
   root["mqtt.username"] = this->mqttUsername;

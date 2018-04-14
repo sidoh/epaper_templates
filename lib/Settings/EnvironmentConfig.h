@@ -12,8 +12,10 @@
 #if defined(ESP8266)
 #include <Ticker.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #elif defined(ESP32)
 #include <WiFi.h>
+#include <ESPmDNS.h>
 extern "C" {
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/timers.h"

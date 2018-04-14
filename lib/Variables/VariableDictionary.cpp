@@ -29,7 +29,7 @@ void VariableDictionary::save() {
   DynamicJsonBuffer buffer;
   JsonObject& obj = buffer.createObject();
 
-  for (std::map<String, String>::iterator itr = vars.begin(); itr != vars.end(); ++itr) { 
+  for (std::map<String, String>::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
     obj[itr->first] = itr->second;
   }
 
