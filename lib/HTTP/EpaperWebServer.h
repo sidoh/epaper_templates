@@ -102,6 +102,11 @@ private:
     const char* contentType,
     const char* defaultText = ""
   );
+  ArRequestHandlerFunction handleServeGzip_P(
+    const char* contentType,
+    const uint8_t* text,
+    size_t length
+  );
   bool serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType);
   void handleUpdateJsonFile(const String& file, AsyncWebServerRequest* request, uint8_t* data, size_t len);
 

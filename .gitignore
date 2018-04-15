@@ -5,3 +5,5 @@
 data
 .vscode
 .vscode/c_cpp_properties.json
+/web/node_modules
+/web/build

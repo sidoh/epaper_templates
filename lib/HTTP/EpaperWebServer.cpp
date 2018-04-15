@@ -1,4 +1,5 @@
 #include <EpaperWebServer.h>
+#include <index.html.gz.h>
 
 #if defined(ESP8266)
 #include <Updater.h>
@@ -49,7 +50,7 @@ void EpaperWebServer::begin() {
   on("/about", HTTP_GET, handleAbout());
   onUpload("/firmware", HTTP_POST, handleOtaSuccess(), handleOtaUpdate());
 
-  on("/", HTTP_GET, handleServeFile(INDEX_FILENAME, TEXT_HTML));
+  on("/", HTTP_GET, handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len));
 
   server.begin();
 }
@@ -143,6 +144,18 @@ ArBodyHandlerFunction EpaperWebServer::handleUpdateVariables() {
     }
 
     request->send_P(200, APPLICATION_JSON, PSTR("true"));
+  };
+}
+
+ArRequestHandlerFunction EpaperWebServer::handleServeGzip_P(
+  const char* contentType,
+  const uint8_t* text,
+  size_t length) {
+
+  return [this, contentType, text, length](AsyncWebServerRequest* request) {
+    AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, text, length);
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   };
 }
 
