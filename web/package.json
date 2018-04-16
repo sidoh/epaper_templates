@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-dev-server",
+    "start": "export NODE_ENV=development && webpack-dev-server",
     "build": "webpack"
   },
   "devDependencies": {
@@ -21,6 +21,7 @@
     "less": "^3.0.1",
     "less-loader": "^4.1.0",
     "node-sass": "^4.8.3",
+    "redux-thunk": "^2.2.0",
     "sass-loader": "^7.0.1",
     "style-loader": "^0.20.3",
     "url-loader": "^1.0.1",
@@ -35,6 +36,8 @@
     "react": "^16.3.1",
     "react-bootstrap": "^0.32.1",
     "react-dom": "^16.3.1",
-    "react-tap-event-plugin": "^3.0.2"
+    "react-redux": "^5.0.7",
+    "react-tap-event-plugin": "^3.0.2",
+    "redux": "^3.7.2"
   }
 }

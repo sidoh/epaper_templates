@@ -1,7 +1,20 @@
 import React from 'react';
 import {render} from 'react-dom';
 import injectTapEventPlugin from 'react-tap-event-plugin';
-import Main from './Main'; // Our custom react component
+import App from './App'; // Our custom react component
+
+import { combineReducers } from 'redux';
+import * as reducers from './reducers';
+import { Provider } from 'react-redux'
+import { createStore } from 'redux'
+import thunk from 'redux-thunk';
+import { applyMiddleware } from 'redux';
+
+const appReducers = combineReducers(reducers);
+const store = createStore(
+  appReducers,
+  applyMiddleware(thunk)
+);
 
 import 'bootstrap';
 import './styles/theme.less';
@@ -13,4 +26,9 @@ injectTapEventPlugin();
 
 // Render the main app react component into the app div.
 // For more details see: https://facebook.github.io/react/docs/top-level-api.html#react.render
-render(<Main />, document.getElementById('app'));
+render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById('app')
+);
