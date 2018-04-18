@@ -1,5 +1,12 @@
 import ReduxThunk from 'redux-thunk';
 
+const handleFetchErrors = (response) => {
+  if (!response.ok) {
+    throw new Error(`${response.status}: ${response.statusText}`);
+  }
+  return response;
+}
+
 export const updateSetting = (key, value) => ({
   type: 'UPDATE_SETTING',
   key,
@@ -26,8 +33,12 @@ export const saveSettings = (keyFilter) => {
         }
       }
     )
-    .then(e => settingsSaved())
-    .catch(e => saveSettingsError(e));
+    .then(handleFetchErrors)
+    .then(e => dispatch(settingsSaved()))
+    .catch(e => {
+      console.log(e);
+      dispatch(saveSettingsError(e.message))
+    });
   };
 }
 
@@ -40,8 +51,15 @@ export const loadSettings = () => {
         credentials: 'same-origin'
       }
     )
-    .then(response => settingsLoaded(JSON.parse(response.text())))
-    .catch(e => loadSettingsError(e));
+    .then(handleFetchErrors)
+    .then(response => response.json())
+    .then(body => {
+      dispatch(settingsLoaded(body))
+    })
+    .catch(e => {
+      console.log(e);
+      dispatch(loadSettingsError(e.message))
+    });
   };
 }
 
