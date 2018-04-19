@@ -85,7 +85,10 @@ export const settingsLoaded = (settings) => ({
   settings: settings
 })
 
+var errorId = 0;
+
 export const loadSettingsError = (message) => ({
   type: 'LOAD_SETTINGS_ERROR',
-  message: message
+  message: message,
+  errorId: errorId++
 });

@@ -21,9 +21,10 @@ export const loadingStatus = (pages = {}, action) => {
     newState = Object.assign({}, pages, {isLoading: false, hasError: false});
   } else if (action.type == 'LOAD_SETTINGS_ERROR') {
     newState = Object.assign({}, pages, {
-      isLoading: false, 
+      isLoading: false,
       errorMessage: `Error loading settings: ${action.message}`, 
-      hasError: true
+      hasError: true,
+      errorId: action.errorId
     });
   } else {
     newState = pages;
