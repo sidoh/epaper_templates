@@ -13,6 +13,8 @@ import {
 } from 'react-router-dom'
 
 import Settings from './components/Settings';
+import TemplateIndex from './components/templates/TemplateIndex';
+import ShowTemplate from './components/templates/ShowTemplate';
 import ErrorHandler from './components/ErrorHandler';
 
 const BasicExample = () => (
@@ -21,6 +23,8 @@ const BasicExample = () => (
       <ErrorHandler />
       <Route exact path="/" component={Settings}/>
       <Route path="/settings" component={Settings}/>
+      <Route path="/templates" component={TemplateIndex} exact={true} />
+      <Route to="template" path="/templates/:templateName/:action*" component={ShowTemplate}/>
     </div>
   </Router>
 )

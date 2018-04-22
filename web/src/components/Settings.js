@@ -17,7 +17,7 @@ class Settings extends React.Component {
 
   render() {
     return (
-      <Loadable active={this.props.isLoading} spinner text='Loading settings'>
+      // <Loadable active={this.props.isLoading} spinner text='Loading settings'>
         <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
           <Tab eventKey={1} title="Web">
             <WebSettings />
@@ -32,7 +32,7 @@ class Settings extends React.Component {
             <HardwareSettings />
           </Tab>
         </Tabs>
-      </Loadable>
+      // </Loadable>
     )
   }
 };

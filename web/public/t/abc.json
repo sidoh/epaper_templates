@@ -1,0 +1,500 @@
+{
+  "background_color": "white",
+  "lines": [
+    {"x1": 260, "y1": 0, "x2": 260, "y2": 55},
+    {"x1": 0, "y1": 55, "x2": 400, "y2": 55},
+    {"x1": 100, "y1": 55, "x2": 100, "y2": 220},
+    {"x1": 0, "y1": 220, "x2": 400, "y2": 220},
+    {"x1": 200, "y1": 220, "x2": 200, "y2": 300},
+    {"x1": 100, "y1": 135, "x2": 400, "y2": 135}
+  ],
+  "formatters": {
+    "weather_small": {
+      "formatter": "cases",
+      "args": {
+        "prefix": "/b/",
+        "cases": {
+          "01d": "010-sun-32x32.bin",
+          "01n": "011-moon-32x32.bin",
+          "02d": "007-cloudy-1-32x32.bin",
+          "02n": "008-cloudy-32x32.bin",
+          "03d": "003-clouds-32x32.bin",
+          "03n": "003-clouds-32x32.bin",
+          "04d": "003-clouds-32x32.bin",
+          "04n": "003-clouds-32x32.bin",
+          "09d": "004-rain-32x32.bin",
+          "09n": "004-rain-32x32.bin",
+          "10d": "004-rain-32x32.bin",
+          "10n": "004-rain-32x32.bin",
+          "11d": "006-storm-32x32.bin",
+          "11n": "006-storm-32x32.bin",
+          "13d": "009-snow-32x32.bin",
+          "13n": "009-snow-32x32.bin",
+          "50d": "002-clouds-1-32x32.bin",
+          "50n": "002-clouds-1-32x32.bin"
+        },
+        "default": "001-signs-32x32.bin"
+      }
+    },
+    "weather_timestamp": {
+      "formatter": "time",
+      "args": {
+        "timezone": "MT",
+        "format": "%l %P"
+      }
+    },
+    "forecast_timestamp": {
+      "formatter": "time",
+      "args": {
+        "timezone": "MT",
+        "format": "%a"
+      }
+    },
+    "temperature": {
+      "formatter": "round"
+    },
+    "weather": {
+      "formatter": "cases",
+      "args": {
+        "prefix": "/b/",
+        "cases": {
+          "01d": "010-sun.bin",
+          "01n": "011-moon.bin",
+          "02d": "007-cloudy-1.bin",
+          "02n": "008-cloudy.bin",
+          "03d": "003-clouds.bin",
+          "03n": "003-clouds.bin",
+          "04d": "003-clouds.bin",
+          "04n": "003-clouds.bin",
+          "09d": "004-rain.bin",
+          "09n": "004-rain.bin",
+          "10d": "004-rain.bin",
+          "10n": "004-rain.bin",
+          "11d": "006-storm.bin",
+          "11n": "006-storm.bin",
+          "13d": "009-snow.bin",
+          "13n": "009-snow.bin",
+          "50d": "002-clouds-1.bin",
+          "50n": "002-clouds-1.bin"
+        },
+        "default": "001-signs.bin"
+      }
+    }
+  },
+  "update_rects": {
+    "datetime": {
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 55
+    },
+    "temps": {
+      "x": 0,
+      "y": 220,
+      "w": 400,
+      "h": 80
+    },
+    "forecast": {
+      "x": 0,
+      "y": 55,
+      "w": 400,
+      "h": 200
+    }
+  },
+  "text": [
+    {
+      "x": 10,
+      "y": 40,
+      "update_rect": "datetime",
+      "font": "FreeMonoBold24pt7b",
+      "variable": "timestamp",
+      "formatter": "time",
+      "args": {
+        "timezone": "MT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 270,
+      "y": 18,
+      "font": "FreeSansBold9pt7b",
+      "variable": "timestamp",
+      "formatter": "time",
+      "update_rect": "datetime",
+      "args": {
+        "timezone": "MT",
+        "format": "%A"
+      }
+    },
+    {
+      "x": 270,
+      "y": 40,
+      "font": "FreeSans9pt7b",
+      "variable": "timestamp",
+      "formatter": "time",
+      "update_rect": "datetime",
+      "args": {
+        "timezone": "MT",
+        "format": "%m/%d/%Y"
+      }
+    },
+    {
+      "x": 10,
+      "y": 240,
+      "font": "FreeSansBold9pt7b",
+      "static": "Garage"
+    },
+    {
+      "x": 120,
+      "y": 240,
+      "font": "FreeSans9pt7b",
+      "variable": "outside_temp_updated_at",
+      "update_rect": "temps",
+      "formatter": "Time",
+      "args": {
+        "timezone": "MT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 10,
+      "y": 290,
+      "font": "FreeMonoBold24pt7b",
+      "variable": "outside_temp",
+      "update_rect": "temps"
+    },
+    {
+      "x": 210,
+      "y": 240,
+      "font": "FreeSansBold9pt7b",
+      "static": "Hot Tub"
+    },
+    {
+      "x": 320,
+      "y": 240,
+      "font": "FreeSans9pt7b",
+      "variable": "hot_tub_temp_updated_at",
+      "update_rect": "temps",
+      "formatter": "Time",
+      "args": {
+        "timezone": "MT",
+        "format": "%l:%M %p"
+      }
+    },
+    {
+      "x": 210,
+      "y": 290,
+      "font": "FreeMonoBold24pt7b",
+      "variable": "hot_tub_temp",
+      "update_rect": "temps"
+    },
+    {
+      "x": 8,
+      "y": 155,
+      "font": "FreeSansBold9pt7b",
+      "static": "Temp"
+    },
+    {
+      "x": 10,
+      "y": 180,
+      "font": "FreeSansBold9pt7b",
+      "static": "Low"
+    },
+    {
+      "x": 10,
+      "y": 205,
+      "font": "FreeSansBold9pt7b",
+      "static": "High"
+    },
+    {
+      "x": 68,
+      "y": 155,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_temp",
+      "formatter": "round",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 68,
+      "y": 180,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_low",
+      "formatter": "round",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 68,
+      "y": 205,
+      "font": "FreeSans9pt7b",
+      "variable": "forecast_high",
+      "formatter": "round",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 105,
+      "y": 73,
+      "font": "FreeSansBold9pt7b",
+      "variable": "weather_slot0_timestamp",
+      "formatter": "&weather_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 165,
+      "y": 73,
+      "font": "FreeSansBold9pt7b",
+      "variable": "weather_slot1_timestamp",
+      "formatter": "&weather_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 225,
+      "y": 73,
+      "font": "FreeSansBold9pt7b",
+      "variable": "weather_slot2_timestamp",
+      "formatter": "&weather_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 285,
+      "y": 73,
+      "font": "FreeSansBold9pt7b",
+      "variable": "weather_slot3_timestamp",
+      "formatter": "&weather_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 345,
+      "y": 73,
+      "font": "FreeSansBold9pt7b",
+      "variable": "weather_slot4_timestamp",
+      "formatter": "&weather_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 120,
+      "y": 129,
+      "font": "FreeSans9pt7b",
+      "variable": "weather_slot0_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 180,
+      "y": 129,
+      "font": "FreeSans9pt7b",
+      "variable": "weather_slot1_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 240,
+      "y": 129,
+      "font": "FreeSans9pt7b",
+      "variable": "weather_slot2_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 300,
+      "y": 129,
+      "font": "FreeSans9pt7b",
+      "variable": "weather_slot3_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 360,
+      "y": 129,
+      "font": "FreeSans9pt7b",
+      "variable": "weather_slot4_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 116,
+      "y": 153,
+      "font": "FreeSansBold9pt7b",
+      "variable": "daily_weather_slot0_timestamp",
+      "formatter": "&forecast_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 176,
+      "y": 153,
+      "font": "FreeSansBold9pt7b",
+      "variable": "daily_weather_slot1_timestamp",
+      "formatter": "&forecast_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 236,
+      "y": 153,
+      "font": "FreeSansBold9pt7b",
+      "variable": "daily_weather_slot2_timestamp",
+      "formatter": "&forecast_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 296,
+      "y": 153,
+      "font": "FreeSansBold9pt7b",
+      "variable": "daily_weather_slot3_timestamp",
+      "formatter": "&forecast_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 356,
+      "y": 153,
+      "font": "FreeSansBold9pt7b",
+      "variable": "daily_weather_slot4_timestamp",
+      "formatter": "&forecast_timestamp",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 120,
+      "y": 213,
+      "font": "FreeSans9pt7b",
+      "variable": "daily_weather_slot0_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 180,
+      "y": 213,
+      "font": "FreeSans9pt7b",
+      "variable": "daily_weather_slot1_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 240,
+      "y": 213,
+      "font": "FreeSans9pt7b",
+      "variable": "daily_weather_slot2_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 300,
+      "y": 213,
+      "font": "FreeSans9pt7b",
+      "variable": "daily_weather_slot3_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    },
+    {
+      "x": 360,
+      "y": 213,
+      "font": "FreeSans9pt7b",
+      "variable": "daily_weather_slot4_temp",
+      "formatter": "&temperature",
+      "update_rect": "forecast"
+    }
+  ],
+  "bitmaps": [
+    {
+      "x": 380,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "variable": "wifi_state",
+      "formatter": "cases",
+      "args": {
+        "prefix": "/b/",
+        "cases": {
+          "connected": "wifi.bin",
+          "disconnected": "nowifi.bin"
+        },
+        "default": "wifi.bin"
+      }
+    },
+    {
+      "x": 18,
+      "y": 65,
+      "w": 64,
+      "h": 64,
+      "variable": "weather_icon",
+      "formatter": "&weather"
+    },
+    {
+      "x": 115,
+      "y": 80,
+      "w": 32,
+      "h": 32,
+      "variable": "weather_slot0_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 175,
+      "y": 80,
+      "w": 32,
+      "h": 32,
+      "variable": "weather_slot1_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 235,
+      "y": 80,
+      "w": 32,
+      "h": 32,
+      "variable": "weather_slot2_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 295,
+      "y": 80,
+      "w": 32,
+      "h": 32,
+      "variable": "weather_slot3_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 355,
+      "y": 80,
+      "w": 32,
+      "h": 32,
+      "variable": "weather_slot4_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 115,
+      "y": 160,
+      "w": 32,
+      "h": 32,
+      "variable": "daily_weather_slot0_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 175,
+      "y": 160,
+      "w": 32,
+      "h": 32,
+      "variable": "daily_weather_slot1_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 235,
+      "y": 160,
+      "w": 32,
+      "h": 32,
+      "variable": "daily_weather_slot2_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 295,
+      "y": 160,
+      "w": 32,
+      "h": 32,
+      "variable": "daily_weather_slot3_icon",
+      "formatter": "&weather_small"
+    },
+    {
+      "x": 355,
+      "y": 160,
+      "w": 32,
+      "h": 32,
+      "variable": "daily_weather_slot4_icon",
+      "formatter": "&weather_small"
+    }
+  ]
+}

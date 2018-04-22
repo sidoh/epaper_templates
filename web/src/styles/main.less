@@ -1,0 +1,31 @@
+@import './bootstrap-custom';
+
+body {
+  padding-top: 30px;
+}
+
+.template-list {
+  li {
+    padding: 0;
+
+    .row {
+      padding: 5px;
+    }
+
+    a {
+      display: block;
+      margin: 0;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      background-color: @list-group-hover-bg;
+    }
+
+    a.delete:hover {
+      background-color: transparent;
+      color: @list-group-link-hover-color;
+    }
+  }
+}

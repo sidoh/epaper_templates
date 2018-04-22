@@ -43,7 +43,24 @@ module.exports = {
     ]
   },
   devServer: {
-    contentBase: path.resolve(__dirname, "dist")
+    contentBase: [
+      path.resolve(__dirname, "dist"),
+      path.resolve(__dirname, "public")
+    ],
+    historyApiFallback: {
+      rewrites: [
+        { from: /^\/templates$/, to: '/templates.json' },
+        { 
+          from: /^\/templates\/(.*)$/,
+          to: context => (`/t/${context.match[1]}`)
+        }
+      ]
+    }
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all'
+    }
   },
   plugins: [
     new webpack.ProvidePlugin({

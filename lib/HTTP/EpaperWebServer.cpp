@@ -273,7 +273,12 @@ PatternHandler::TPatternHandlerFn EpaperWebServer::handleShowTemplate() {
     if (bindings->hasBinding("filename")) {
       const char* filename = bindings->get("filename");
       String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
-      request->send(SPIFFS, path, APPLICATION_JSON);
+
+      if (SPIFFS.exists(path.c_str())) {
+        request->send(SPIFFS, path, APPLICATION_JSON);
+      } else {
+        request->send_P(404, TEXT_PLAIN, PSTR("File not found."));
+      }
     } else {
       request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
     }
@@ -332,6 +337,8 @@ ArUploadHandlerFunction EpaperWebServer::handleCreateFile(const char* filePrefix
     if (index == 0) {
       String path = String(filePrefix) + "/" + filename;
       updateFile = SPIFFS.open(path, FILE_WRITE);
+      Serial.println("Writing to file: ");
+      Serial.println(path);
 
       if (!updateFile) {
         Serial.println(F("Failed to open file"));

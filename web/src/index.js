@@ -19,7 +19,7 @@ const store = createStore(
 
 import 'bootstrap';
 import './styles/theme.less';
-import './styles/main.scss';
+import './styles/main.less';
 
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
