@@ -34,6 +34,7 @@ export const loadingStatus = (pages = {}, action) => {
       newState = Object.assign({}, pages, {isLoading: false, hasError: false});
       break;
 
+    case 'SAVE_SETTINGS_ERROR':
     case 'LOAD_SETTINGS_ERROR':
     case 'LOAD_TEMPLATES_ERROR':
     case 'LOAD_TEMPLATE_ERROR':

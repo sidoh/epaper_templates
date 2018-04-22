@@ -31,8 +31,8 @@ export const saveSettings = (keyFilter) => {
     .then(handleFetchErrors)
     .then(e => dispatch(settingsSaved()))
     .catch(e => {
-      console.log(e);
-      dispatch(saveSettingsError(e.message))
+      dispatch(saveSettingsError(e.message));
+      throw e;
     });
   };
 }
@@ -52,8 +52,8 @@ export const loadSettings = () => {
       dispatch(settingsLoaded(body))
     })
     .catch(e => {
-      console.log(e);
-      dispatch(loadSettingsError(e.message))
+      dispatch(loadSettingsError(e.message));
+      throw e;
     });
   };
 }
@@ -68,7 +68,8 @@ export const settingsSaved = () => ({
 
 export const saveSettingsError = (message) => ({
   type: 'SAVE_SETTINGS_ERROR',
-  message: message
+  message: `Error saving settings -- ${message}`,
+  errorId: errorId++
 });
 
 export const loadingSettings = () => ({
@@ -82,6 +83,6 @@ export const settingsLoaded = (settings) => ({
 
 export const loadSettingsError = (message) => ({
   type: 'LOAD_SETTINGS_ERROR',
-  message: message,
+  message: `Error loading settings -- ${message}`,
   errorId: errorId++
 });
