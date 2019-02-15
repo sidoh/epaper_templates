@@ -7,7 +7,7 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 
 import {
-  HashRouter as Router,
+  BrowserRouter as Router,
   Route,
   Link
 } from 'react-router-dom'
@@ -18,7 +18,7 @@ import ShowTemplate from './components/templates/ShowTemplate';
 import ErrorHandler from './components/ErrorHandler';
 
 const BasicExample = () => (
-  <Router>
+  <Router basename="/app">
     <div>
       <ErrorHandler />
       <Route exact path="/" component={Settings}/>

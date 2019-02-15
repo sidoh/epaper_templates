@@ -6,8 +6,8 @@ import { Button, Glyphicon } from 'react-bootstrap'
 
 import { loadTemplate, loadTemplates, deleteTemplate } from '../../actions';
 
-const TemplateListItem = ({template, onClick, onDelete}) => (
-  <li className="list-group-item">
+const TemplateListItem = ({isActive, template, onClick, onDelete}) => (
+  <li className={`${isActive ? 'active ' : ''}list-group-item`}>
     <div className="row">
       <div className="col-sm-10">
         <Link to={`/templates/${template.filename}`} onClick={onClick}>{template.name}</Link>
@@ -49,6 +49,7 @@ class TemplateList extends React.Component {
             template => (
               <TemplateListItem 
                 template={template} 
+                isActive={!this.props.disableActive && this.props.selectedTemplate == template.filename}
                 onClick={() => {this.props.loadTemplate(template.filename)}} 
                 onDelete={(e) => {e.preventDefault(); this.props.deleteTemplate(template.filename)}} 
               />

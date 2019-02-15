@@ -38,6 +38,7 @@
     "react-ace": "^6.0.0",
     "react-alert": "^4.0.2",
     "react-bootstrap": "^0.32.1",
+    "react-confirm-alert": "^2.0.2",
     "react-dom": "^16.3.1",
     "react-loading-overlay": "^0.3.0",
     "react-redux": "^5.0.7",

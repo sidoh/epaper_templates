@@ -34,11 +34,11 @@ module.exports = {
       },
       {
         test: /\.less$/,
-        loader: [ 'style-loader', 'css-loader', 'less-loader' ]
+        loader: [ 'file-loader', 'css-loader', 'less-loader' ]
       },
       {
         test: /\.scss$/,
-        use: [ 'style-loader', 'css-loader', 'sass-loader' ]
+        use: [ 'file-loader', 'css-loader', 'sass-loader' ]
       }
     ]
   },
@@ -70,9 +70,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'E-Paper Display',
       template: 'src/index.html',
-      inlineSource: '.(js|css)$' // embed all javascript and css inline
+      inlineSource: '.(js)$' // embed all javascript
     }),
-    new HtmlWebpackInlineSourcePlugin(),
+    // new HtmlWebpackInlineSourcePlugin(),
     new CompressionPlugin({
       include: /\.html$/
     }),

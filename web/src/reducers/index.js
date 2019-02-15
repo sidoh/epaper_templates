@@ -71,6 +71,10 @@ export const templates = (state = {}, action) => {
   } else if (action.type == 'DELETED_TEMPLATE') {
     var newTemplates = state.templates.filter(v => (v.filename != action.name));
     newState = Object.assign({}, state, {templates: newTemplates});
+
+    var newTemplateContents = Object.assign({}, state.templateContents);
+    delete newTemplateContents[action.name];
+    newState.templateContents = newTemplateContents;
   }
 
   return newState;

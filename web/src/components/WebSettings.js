@@ -1,8 +1,4 @@
 import React, {Component} from 'react';
-import {TextSetting} from './TextSetting';
-import {updateSetting, saveSettings} from '../actions';
-import {Button} from 'react-bootstrap';
-import { connect } from 'react-redux'
 import SettingsGroup from './SettingsGroup';
 
 const SETTINGS = {

@@ -8,8 +8,8 @@
 #include <SPIFFS.h>
 #endif
 
-#ifndef _WEB_SERVER_H
-#define _WEB_SERVER_H
+#ifndef _EPAPER_WEB_SERVER_H
+#define _EPAPER_WEB_SERVER_H
 
 class EpaperWebServer {
 public:
@@ -112,6 +112,9 @@ private:
 
   // Checks if auth is enabled, and requires appropriate username/password if so
   bool isAuthenticated(AsyncWebServerRequest* request);
+
+  // Wraps a handler in a function that validates auth
+  ArRequestHandlerFunction wrapAuth(ArRequestHandlerFunction fn);
 
   // Support for routes with tokens like a/:id/:id2. Injects auth handling.
   void onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn);

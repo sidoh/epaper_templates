@@ -1,3 +1,4 @@
 [
-  {"name":"/t/abc.json","size":123}
+  {"name":"/t/abc.json","size":123},
+  {"name":"/t/def.json","size":123}
 ]

@@ -5,15 +5,17 @@ import {
   Glyphicon, 
   FormGroup,
   ControlLabel,
-  FormControl
+  FormControl,
+  Alert
 } from 'react-bootstrap'
 import brace from 'brace';
 import AceEditor from 'react-ace';
+import { withAlert } from 'react-alert'
 
 import 'brace/mode/json';
 import 'brace/theme/solarized_dark';
 
-import { loadTemplate, saveTemplate } from '../../actions'
+import { loadTemplate, saveTemplate, loadTemplates } from '../../actions'
 import TemplateList from './TemplateList'
 
 class Template extends React.Component {
@@ -42,10 +44,17 @@ class Template extends React.Component {
     e.preventDefault();
 
     const { name, contents } = this.state;
+
     this.props.onSave(name, contents)
       .then(() => {
         if (this.props.isNew) {
-          window.location.hash = `/templates/${name}.json`;
+          this.props.loadTemplates().then(() => {
+            this.props.loadTemplate(`${name}.json`).then(() => {
+              window.location.hash = `/templates/${name}.json`;
+            });
+          });
+        } else {
+          this.props.loadTemplates();
         }
       });
   }
@@ -69,7 +78,15 @@ class Template extends React.Component {
   }
 
   render() {
+    var isNewAlert = '';
+
+    if (this.props.isNew) {
+      isNewAlert = <Alert bsStyle="success">Creating new template</Alert>;
+    }
+
     return (
+      <div>
+      {isNewAlert}
       <form onSubmit={this.handleSubmit.bind(this)}>
         <FormGroup>
           <ControlLabel>Name</ControlLabel>
@@ -100,6 +117,7 @@ class Template extends React.Component {
           >Save</Button>
         </FormGroup>
       </form>
+      </div>
     )
   }
 }
@@ -115,9 +133,18 @@ class ShowTemplate extends React.Component {
 
   templateContents() {
     if (this.props.templateContents) {
-      return JSON.stringify(this.props.templateContents[this.templateFilename()], null, 2)
+      var contents = this.props.templateContents[this.templateFilename()];
+
+      try {
+        contents = JSON.stringify(JSON.parse(contents), null, 2);
+      } catch (err) {
+        // Error is handled by action
+      }
+
+      return contents;
     }
-    return ''
+
+    return '';
   }
 
   isNew() {
@@ -132,17 +159,25 @@ class ShowTemplate extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (!this.templateContents() && prevProps.templateContents && prevProps.templateContents[this.templateFilename()]) {
+      window.location.hash = '/templates';
+    }
+  }
+
   render() {
     return (
       <div className="row">
         <div className="col-md-3">
-          <TemplateList />
+          <TemplateList disableActive={this.isNew()} />
         </div>
         <div className="col-md-9">
           <Template 
             name={this.templateName()}
             contents={this.templateContents()}
             onSave={this.props.saveTemplate}
+            loadTemplates={this.props.loadTemplates}
+            loadTemplate={this.props.loadTemplate}
             isNew={this.isNew()}
           />
         </div>
@@ -157,10 +192,13 @@ export default connect(
   }),
   (dispatch) => ({
     loadTemplate: (template) => {
-      dispatch(loadTemplate(template));
+      return dispatch(loadTemplate(template));
     },
     saveTemplate: (name, contents) => {
-      return dispatch(saveTemplate(name, contents))
+      return dispatch(saveTemplate(name, contents));
+    },
+    loadTemplates: () => { 
+      return dispatch(loadTemplates());
     }
   })
-)(ShowTemplate);
+)(withAlert(ShowTemplate));

@@ -52,6 +52,14 @@ void EpaperWebServer::begin() {
 
   on("/", HTTP_GET, handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len));
 
+  server.onNotFound(wrapAuth([this](AsyncWebServerRequest *request) {
+    if (request->url().startsWith("/app/")) {
+      handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len)(request);
+    } else {
+      request->send(404);
+    }
+  }));
+
   server.begin();
 }
 
@@ -465,14 +473,16 @@ void EpaperWebServer::onPattern(const String& pattern, const WebRequestMethod me
   server.addHandler(new PatternHandler(pattern.c_str(), method, NULL, authedFn));
 }
 
-void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
-  ArRequestHandlerFunction authedFn = [this, fn](AsyncWebServerRequest* request) {
+ArRequestHandlerFunction EpaperWebServer::wrapAuth(ArRequestHandlerFunction fn) {
+  return [this, fn](AsyncWebServerRequest* request) {
     if (isAuthenticated(request)) {
       fn(request);
     }
   };
+}
 
-  server.on(path.c_str(), method, authedFn);
+void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
+  server.on(path.c_str(), method, wrapAuth(fn));
 }
 
 void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArBodyHandlerFunction fn) {

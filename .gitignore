@@ -7,3 +7,5 @@ data
 .vscode/c_cpp_properties.json
 /web/node_modules
 /web/build
+.vscode/.browse.c_cpp.db*
+.vscode/launch.json

@@ -9,7 +9,7 @@ import TemplateList from './TemplateList'
 const TemplateIndex = () => (
   <div className="row">
     <div className="col-md-3">
-      <TemplateList />
+      <TemplateList disableActive={true} />
     </div>
   </div>
 )
