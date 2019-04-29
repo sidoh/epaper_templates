@@ -1,3 +1,4 @@
+#include <TimeLib.h>
 #include <VariableFormatters.h>
 #include <Timezones.h>
 #include <time.h>

@@ -1,4 +1,9 @@
 #include <Arduino.h>
+
+// Make sure TimeLib.h is included first so that Time.h doesn't get included.
+// This breaks builds on case-sensitive filesystems.
+#include <TimeLib.h>
+
 #include <EnvironmentConfig.h>
 
 #include <GxEPD.h>
@@ -8,7 +13,6 @@
 
 #include <WiFiManager.h>
 #include <ESPAsyncWebServer.h>
-#include <TimeLib.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Timezone.h>
@@ -31,7 +35,7 @@ EpaperWebServer* webServer = NULL;
 MqttClient* mqttClient = NULL;
 
 // Don't attempt to reconnect to wifi if we've never connected
-volatile bool hasConnected = false; 
+volatile bool hasConnected = false;
 volatile bool shouldRestart = false;
 
 WiFiUDP ntpUDP;

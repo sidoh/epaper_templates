@@ -1,8 +1,8 @@
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
 #include <DisplayTemplateDriver.h>
-#include <PatternHandler.h>
 #include <Settings.h>
+#include <RichHttpServer.h>
 
 #if defined(ESP32)
 #include <SPIFFS.h>
@@ -20,111 +20,91 @@ public:
   uint16_t getPort() const;
 
 private:
-  class BodyHandler : public AsyncWebHandler {
-  public:
-    BodyHandler(const char* uri, const WebRequestMethod method, ArBodyHandlerFunction handler);
-    ~BodyHandler();
 
-    virtual bool isRequestHandlerTrivial() override { return false; }
-    virtual bool canHandle(AsyncWebServerRequest* request) override;
-    virtual void handleRequest(AsyncWebServerRequest* request) override;
-    virtual void handleBody(
-      AsyncWebServerRequest *request,
-      uint8_t *data,
-      size_t len,
-      size_t index,
-      size_t total
-    ) override;
-
-  private:
-    char* uri;
-    const WebRequestMethod method;
-    ArBodyHandlerFunction handler;
-  };
-
-  class UploadHandler : public AsyncWebHandler {
-  public:
-    UploadHandler(const char* uri, const WebRequestMethod method, ArUploadHandlerFunction handler);
-    UploadHandler(const char* uri, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction handler);
-    ~UploadHandler();
-
-    virtual bool isRequestHandlerTrivial() override { return false; }
-    virtual bool canHandle(AsyncWebServerRequest* request) override;
-    virtual void handleRequest(AsyncWebServerRequest* request) override;
-    virtual void handleUpload(
-      AsyncWebServerRequest *request,
-      const String& filename,
-      size_t index,
-      uint8_t *data,
-      size_t len,
-      bool isFinal
-    ) override;
-
-  private:
-    char* uri;
-    const WebRequestMethod method;
-    ArUploadHandlerFunction handler;
-    ArRequestHandlerFunction onCompleteFn;
-  };
-
-  AsyncWebServer server;
+  RichHttpServer server;
   DisplayTemplateDriver*& driver;
   Settings& settings;
   uint16_t port;
 
-  ArBodyHandlerFunction handleUpdateVariables();
-  ArRequestHandlerFunction sendSuccess();
+  // Variables CRUD
+  void handleUpdateVariables(
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  );
 
-  // Special routes
-  ArRequestHandlerFunction handleAbout();
-  ArUploadHandlerFunction  handleOtaUpdate();
-  ArRequestHandlerFunction handleOtaSuccess();
+  void handleStaticResponse_P(AsyncWebServerRequest* request, int responseCode, const char* responseType, const char* message);
+  void handleNoOp(AsyncWebServerRequest* request);
+
+  // General info routes
+  void handleAbout(AsyncWebServerRequest* request);
+
+  // OTA
+  void handleOtaUpdate(
+    AsyncWebServerRequest* request,
+    const String &filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  );
+  void handleOtaSuccess(AsyncWebServerRequest* request);
 
   // General helpers
-  ArRequestHandlerFunction handleListDirectory(const char* dir);
-  ArUploadHandlerFunction  handleCreateFile(const char* filePrefix);
+  void handleListDirectory(const char* dir, AsyncWebServerRequest* request);
+  void handleCreateFile(
+    const char* filePrefix,
+    AsyncWebServerRequest* request,
+    const String &filename,
+    size_t index,
+    uint8_t *data,
+    size_t len,
+    bool isFinal
+  );
 
   // CRUD handlers for Bitmaps
-  PatternHandler::TPatternHandlerFn handleDeleteBitmap();
-  PatternHandler::TPatternHandlerFn handleShowBitmap();
+  void handleDeleteBitmap(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
+  void handleShowBitmap(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
 
   // CRUD handlers for Templates
-  PatternHandler::TPatternHandlerFn     handleDeleteTemplate();
-  PatternHandler::TPatternHandlerFn     handleShowTemplate();
-  PatternHandler::TPatternHandlerBodyFn handleUpdateTemplate();
+  void handleDeleteTemplate(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
+  void handleShowTemplate(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
+  void handleUpdateTemplate(
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total,
+    const UrlTokenBindings* bindings
+  );
 
-  ArBodyHandlerFunction    handleUpdateSettings();
-  ArRequestHandlerFunction handleListSettings();
+  void handleUpdateSettings(
+    AsyncWebServerRequest* request,
+    uint8_t* data,
+    size_t len,
+    size_t index,
+    size_t total
+  );
+  void handleListSettings(AsyncWebServerRequest* request);
 
-  ArUploadHandlerFunction handleUpdateFile(const char* filename);
-  ArRequestHandlerFunction handleServeFile(
+  // Misc helpers
+  void handleUpdateFile(ArUploadHandlerFunction* request, const char* filename);
+  void handleServeFile(
+    AsyncWebServerRequest* request,
     const char* filename,
     const char* contentType,
     const char* defaultText = ""
   );
-  ArRequestHandlerFunction handleServeGzip_P(
+  void handleServeGzip_P(
+    AsyncWebServerRequest* request,
     const char* contentType,
     const uint8_t* text,
     size_t length
   );
   bool serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType);
   void handleUpdateJsonFile(const String& file, AsyncWebServerRequest* request, uint8_t* data, size_t len);
-
-  // Checks if auth is enabled, and requires appropriate username/password if so
-  bool isAuthenticated(AsyncWebServerRequest* request);
-
-  // Wraps a handler in a function that validates auth
-  ArRequestHandlerFunction wrapAuth(ArRequestHandlerFunction fn);
-
-  // Support for routes with tokens like a/:id/:id2. Injects auth handling.
-  void onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn);
-  void onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn);
-
-  // Injects auth handling
-  void on(const String& pattern, const WebRequestMethod method, ArRequestHandlerFunction fn);
-  void on(const String& pattern, const WebRequestMethod method, ArBodyHandlerFunction fn);
-  void onUpload(const String& pattern, const WebRequestMethod method, ArUploadHandlerFunction uploadFn);
-  void onUpload(const String& pattern, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction uploadFn);
 };
 
 #endif
