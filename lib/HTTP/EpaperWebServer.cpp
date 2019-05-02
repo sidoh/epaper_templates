@@ -99,13 +99,13 @@ void EpaperWebServer::begin() {
       std::bind(&EpaperWebServer::handleOtaUpdate, this, _1, _3, _4, _5, _6, _7)
     );
 
-  // server.onNotFound(wrapAuth([this](AsyncWebServerRequest *request) {
-  //   if (request->url().startsWith("/app/")) {
-  //     handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len)(request);
-  //   } else {
-  //     request->send(404);
-  //   }
-  // }));
+  server.onNotFound([this](AsyncWebServerRequest *request) {
+    if (request->url().startsWith("/app/")) {
+      handleServeGzip_P(request, TEXT_HTML, index_html_gz, index_html_gz_len);
+    } else {
+      request->send(404);
+    }
+  });
 
   server.clearBuilders();
   server.begin();
