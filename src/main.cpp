@@ -11,8 +11,15 @@
 #include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
 #include <GxIO/GxIO.cpp>
 
-#include <WiFiManager.h>
+#if defined(ESP32)
+#include <WebServer.h>
+#elif defined(ESP8266)
+#include <ESP8266WebServer.h>
+#define WEBSERVER_H
+#endif
 #include <ESPAsyncWebServer.h>
+
+#include <WiFiManager.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Timezone.h>
