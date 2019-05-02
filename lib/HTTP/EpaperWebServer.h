@@ -21,7 +21,7 @@ public:
 
 private:
 
-  RichHttpServer server;
+  RichHttpServer<RichHttp::Generics::Configs::AsyncWebServer> server;
   DisplayTemplateDriver*& driver;
   Settings& settings;
   uint16_t port;
@@ -73,11 +73,11 @@ private:
   void handleShowTemplate(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
   void handleUpdateTemplate(
     AsyncWebServerRequest* request,
+    const UrlTokenBindings* bindings,
     uint8_t* data,
     size_t len,
     size_t index,
-    size_t total,
-    const UrlTokenBindings* bindings
+    size_t total
   );
 
   void handleUpdateSettings(

@@ -15,12 +15,13 @@ static const char APPLICATION_JSON[] = "application/json";
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 
 using namespace std::placeholders;
+using namespace RichHttp::Generics;
 
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
   : driver(driver),
     settings(settings),
     port(settings.webPort),
-    server(RichHttpServer(settings.webPort))
+    server(RichHttpServer<Configs::AsyncWebServer>(settings.webPort))
 { }
 
 EpaperWebServer::~EpaperWebServer() {
@@ -35,53 +36,40 @@ void EpaperWebServer::begin() {
   server
     .buildHandler("/")
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeGzip_P, this, _1, TEXT_HTML, index_html_gz, index_html_gz_len));
-  // on("/", HTTP_GET, handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len));
 
   server
     .buildHandler("/variables")
-    .on(
+    .onBody(
       HTTP_PUT,
-      std::bind(&EpaperWebServer::handleStaticResponse_P, this, _1, 200, APPLICATION_JSON, PSTR("true")),
-      std::bind(&EpaperWebServer::handleUpdateVariables, this, _1, _2, _3, _4, _5)
+      std::bind(&EpaperWebServer::handleUpdateVariables, this, _1, _3, _4, _5, _6)
     )
     .on(
       HTTP_GET,
       std::bind(&EpaperWebServer::handleServeFile, this, _1, VariableDictionary::FILENAME, APPLICATION_JSON, "")
     );
-  // on("/variables", HTTP_PUT, handleUpdateVariables());
-  // on("/variables", HTTP_GET, handleServeFile(VariableDictionary::FILENAME, APPLICATION_JSON));
 
   server
     .buildHandler("/templates")
-    .on(
-      HTTP_POST,
+    .onUpload(
       std::bind(&EpaperWebServer::handleNoOp, this, _1),
-      std::bind(&EpaperWebServer::handleCreateFile, this, TEMPLATES_DIRECTORY, _1, _2, _3, _4, _5, _6)
+      std::bind(&EpaperWebServer::handleCreateFile, this, TEMPLATES_DIRECTORY, _1, _3, _4, _5, _6, _7)
     )
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleListDirectory, this, TEMPLATES_DIRECTORY, _1));
-
-  // onUpload("/templates", HTTP_POST, handleCreateFile(TEMPLATES_DIRECTORY));
-  // on("/templates", HTTP_GET, handleListDirectory(TEMPLATES_DIRECTORY));
 
   server
     .buildHandler("/templates/:filename")
     .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteTemplate, this, _1, _2))
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowTemplate, this, _1, _2))
-    .on(
+    .onBody(
       HTTP_PUT,
-      std::bind(&EpaperWebServer::handleNoOp, this, _1),
       std::bind(&EpaperWebServer::handleUpdateTemplate, this, _1, _2, _3, _4, _5, _6)
     );
-  // onPattern("/templates/:filename", HTTP_DELETE, handleDeleteTemplate());
-  // onPattern("/templates/:filename", HTTP_GET, handleShowTemplate());
-  // onPattern("/templates/:filename", HTTP_PUT, handleUpdateTemplate());
 
   server
     .buildHandler("/bitmaps")
-    .on(
-      HTTP_POST,
+    .onUpload(
       std::bind(&EpaperWebServer::handleNoOp, this, _1),
-      std::bind(&EpaperWebServer::handleCreateFile, this, BITMAPS_DIRECTORY, _1, _2, _3, _4, _5, _6)
+      std::bind(&EpaperWebServer::handleCreateFile, this, BITMAPS_DIRECTORY, _1, _3, _4, _5, _6, _7)
     )
     .on(
       HTTP_GET,
@@ -91,21 +79,14 @@ void EpaperWebServer::begin() {
     .buildHandler("/bitmaps/:filename")
     .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteBitmap, this, _1, _2))
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowBitmap, this, _1, _2));
-  // onUpload("/bitmaps", HTTP_POST, handleCreateFile(BITMAPS_DIRECTORY));
-  // onPattern("/bitmaps/:filename", HTTP_DELETE, handleDeleteBitmap());
-  // onPattern("/bitmaps/:filename", HTTP_GET, handleShowBitmap());
-  // on("/bitmaps", HTTP_GET, handleListDirectory(BITMAPS_DIRECTORY));
 
   server
     .buildHandler("/settings")
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleListSettings, this, _1))
-    .on(
+    .onBody(
       HTTP_PUT,
-      std::bind(&EpaperWebServer::handleNoOp, this, _1),
-      std::bind(&EpaperWebServer::handleUpdateSettings, this, _1, _2, _3, _4, _5)
+      std::bind(&EpaperWebServer::handleUpdateSettings, this, _1, _3, _4, _5, _6)
     );
-  // on("/settings", HTTP_GET, handleListSettings());
-  // on("/settings", HTTP_PUT, handleUpdateSettings());
 
   server
     .buildHandler("/about")
@@ -113,12 +94,10 @@ void EpaperWebServer::begin() {
 
   server
     .buildHandler("/firmware")
-    .on(
-      HTTP_POST,
+    .onUpload(
       std::bind(&EpaperWebServer::handleOtaSuccess, this, _1),
-      std::bind(&EpaperWebServer::handleOtaUpdate, this, _1, _2, _3, _4, _5, _6)
+      std::bind(&EpaperWebServer::handleOtaUpdate, this, _1, _3, _4, _5, _6, _7)
     );
-  // onUpload("/firmware", HTTP_POST, handleOtaSuccess(), handleOtaUpdate());
 
   // server.onNotFound(wrapAuth([this](AsyncWebServerRequest *request) {
   //   if (request->url().startsWith("/app/")) {
@@ -128,6 +107,7 @@ void EpaperWebServer::begin() {
   //   }
   // }));
 
+  server.clearBuilders();
   server.begin();
 }
 
@@ -352,11 +332,11 @@ void EpaperWebServer::handleShowTemplate(AsyncWebServerRequest* request, const U
 
 void EpaperWebServer::handleUpdateTemplate(
   AsyncWebServerRequest* request,
+  const UrlTokenBindings* bindings,
   uint8_t* data,
   size_t len,
   size_t index,
-  size_t total,
-  const UrlTokenBindings* bindings
+  size_t total
 ) {
   if (bindings->hasBinding("filename")) {
     const char* filename = bindings->get("filename");
