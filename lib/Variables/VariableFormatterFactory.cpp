@@ -1,15 +1,15 @@
 #include <VariableFormatters.h>
 
-VariableFormatterFactory::VariableFormatterFactory(const JsonObject& referenceFormatters) 
+VariableFormatterFactory::VariableFormatterFactory(JsonObject referenceFormatters)
   : referenceFormatters(referenceFormatters),
     defaultFormatter(new IdentityVariableFormatter())
 { }
 
-std::shared_ptr<const VariableFormatter> VariableFormatterFactory::create(const JsonObject& spec) {
+std::shared_ptr<const VariableFormatter> VariableFormatterFactory::create(JsonObject spec) {
   return _createInternal(spec, true);
 }
 
-std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createInternal(const JsonObject& spec, bool allowReference) {
+std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createInternal(JsonObject spec, bool allowReference) {
   String formatter = spec["formatter"];
 
   // Handle references first (code is clearer this way)
@@ -21,7 +21,7 @@ std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createIntern
 
     String refName = formatter.substring(1);
 
-    if (referenceFormatters.success() && referenceFormatters.containsKey(refName)) {
+    if (!referenceFormatters.isNull() && referenceFormatters.containsKey(refName)) {
       if (internedFormatters.count(refName) > 0) {
         return internedFormatters[refName];
       } else {
@@ -42,11 +42,11 @@ std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createIntern
   if (formatter.equalsIgnoreCase("time")) {
     return TimeVariableFormatter::build(spec["args"]);
   } else if (formatter.equalsIgnoreCase("cases")) {
-    return std::shared_ptr<const VariableFormatter>(new CasesVariableFormatter(spec.get<const JsonObject&>("args")));
+    return std::shared_ptr<const VariableFormatter>(new CasesVariableFormatter(spec["args"].as<JsonObject>()));
   } else if (formatter.equalsIgnoreCase("round")) {
     uint8_t numDigits = 0;
     if (spec.containsKey("args")) {
-      JsonObject& objArgs = spec["args"];
+      JsonObject objArgs = spec["args"];
       if (objArgs.containsKey("digits")) {
         numDigits = objArgs["digits"];
       }

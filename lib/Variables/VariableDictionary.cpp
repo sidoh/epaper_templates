@@ -11,23 +11,24 @@ void VariableDictionary::load() {
   this->vars.clear();
 
   File f = SPIFFS.open(FILENAME, "r");
-  DynamicJsonBuffer buffer;
-  JsonObject& obj = buffer.parseObject(f);
+  DynamicJsonDocument buffer(2048);
+  deserializeJson(buffer, f);
+  JsonObject obj = buffer.as<JsonObject>();
   f.close();
 
-  if (! obj.success()) {
+  if (obj.isNull()) {
     Serial.println(F("WARN - VariableDictionary: couldn't parse variables file"));
+    return;
   }
 
   for (JsonObject::iterator itr = obj.begin(); itr != obj.end(); ++itr) {
-    this->vars[itr->key] = itr->value.as<const char*>();
+    this->vars[itr->key().c_str()] = itr->value().as<const char*>();
   }
 }
 
 void VariableDictionary::save() {
   // For conversion to json
-  DynamicJsonBuffer buffer;
-  JsonObject& obj = buffer.createObject();
+  DynamicJsonDocument obj(2048);
 
   for (std::map<String, String>::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
     obj[itr->first] = itr->second;
@@ -36,7 +37,7 @@ void VariableDictionary::save() {
   char tmpName[50];
   sprintf(tmpName, "%s_tmp", FILENAME);
   File f = SPIFFS.open(tmpName, "w");
-  obj.printTo(f);
+  serializeJson(obj, f);
   f.close();
 
   SPIFFS.remove(FILENAME);

@@ -3,7 +3,6 @@
 #include <ArduinoJson.h>
 #include <Timezone.h>
 #include <Timezones.h>
-#include <StringStream.h>
 
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
@@ -51,12 +50,10 @@ public:
 
   bool hasAuthSettings();
 
-  static void deserialize(Settings& settings, String json);
   static void load(Settings& settings);
-  String toJson(const bool prettyPrint = true);
   void save();
   void serialize(Stream& stream, const bool prettyPrint = false);
-  void patch(JsonObject& obj);
+  void patch(JsonObject obj);
 
   Timezone& getTimezone();
   void setTimezone(const String& timezone);
@@ -86,9 +83,10 @@ public:
 
 protected:
   template <typename T>
-  void setIfPresent(JsonObject& obj, const char* key, T& var) {
+  void setIfPresent(JsonObject obj, const char* key, T& var) {
     if (obj.containsKey(key)) {
-      var = obj.get<T>(key);
+      JsonVariant val = obj[key];
+      var = val.as<T>();
     }
   }
 

@@ -11,6 +11,9 @@
 #ifndef _EPAPER_WEB_SERVER_H
 #define _EPAPER_WEB_SERVER_H
 
+using RichHttpConfig = RichHttp::Generics::Configs::AsyncWebServer;
+using RequestContext = RichHttpConfig::RequestContextType;
+
 class EpaperWebServer {
 public:
   EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings);
@@ -21,90 +24,57 @@ public:
 
 private:
 
-  RichHttpServer<RichHttp::Generics::Configs::AsyncWebServer> server;
+  RichHttpServer<RichHttpConfig> server;
   DisplayTemplateDriver*& driver;
   Settings& settings;
   uint16_t port;
 
   // Variables CRUD
-  void handleUpdateVariables(
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  );
+  void handleUpdateVariables(RequestContext& request);
 
-  void handleStaticResponse_P(AsyncWebServerRequest* request, int responseCode, const char* responseType, const char* message);
-  void handleNoOp(AsyncWebServerRequest* request);
+  void handleNoOp();
 
   // General info routes
-  void handleAbout(AsyncWebServerRequest* request);
-
-  // OTA
-  void handleOtaUpdate(
-    AsyncWebServerRequest* request,
-    const String &filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  );
-  void handleOtaSuccess(AsyncWebServerRequest* request);
+  void handleAbout(RequestContext& request);
 
   // General helpers
-  void handleListDirectory(const char* dir, AsyncWebServerRequest* request);
-  void handleCreateFile(
-    const char* filePrefix,
-    AsyncWebServerRequest* request,
-    const String &filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  );
+  void handleListDirectory(const char* dir, RequestContext& request);
+  void handleCreateFile(const char* filePrefix, RequestContext& request);
+  void handleDeleteFile(const String& file, RequestContext& request);
 
   // CRUD handlers for Bitmaps
-  void handleDeleteBitmap(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
-  void handleShowBitmap(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
+  void handleDeleteBitmap(RequestContext& request);
+  void handleShowBitmap(RequestContext& request);
 
   // CRUD handlers for Templates
-  void handleDeleteTemplate(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
-  void handleShowTemplate(AsyncWebServerRequest* request, const UrlTokenBindings* bindings);
-  void handleUpdateTemplate(
-    AsyncWebServerRequest* request,
-    const UrlTokenBindings* bindings,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  );
+  void handleDeleteTemplate(RequestContext& request);
+  void handleShowTemplate(RequestContext& request);
+  void handleUpdateTemplate(RequestContext& request);
 
-  void handleUpdateSettings(
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  );
-  void handleListSettings(AsyncWebServerRequest* request);
+  void handleUpdateSettings(RequestContext& request);
 
   // Misc helpers
   void handleUpdateFile(ArUploadHandlerFunction* request, const char* filename);
   void handleServeFile(
-    AsyncWebServerRequest* request,
     const char* filename,
     const char* contentType,
-    const char* defaultText = ""
+    const char* defaultText,
+    RequestContext& request
   );
   void handleServeGzip_P(
-    AsyncWebServerRequest* request,
     const char* contentType,
     const uint8_t* text,
-    size_t length
+    size_t length,
+    RequestContext& request
   );
-  bool serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType);
-  void handleUpdateJsonFile(const String& file, AsyncWebServerRequest* request, uint8_t* data, size_t len);
+  void _handleServeGzip_P(
+    const char* contentType,
+    const uint8_t* text,
+    size_t length,
+    AsyncWebServerRequest* request
+  );
+  bool serveFile(const char* file, const char* contentType, RequestContext& request);
+  void handleUpdateJsonFile(const String& file, RequestContext& request);
 };
 
 #endif

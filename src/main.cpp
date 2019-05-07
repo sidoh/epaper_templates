@@ -161,6 +161,9 @@ void updateWiFiState(WiFiState state) {
         xTimerStop(reconnectTimer, 0);
         hasConnected = true;
         break;
+
+      default:
+        break;
     }
   }
 #elif defined(ESP8266)

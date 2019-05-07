@@ -26,14 +26,8 @@ bool Settings::hasAuthSettings() {
   return adminUsername.length() > 0 && adminPassword.length() > 0;
 }
 
-void Settings::deserialize(Settings& settings, String json) {
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& parsedSettings = jsonBuffer.parseObject(json);
-  settings.patch(parsedSettings);
-}
-
-void Settings::patch(JsonObject& parsedSettings) {
-  if (parsedSettings.success()) {
+void Settings::patch(JsonObject parsedSettings) {
+  if (!parsedSettings.isNull()) {
     this->setIfPresent<String>(parsedSettings, "web.admin_username", adminUsername);
     this->setIfPresent(parsedSettings, "web.admin_password", adminPassword);
     this->setIfPresent(parsedSettings, "web.port", webPort);
@@ -64,11 +58,12 @@ void Settings::patch(JsonObject& parsedSettings) {
 
 void Settings::load(Settings& settings) {
   if (SPIFFS.exists(SETTINGS_FILE)) {
+    DynamicJsonDocument jsonBuffer(4096);
     File f = SPIFFS.open(SETTINGS_FILE, "r");
-    String settingsContents = f.readStringUntil(SETTINGS_TERMINATOR);
+    deserializeJson(jsonBuffer, f);
     f.close();
 
-    deserialize(settings, settingsContents);
+    settings.patch(jsonBuffer.as<JsonObject>());
   } else {
     settings.save();
   }
@@ -86,8 +81,8 @@ void Settings::save() {
 }
 
 void Settings::serialize(Stream& stream, const bool prettyPrint) {
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
+  DynamicJsonDocument jsonBuffer(4096);
+  JsonObject root = jsonBuffer.to<JsonObject>();
 
   root["web.admin_username"] = this->adminUsername;
   root["web.admin_password"] = this->adminPassword;
@@ -113,17 +108,10 @@ void Settings::serialize(Stream& stream, const bool prettyPrint) {
   root["wifi.password"] = this->wifiPassword;
 
   if (prettyPrint) {
-    root.prettyPrintTo(stream);
+    serializeJsonPretty(root, stream);
   } else {
-    root.printTo(stream);
+    serializeJson(root, stream);
   }
-}
-
-String Settings::toJson(const bool prettyPrint) {
-  String buffer = "";
-  StringStream s(buffer);
-  serialize(s, prettyPrint);
-  return buffer;
 }
 
 Timezone& Settings::getTimezone() {
