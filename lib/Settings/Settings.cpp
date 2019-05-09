@@ -142,3 +142,19 @@ uint16_t Settings::mqttPort() {
     return atoi(_mqttServer.c_str() + pos + 1);
   }
 }
+
+SettingsAuthProvider::SettingsAuthProvider(Settings& settings)
+  : settings(settings)
+{ }
+
+bool SettingsAuthProvider::isAuthenticationEnabled() const {
+  return settings.hasAuthSettings();
+}
+
+const String& SettingsAuthProvider::getUsername() const {
+  return settings.adminUsername;
+}
+
+const String& SettingsAuthProvider::getPassword() const {
+  return settings.adminPassword;
+}

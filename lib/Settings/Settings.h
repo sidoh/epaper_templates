@@ -4,6 +4,8 @@
 #include <Timezone.h>
 #include <Timezones.h>
 
+#include <AuthProviders.h>
+
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
 
@@ -97,6 +99,20 @@ protected:
 
   TSettingsUpdateFn onUpdateFn;
   String timezoneName;
+};
+
+class SettingsAuthProvider : public AuthProvider {
+public:
+  SettingsAuthProvider(Settings& settings);
+
+  // Returns true if authentication is currently enabled
+  virtual bool isAuthenticationEnabled() const override;
+
+  virtual const String& getUsername() const override;
+  virtual const String& getPassword() const override;
+
+private:
+  Settings& settings;
 };
 
 #endif

@@ -27,6 +27,7 @@ private:
   RichHttpServer<RichHttpConfig> server;
   DisplayTemplateDriver*& driver;
   Settings& settings;
+  SettingsAuthProvider authProvider;
   uint16_t port;
 
   // Variables CRUD

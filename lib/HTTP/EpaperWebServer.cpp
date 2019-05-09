@@ -19,8 +19,9 @@ using namespace std::placeholders;
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
   : driver(driver),
     settings(settings),
-    port(settings.webPort),
-    server(RichHttpServer<RichHttpConfig>(settings.webPort))
+    authProvider(settings),
+    server(RichHttpServer<RichHttpConfig>(settings.webPort, authProvider)),
+    port(settings.webPort)
 { }
 
 EpaperWebServer::~EpaperWebServer() {
