@@ -3,8 +3,9 @@
 // Make sure TimeLib.h is included first so that Time.h doesn't get included.
 // This breaks builds on case-sensitive filesystems.
 #include <TimeLib.h>
-
 #include <EnvironmentConfig.h>
+
+#include <Settings.h>
 
 #include <GxEPD.h>
 #include <GxGDEW042T2/GxGDEW042T2.cpp>

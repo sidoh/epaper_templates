@@ -194,7 +194,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 
   File file = SPIFFS.open(templateFilename, "r");
 
-  DynamicJsonDocument jsonBuffer(4096);
+  DynamicJsonDocument jsonBuffer(JSON_TEMPLATE_BUFFER_SIZE);
   deserializeJson(jsonBuffer, file);
   file.close();
 
@@ -226,7 +226,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(formatterFactory, updateRects, tmpl["text"]);
+    renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>());
   }
 }
 

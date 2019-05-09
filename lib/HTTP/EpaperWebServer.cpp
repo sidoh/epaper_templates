@@ -300,7 +300,7 @@ void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& r
     DynamicJsonDocument fileBuffer(4096);
     deserializeJson(fileBuffer, file);
     file.close();
-    JsonObject tmpl = fileBuffer.to<JsonObject>();
+    JsonObject tmpl = fileBuffer.as<JsonObject>();
 
     if (tmpl.isNull()) {
       request.response.json["error"] = F("Failed to load persisted file");
@@ -325,7 +325,7 @@ void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& r
 }
 
 void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
-  JsonObject req = request.getJsonBody().to<JsonObject>();
+  JsonObject req = request.getJsonBody().as<JsonObject>();
 
   if (req.isNull()) {
     request.response.json["error"] = F("Invalid JSON");

@@ -47,9 +47,9 @@ Rectangle Region::updateScreen(GxEPD *display) {
 
 Rectangle Region::getBoundingBox() {
   return {
-    .x = this->x, 
-    .y = this->y, 
-    .w = this->w, 
+    .x = this->x,
+    .y = this->y,
+    .w = this->w,
     .h = this->h
   };
 }
