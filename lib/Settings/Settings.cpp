@@ -22,10 +22,6 @@ void Settings::onUpdate(TSettingsUpdateFn fn) {
   this->onUpdateFn = fn;
 }
 
-bool Settings::hasAuthSettings() {
-  return adminUsername.length() > 0 && adminPassword.length() > 0;
-}
-
 void Settings::patch(JsonObject parsedSettings) {
   if (!parsedSettings.isNull()) {
     this->setIfPresent<String>(parsedSettings, "web.admin_username", adminUsername);
@@ -147,14 +143,14 @@ SettingsAuthProvider::SettingsAuthProvider(Settings& settings)
   : settings(settings)
 { }
 
-bool SettingsAuthProvider::isAuthenticationEnabled() const {
-  return settings.hasAuthSettings();
+bool Settings::isAuthenticationEnabled() const {
+  return adminUsername.length() > 0 && adminPassword.length() > 0;
 }
 
-const String& SettingsAuthProvider::getUsername() const {
-  return settings.adminUsername;
+const String& Settings::getUsername() const {
+  return this->adminUsername;
 }
 
-const String& SettingsAuthProvider::getPassword() const {
-  return settings.adminPassword;
+const String& Settings::getPassword() const {
+  return this->adminPassword;
 }

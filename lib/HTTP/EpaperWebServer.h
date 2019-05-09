@@ -24,10 +24,10 @@ public:
 
 private:
 
-  RichHttpServer<RichHttpConfig> server;
   DisplayTemplateDriver*& driver;
   Settings& settings;
-  SettingsAuthProvider authProvider;
+  PassthroughAuthProvider<Settings> authProvider;
+  RichHttpServer<RichHttpConfig> server;
   uint16_t port;
 
   // Variables CRUD

@@ -55,7 +55,9 @@ public:
 
   void onUpdate(TSettingsUpdateFn fn);
 
-  bool hasAuthSettings();
+  bool isAuthenticationEnabled() const;
+  const String& getUsername() const;
+  const String& getPassword() const;
 
   static void load(Settings& settings);
   void save();
