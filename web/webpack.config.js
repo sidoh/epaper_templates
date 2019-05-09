@@ -15,9 +15,9 @@ module.exports = {
   },
   module: {
     rules: [
-      { 
-        test: /\.jsx?$/, 
-        loader: 'babel-loader', 
+      {
+        test: /\.jsx?$/,
+        loader: 'babel-loader',
         exclude: /node_modules/,
         query: {
           presets: ["es2016", "react"]
@@ -50,7 +50,7 @@ module.exports = {
     historyApiFallback: {
       rewrites: [
         { from: /^\/templates$/, to: '/templates.json' },
-        { 
+        {
           from: /^\/templates\/(.*)$/,
           to: context => (`/t/${context.match[1]}`)
         }
@@ -72,7 +72,7 @@ module.exports = {
       template: 'src/index.html',
       inlineSource: '.(js)$' // embed all javascript
     }),
-    // new HtmlWebpackInlineSourcePlugin(),
+    new HtmlWebpackInlineSourcePlugin(),
     new CompressionPlugin({
       include: /\.html$/
     }),
