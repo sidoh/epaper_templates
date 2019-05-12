@@ -17,7 +17,7 @@ public:
   );
   ~BitmapRegion();
 
-  virtual void render(GxEPD* display);
+  virtual void render(GxEPD2_GFX* display);
 };
 
 #endif

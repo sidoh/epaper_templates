@@ -39,9 +39,9 @@ bool Region::updateValue(const String &value) {
   return true;
 }
 
-Rectangle Region::updateScreen(GxEPD *display) {
+Rectangle Region::updateScreen(GxEPD2_GFX* display) {
   Rectangle r = getBoundingBox();
-  display->updateWindow(r.x, r.y, r.w, r.h);
+  display->refresh(r.x, r.y, r.w, r.h);
   return r;
 }
 

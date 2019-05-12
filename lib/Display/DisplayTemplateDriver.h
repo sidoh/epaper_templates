@@ -1,6 +1,6 @@
 #include <EnvironmentConfig.h>
 #include <FS.h>
-#include <GxEPD.h>
+#include <GxEPD2_BW.h>
 #include <gfxfont.h>
 #include <ArduinoJson.h>
 #include <memory>
@@ -39,7 +39,7 @@ extern "C" {
 class DisplayTemplateDriver {
 public:
   DisplayTemplateDriver(
-    GxEPD* display,
+    GxEPD2_GFX* display,
     Settings& settings
   );
 
@@ -66,7 +66,7 @@ public:
   void init();
 
 private:
-  GxEPD* display;
+  GxEPD2_GFX* display;
   VariableDictionary vars;
   String templateFilename;
   Settings& settings;

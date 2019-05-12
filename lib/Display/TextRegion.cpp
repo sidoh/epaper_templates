@@ -14,14 +14,14 @@ TextRegion::TextRegion(
   const GFXfont* font,
   std::shared_ptr<const VariableFormatter> formatter
 ) : Region(variable, x, y, 0, 0, color, formatter), font(font),
-    bbX(x), bbY(y), 
+    bbX(x), bbY(y),
     fixedBbX(fixedBbX), fixedBbY(fixedBbY), fixedBbW(fixedBbW), fixedBbH(fixedBbH),
     prevX(x), prevY(y), prevW(w), prevH(h)
 { }
 
 TextRegion::~TextRegion() { }
 
-void TextRegion::render(GxEPD* display) {
+void TextRegion::render(GxEPD2_GFX* display) {
   // Clear the previous text
   // TODO: expose setting for background color
   display->fillRect(this->bbX, this->bbY, this->w, this->h, GxEPD_WHITE);
@@ -36,7 +36,6 @@ void TextRegion::render(GxEPD* display) {
   int16_t x1, y1;
   uint16_t w, h;
   char valueCpy[variableValue.length() + 1];
-  memset(valueCpy, 0, variableValue.length() + 1);
   strcpy(valueCpy, variableValue.c_str());
 
   display->getTextBounds(valueCpy, x, y, &x1, &y1, &w, &h);

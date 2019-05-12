@@ -90,6 +90,8 @@ public:
   String wifiPassword;
   String mdnsName;
 
+  bool windowedPartialUpdates;
+
 protected:
   template <typename T>
   void setIfPresent(JsonObject obj, const char* key, T& var) {

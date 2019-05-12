@@ -13,7 +13,8 @@ Settings::Settings()
     webPort(80),
     dcPin(EPD_DEFAULT_DC_PIN),
     rstPin(EPD_DEFAULT_RST_PIN),
-    busyPin(EPD_DEFAULT_BUSY_PIN)
+    busyPin(EPD_DEFAULT_BUSY_PIN),
+    windowedPartialUpdates(false)
 { }
 
 Settings::~Settings() { }
@@ -38,6 +39,7 @@ void Settings::patch(JsonObject parsedSettings) {
     this->setIfPresent(parsedSettings, "display.dc_pin", dcPin);
     this->setIfPresent(parsedSettings, "display.rst_pin", rstPin);
     this->setIfPresent(parsedSettings, "display.busy_pin", busyPin);
+    this->setIfPresent(parsedSettings, "display.windowed_partial_updates", windowedPartialUpdates);
 
     this->setIfPresent(parsedSettings, "local.timezone", timezoneName);
 
@@ -95,6 +97,7 @@ void Settings::serialize(Stream& stream, const bool prettyPrint) {
   root["display.dc_pin"] = this->dcPin;
   root["display.rst_pin"] = this->rstPin;
   root["display.busy_pin"] = this->busyPin;
+  root["display.windowed_partial_updates"] = this->windowedPartialUpdates;
 
   root["local.timezone"] = this->timezoneName;
 

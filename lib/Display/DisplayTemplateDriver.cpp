@@ -4,7 +4,7 @@
 #define JSON_VAL_OR_DEFAULT(json, key, d) (json.containsKey(key) ? json[key] : d)
 
 DisplayTemplateDriver::DisplayTemplateDriver(
-  GxEPD* display,
+  GxEPD2_GFX* display,
   Settings& settings
 )
   : display(display),
@@ -23,7 +23,8 @@ DisplayTemplateDriver::DisplayTemplateDriver(
 }
 
 void DisplayTemplateDriver::init() {
-  display->init();
+  display->init(115200);
+  display->mirror(false);
   vars.load();
 }
 
@@ -33,6 +34,8 @@ void DisplayTemplateDriver::loop() {
 #endif
 
   if (newTemplate.length() > 0) {
+    Serial.printf_P(PSTR("Loading new template: %s\n"), newTemplate.c_str());
+
     // Delete regions so we don't have unused regions hanging around
     regions.clear();
 
@@ -85,6 +88,7 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
+  std::vector<std::shared_ptr<Region>> regionsToRender;
 
   // Render everything first
   while (curr != NULL) {
@@ -92,10 +96,14 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
 
     if (region->isDirty()) {
       printf("Rendering %s\n", region->getVariableName().c_str());
-      region->render(display);
+      regionsToRender.push_back(region);
     }
 
     curr = curr->next;
+  }
+
+  for (std::vector<std::shared_ptr<Region>>::const_iterator itr = regionsToRender.begin(); itr != regionsToRender.end(); ++itr) {
+    (*itr)->render(display);
   }
 
   // Can skip partial updates if we don't need to update the screen
@@ -114,13 +122,15 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
         Rectangle bb = region->getBoundingBox();
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-          display->updateWindow(bb.x, bb.y, bb.w, bb.h);
+          display->display(bb.x, bb.y, bb.w, bb.h);
           flushedRegions.add(bb);
         }
       }
 
       curr = curr->next;
     }
+
+    display->powerOff();
   }
 }
 
@@ -146,7 +156,8 @@ bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rec
 
 void DisplayTemplateDriver::fullUpdate() {
   flushDirtyRegions(false);
-  display->update();
+  display->setFullWindow();
+  display->display(false);
 }
 
 void DisplayTemplateDriver::updateVariable(const String& key, const String& value) {
@@ -243,7 +254,8 @@ void DisplayTemplateDriver::renderBitmap(const String &filename, uint16_t x, uin
   size_t readBytes = file.readBytes(reinterpret_cast<char*>(bits), size);
 
   file.close();
-  display->drawBitmap(bits, x, y, w, h, color);
+
+  display->writeImage(bits, x, y, w, h, color);
 }
 
 void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray bitmaps) {
@@ -298,7 +310,8 @@ void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFacto
 void DisplayTemplateDriver::renderLines(JsonArray lines) {
   for (JsonArray::iterator it = lines.begin(); it != lines.end(); ++it) {
     JsonObject line = it->as<JsonObject>();
-    display->drawLine(line["x1"], line["y1"], line["x2"], line["y2"], extractColor(line));
+
+    display->writeLine(line["x1"], line["y1"], line["x2"], line["y2"], extractColor(line));
   }
 }
 
@@ -354,11 +367,14 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFa
 }
 
 void DisplayTemplateDriver::printError(const char *message) {
+  Serial.printf_P(PSTR("Printing error to screen: %s\n"), message);
+
   display->fillScreen(GxEPD_BLACK);
   display->setFont(&FreeMonoBold9pt7b);
   display->setTextColor(GxEPD_WHITE);
   display->setCursor(0, display->height() / 2);
   display->print(message);
+  display->display(false);
 }
 
 const GFXfont* DisplayTemplateDriver::parseFont(const String &fontName) {

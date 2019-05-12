@@ -7,11 +7,6 @@
 
 #include <Settings.h>
 
-#include <GxEPD.h>
-#include <GxGDEW042T2/GxGDEW042T2.cpp>
-#include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
-#include <GxIO/GxIO.cpp>
-
 #if defined(ESP32)
 #include <WebServer.h>
 #elif defined(ESP8266)
@@ -29,15 +24,15 @@
 #include <EpaperWebServer.h>
 #include <MqttClient.h>
 
-GxIO_Class* io = NULL;
-GxEPD_Class* display = NULL;
+#include <GxEPD2_BW.h>
+#include <GxEPD2_GFX.h>
 
 enum class WiFiState {
   CONNECTED, DISCONNECTED
 };
 
 Settings settings;
-
+GxEPD2_GFX* display = NULL;
 DisplayTemplateDriver* driver = NULL;
 EpaperWebServer* webServer = NULL;
 MqttClient* mqttClient = NULL;
@@ -52,17 +47,12 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 uint8_t lastSecond = 60;
 
 void initDisplay() {
-  if (io != NULL) {
-    delete io;
-    io = NULL;
-  }
-  io = new GxIO_Class(SPI, SS, settings.dcPin, settings.rstPin);
-
   if (display != NULL) {
     delete display;
-    display = NULL;
   }
-  display = new GxEPD_Class(*io, settings.rstPin, settings.busyPin);
+  display = new GxEPD2_BW<GxEPD2_420, GxEPD2_420::HEIGHT>(
+    GxEPD2_420(SS, settings.dcPin, settings.rstPin, settings.busyPin)
+  );
 
   if (driver != NULL) {
     delete driver;
