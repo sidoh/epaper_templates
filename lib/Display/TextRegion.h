@@ -1,4 +1,7 @@
 #include <Region.h>
+
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_GFX.h>
 #include <Adafruit_GFX.h>
 
 #ifndef _TEXT_REGION_H

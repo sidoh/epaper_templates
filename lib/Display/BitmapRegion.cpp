@@ -26,8 +26,7 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
 
     file.close();
 
+    display->fillRect(x, y, w, h, GxEPD_WHITE);
     display->drawBitmap(x, y, bits, w, h, color);
   }
-
-  this->dirty = false;
 }

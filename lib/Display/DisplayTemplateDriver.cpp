@@ -88,7 +88,6 @@ void DisplayTemplateDriver::clearDirtyRegions() {
 
 void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
-  std::vector<std::shared_ptr<Region>> regionsToRender;
 
   // Render everything first
   while (curr != NULL) {
@@ -96,14 +95,10 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
 
     if (region->isDirty()) {
       printf("Rendering %s\n", region->getVariableName().c_str());
-      regionsToRender.push_back(region);
+      region->render(display);
     }
 
     curr = curr->next;
-  }
-
-  for (std::vector<std::shared_ptr<Region>>::const_iterator itr = regionsToRender.begin(); itr != regionsToRender.end(); ++itr) {
-    (*itr)->render(display);
   }
 
   // Can skip partial updates if we don't need to update the screen
@@ -123,6 +118,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
           display->display(bb.x, bb.y, bb.w, bb.h);
+          // display->display(true);
           flushedRegions.add(bb);
         }
       }

@@ -24,6 +24,7 @@
 #include <EpaperWebServer.h>
 #include <MqttClient.h>
 
+#include <GxEPD2_EPD.h>
 #include <GxEPD2_BW.h>
 #include <GxEPD2_GFX.h>
 
