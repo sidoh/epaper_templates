@@ -34,11 +34,11 @@ class TemplateList extends React.Component {
           <h3>Templates</h3>
         </div>
         <div className="pull-right">
-          <Button 
-            bsSize="small" 
-            bsStyle="success" 
+          <Button
+            bsSize="small"
+            bsStyle="success"
             style={{marginTop: '1em'}}
-            href="/#/templates/_/new"
+            href="/templates/_/new"
            >
             <Glyphicon glyph="plus" />
           </Button>
@@ -47,11 +47,11 @@ class TemplateList extends React.Component {
         <ul className="list-group template-list">
           {this.props.templates.map(
             template => (
-              <TemplateListItem 
-                template={template} 
+              <TemplateListItem
+                template={template}
                 isActive={!this.props.disableActive && this.props.selectedTemplate == template.filename}
-                onClick={() => {this.props.loadTemplate(template.filename)}} 
-                onDelete={(e) => {e.preventDefault(); this.props.deleteTemplate(template.filename)}} 
+                onClick={() => {this.props.loadTemplate(template.filename)}}
+                onDelete={(e) => {e.preventDefault(); this.props.deleteTemplate(template.filename)}}
               />
             )
           )}
