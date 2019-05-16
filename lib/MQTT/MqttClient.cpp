@@ -29,13 +29,13 @@ MqttClient::MqttClient(
   String variableTopicPattern,
   String username,
   String password
-) : lastConnectAttempt(0),
-    variableUpdateCallback(NULL),
-    port(port),
-    domain(domain),
-    username(username),
-    password(password),
-    topicPattern(variableTopicPattern)
+) : port(port)
+  , domain(domain)
+  , username(username)
+  , password(password)
+  , lastConnectAttempt(0)
+  , variableUpdateCallback(NULL)
+  , topicPattern(variableTopicPattern)
 {
   this->topicPatternBuffer = new char[topicPattern.length() + 1];
   strcpy(this->topicPatternBuffer, this->topicPattern.c_str());

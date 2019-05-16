@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <Timezone.h>
 #include <Timezones.h>
+#include <Bleeper.h>
 
 #include <AuthProviders.h>
 
@@ -46,77 +47,104 @@
 
 #define DEFAULT_MQTT_PORT 1883
 
-class Settings {
+static const char DEFAULT_DISPLAY_NAME[] = "epaper-display";
+
+class MqttSettings : public Configuration {
 public:
-  typedef std::function<void()> TSettingsUpdateFn;
+  persistentStringVar(username, "");
+  persistentStringVar(password, "");
+  persistentStringVar(server, "");
+  persistentStringVar(variables_topic_pattern, "");
 
-  Settings();
-  ~Settings();
+  String serverHost() const;
+  uint16_t serverPort() const;
+};
 
-  void onUpdate(TSettingsUpdateFn fn);
+class WebSettings : public Configuration {
+public:
+  persistentStringVar(admin_username, "");
+  persistentStringVar(admin_password, "");
+  persistentIntVar(port, 80);
 
   bool isAuthenticationEnabled() const;
   const String& getUsername() const;
   const String& getPassword() const;
-
-  static void load(Settings& settings);
-  void save();
-  void serialize(Stream& stream, const bool prettyPrint = false);
-  void patch(JsonObject obj);
-
-  Timezone& getTimezone();
-  void setTimezone(const String& timezone);
-
-  String adminUsername;
-  String adminPassword;
-  uint16_t webPort;
-
-  String mqttServer();
-  uint16_t mqttPort();
-  String _mqttServer;
-  String mqttUsername;
-  String mqttPassword;
-  String mqttVariablesTopicPattern;
-
-  unsigned long fullRefreshPeriod;
-  String templatePath;
-  uint8_t dcPin;
-  uint8_t rstPin;
-  uint8_t busyPin;
-
-  String hostname;
-  String setupApPassword;
-  String wifiSsid;
-  String wifiPassword;
-  String mdnsName;
-
-  bool windowedPartialUpdates;
-
-protected:
-  template <typename T>
-  void setIfPresent(JsonObject obj, const char* key, T& var) {
-    if (obj.containsKey(key)) {
-      JsonVariant val = obj[key];
-      var = val.as<T>();
-    }
-  }
-
-  TSettingsUpdateFn onUpdateFn;
-  String timezoneName;
 };
 
-class SettingsAuthProvider : public AuthProvider {
+class HardwareSettings : public Configuration {
 public:
-  SettingsAuthProvider(Settings& settings);
+  persistentIntVar(dc_pin, EPD_DEFAULT_DC_PIN);
+  persistentIntVar(rst_pin, EPD_DEFAULT_RST_PIN);
+  persistentIntVar(busy_pin, EPD_DEFAULT_BUSY_PIN);
+};
 
-  // Returns true if authentication is currently enabled
-  virtual bool isAuthenticationEnabled() const override;
+class NetworkSettings : public Configuration {
+public:
+  persistentStringVar(hostname, DEFAULT_DISPLAY_NAME);
+  persistentStringVar(mdns_name, DEFAULT_DISPLAY_NAME);
+  persistentStringVar(setup_ap_password, "waveshare");
+  persistentStringVar(wifi_ssid, "");
+  persistentStringVar(wifi_password, "");
+};
 
-  virtual const String& getUsername() const override;
-  virtual const String& getPassword() const override;
+class DisplaySettings : public Configuration {
+public:
+  persistentStringVar(template_name, "");
+  persistentVar(
+    uint64_t,
+    full_refresh_period,
+    3600000,
+    {
+      full_refresh_period = atol(full_refresh_periodString.c_str());
+    },
+    {
+      const int n = snprintf(NULL, 0, "%llu", full_refresh_period);
+      char buf[n+1];
+      snprintf(buf, n+1, "%llu", full_refresh_period);
+      full_refresh_periodString = String(buf);
+    }
+  );
+};
+
+class SystemSettings : public Configuration {
+public:
+  persistentVar(
+    Timezone*,
+    timezone,
+    &TimezonesClass::DEFAULT_TIMEZONE,
+    {
+      timezone = &Timezones.getTimezone(timezoneString);
+    },
+    {
+      timezoneString = Timezones.getTimezoneName(*timezone);
+    }
+  );
+};
+
+class Settings : public RootConfiguration {
+public:
+  subconfig(SystemSettings, system);
+  subconfig(DisplaySettings, display);
+  subconfig(NetworkSettings, network);
+  subconfig(HardwareSettings, hardware);
+  subconfig(WebSettings, web);
+  subconfig(MqttSettings, mqtt);
+
+  void save();
+  void patch(JsonObject obj);
+  void dump(Print& s);
+  void dumpSchema(Print& s);
+};
+
+class SettingsCallbackObserver : public ConfigurationObserver {
+public:
+  using CallbackFn = std::function<void(const ConfigurationPropertyChange)>;
+
+  SettingsCallbackObserver(CallbackFn callback);
+  void onConfigurationChanged(const ConfigurationPropertyChange value);
 
 private:
-  Settings& settings;
+  CallbackFn callback;
 };
 
 #endif

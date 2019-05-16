@@ -19,9 +19,10 @@ using namespace std::placeholders;
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
   : driver(driver),
     settings(settings),
-    authProvider(settings),
-    server(RichHttpServer<RichHttpConfig>(settings.webPort, authProvider)),
-    port(settings.webPort)
+    authProvider(settings.web),
+    server(RichHttpServer<RichHttpConfig>(settings.web.port, authProvider)),
+    port(settings.web.port),
+    changeFn(nullptr)
 { }
 
 EpaperWebServer::~EpaperWebServer() {
@@ -75,7 +76,7 @@ void EpaperWebServer::begin() {
 
   server
     .buildHandler("/settings")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeFile, this, SETTINGS_FILE, APPLICATION_JSON, "", _1))
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSettings, this, _1))
     .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateSettings, this, _1));
 
   server
@@ -337,5 +338,21 @@ void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
   settings.patch(req);
   settings.save();
 
+  if (this->changeFn) {
+    this->changeFn();
+  }
+
   request.response.json["success"] = true;
+}
+
+void EpaperWebServer::handleGetSettings(RequestContext& request) {
+  AsyncResponseStream* stream = request.rawRequest->beginResponseStream(APPLICATION_JSON);
+  stream->setCode(200);
+  settings.dump(*stream);
+
+  request.rawRequest->send(stream);
+}
+
+void EpaperWebServer::onSettingsChange(std::function<void()> changeFn) {
+  this->changeFn = changeFn;
 }

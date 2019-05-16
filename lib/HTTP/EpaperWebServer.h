@@ -3,6 +3,7 @@
 #include <DisplayTemplateDriver.h>
 #include <Settings.h>
 #include <RichHttpServer.h>
+#include <functional>
 
 #if defined(ESP32)
 #include <SPIFFS.h>
@@ -16,9 +17,12 @@ using RequestContext = RichHttpConfig::RequestContextType;
 
 class EpaperWebServer {
 public:
+  using OnChangeFn = std::function<void()>;
+
   EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings);
   ~EpaperWebServer();
 
+  void onSettingsChange(OnChangeFn changeFn);
   void begin();
   uint16_t getPort() const;
 
@@ -26,9 +30,10 @@ private:
 
   DisplayTemplateDriver*& driver;
   Settings& settings;
-  PassthroughAuthProvider<Settings> authProvider;
+  PassthroughAuthProvider<WebSettings> authProvider;
   RichHttpServer<RichHttpConfig> server;
   uint16_t port;
+  OnChangeFn changeFn;
 
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);
@@ -53,6 +58,7 @@ private:
   void handleUpdateTemplate(RequestContext& request);
 
   void handleUpdateSettings(RequestContext& request);
+  void handleGetSettings(RequestContext& request);
 
   // Misc helpers
   void handleUpdateFile(ArUploadHandlerFunction* request, const char* filename);

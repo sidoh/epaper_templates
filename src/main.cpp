@@ -4,6 +4,7 @@
 // This breaks builds on case-sensitive filesystems.
 #include <TimeLib.h>
 #include <EnvironmentConfig.h>
+#include <Bleeper.h>
 
 #include <Settings.h>
 
@@ -52,7 +53,7 @@ void initDisplay() {
     delete display;
   }
   display = new GxEPD2_BW<GxEPD2_420, GxEPD2_420::HEIGHT>(
-    GxEPD2_420(SS, settings.dcPin, settings.rstPin, settings.busyPin)
+    GxEPD2_420(SS, settings.hardware.dc_pin, settings.hardware.rst_pin, settings.hardware.busy_pin)
   );
 
   if (driver != NULL) {
@@ -66,11 +67,11 @@ void initDisplay() {
 void applySettings() {
   Serial.println(F("Applying settings"));
 
-  if (hasConnected && settings.wifiSsid.length() > 0 && settings.wifiSsid != WiFi.SSID()) {
+  if (hasConnected && settings.network.wifi_ssid.length() > 0 && settings.network.wifi_ssid != WiFi.SSID()) {
     Serial.println(F("Switching WiFi networks"));
 
     WiFi.disconnect(true);
-    WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
+    WiFi.begin(settings.network.wifi_ssid.c_str(), settings.network.wifi_password.c_str());
   }
 
   if (mqttClient != NULL) {
@@ -78,13 +79,13 @@ void applySettings() {
     mqttClient = NULL;
   }
 
-  if (settings.mqttServer().length() > 0) {
+  if (settings.mqtt.serverHost().length() > 0) {
     mqttClient = new MqttClient(
-      settings.mqttServer(),
-      settings.mqttPort(),
-      settings.mqttVariablesTopicPattern,
-      settings.mqttUsername,
-      settings.mqttPassword
+      settings.mqtt.serverHost(),
+      settings.mqtt.serverPort(),
+      settings.mqtt.variables_topic_pattern,
+      settings.mqtt.username,
+      settings.mqtt.password
     );
     mqttClient->onVariableUpdate([](const String& variable, const String& value) {
       driver->updateVariable(variable, value);
@@ -92,15 +93,16 @@ void applySettings() {
     mqttClient->begin();
   }
 
-  if (settings.templatePath.length() > 0) {
-    driver->setTemplate(settings.templatePath);
+  if (settings.display.template_name.length() > 0) {
+    driver->setTemplate(settings.display.template_name);
   }
 
   if (webServer == NULL) {
     webServer = new EpaperWebServer(driver, settings);
+    webServer->onSettingsChange(applySettings);
     webServer->begin();
   // Get stupid exceptions when trying to tear down old webserver.  Easier to just restart.
-  } else if (settings.webPort != webServer->getPort()) {
+  } else if (settings.web.port != webServer->getPort()) {
     shouldRestart = true;
   }
 }
@@ -122,7 +124,7 @@ void updateWiFiState(WiFiState state) {
     // Force disconnect seems necessary on ESP32:
     // https://github.com/espressif/arduino-esp32/issues/653
     WiFi.disconnect(true);
-    WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
+    WiFi.begin(settings.network.wifi_ssid.c_str(), settings.network.wifi_password.c_str());
     uint8_t result = WiFi.waitForConnectResult();
 
     if (result == WL_CONNECTED) {
@@ -137,7 +139,7 @@ void updateWiFiState(WiFiState state) {
   void onWifiEvent(WiFiEvent_t event) {
     switch (event) {
       case SYSTEM_EVENT_STA_START:
-        WiFi.setHostname(settings.hostname.c_str());
+        WiFi.setHostname(settings.network.hostname.c_str());
         break;
 
       case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -170,9 +172,9 @@ void updateWiFiState(WiFiState state) {
 void wifiManagerConfigSaved() {
   Serial.println(F("Config saved"));
 
-  settings.wifiSsid = WiFi.SSID();
-  settings.wifiPassword = WiFi.psk();
-  settings.save();
+  settings.network.wifi_ssid = WiFi.SSID();
+  settings.network.wifi_password = WiFi.psk();
+  Bleeper.storage.persist();
 
   // Restart for good measure
   ESP.restart();
@@ -189,15 +191,23 @@ void setup() {
     Serial.println(F("Failed to mount SPIFFS!"));
   }
 
-  Settings::load(settings);
-  settings.onUpdate(applySettings);
+  Bleeper
+    .verbose()
+    .configuration
+      .set(&settings)
+      .done()
+    .storage
+      .set(new SPIFFSStorage())
+      .done()
+    .init();
+
   initDisplay();
 
   WiFiManager wifiManager;
 
 #if defined(ESP8266)
   WiFi.setAutoReconnect(true);
-  WiFi.hostname(settings.hostname);
+  WiFi.hostname(settings.network.hostname);
   WiFi.onStationModeGotIP(onWiFiConnected);
   WiFi.onStationModeDisconnected(onWiFiDisconnected);
 #elif defined(ESP32)
@@ -216,10 +226,10 @@ void setup() {
   sprintf(setupSsid, "epaper_%d", ESP_CHIP_ID());
 
   wifiManager.setSaveConfigCallback(wifiManagerConfigSaved);
-  wifiManager.autoConnect(setupSsid, settings.setupApPassword.c_str());
+  wifiManager.autoConnect(setupSsid, settings.network.setup_ap_password.c_str());
 
-  if (settings.mdnsName.length() > 0) {
-    if (! MDNS.begin(settings.mdnsName.c_str())) {
+  if (settings.network.mdns_name.length() > 0) {
+    if (! MDNS.begin(settings.network.mdns_name.c_str())) {
       Serial.println(F("Error setting up MDNS responder"));
     } else {
       MDNS.addService("http", "tcp", 80);

@@ -13,7 +13,7 @@ const SETTINGS = {
     name: "Web Server Port",
     type: 'number'
   },
-  "web.mdns_name": {
+  "network.mdns_name": {
     name: "mDNS Name"
   }
 }

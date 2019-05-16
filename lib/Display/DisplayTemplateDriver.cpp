@@ -7,11 +7,11 @@ DisplayTemplateDriver::DisplayTemplateDriver(
   GxEPD2_GFX* display,
   Settings& settings
 )
-  : display(display),
-    dirty(true),
-    shouldFullUpdate(false),
-    lastFullUpdate(0),
-    settings(settings)
+  : display(display)
+  ,  settings(settings)
+  ,  dirty(true)
+  ,  shouldFullUpdate(false)
+  ,  lastFullUpdate(0)
 {
 #if defined(ESP32)
   mutex = xSemaphoreCreateMutex();
@@ -53,7 +53,7 @@ void DisplayTemplateDriver::loop() {
   if (shouldFullUpdate || dirty) {
     time_t now = millis();
 
-    if (shouldFullUpdate || now > (lastFullUpdate + settings.fullRefreshPeriod)) {
+    if (shouldFullUpdate || now > (lastFullUpdate + settings.display.full_refresh_period)) {
       shouldFullUpdate = false;
       lastFullUpdate = now;
       fullUpdate();
@@ -247,7 +247,7 @@ void DisplayTemplateDriver::renderBitmap(const String &filename, uint16_t x, uin
   File file = SPIFFS.open(filename, "r");
   size_t size = w*h/8;
   uint8_t bits[size];
-  size_t readBytes = file.readBytes(reinterpret_cast<char*>(bits), size);
+  file.readBytes(reinterpret_cast<char*>(bits), size);
 
   file.close();
 

@@ -2,17 +2,17 @@ import React, {Component} from 'react';
 import SettingsGroup from './SettingsGroup';
 
 const SETTINGS = {
-  "display.dc_pin": {
+  "hardware.dc_pin": {
     name: "DC Pin",
     type: 'number'
   },
 
-  "display.rst_pin": {
+  "hardware.rst_pin": {
     name: "RST Pin",
     type: 'number'
   },
 
-  "display.busy_pin": {
+  "hardware.busy_pin": {
     name: "Busy Pin",
     type: 'number'
   }
