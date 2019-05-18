@@ -115,58 +115,31 @@ void updateWiFiState(WiFiState state) {
 }
 
 #if defined(ESP32)
-  TimerHandle_t reconnectTimer;
+void onWifiEvent(WiFiEvent_t event) {
+  switch (event) {
+    case SYSTEM_EVENT_STA_START:
+      WiFi.setHostname(settings.network.hostname.c_str());
+      break;
 
-  void wifiReconnectCallback(TimerHandle_t xTimer) {
-    Serial.print(F("Attempting to reconnect to wifi... ssid = "));
-    Serial.println(WiFi.SSID());
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      updateWiFiState(WiFiState::DISCONNECTED);
+      break;
 
-    // Force disconnect seems necessary on ESP32:
-    // https://github.com/espressif/arduino-esp32/issues/653
-    WiFi.disconnect(true);
-    WiFi.begin(settings.network.wifi_ssid.c_str(), settings.network.wifi_password.c_str());
-    uint8_t result = WiFi.waitForConnectResult();
+    case SYSTEM_EVENT_STA_GOT_IP:
+      updateWiFiState(WiFiState::CONNECTED);
+      break;
 
-    if (result == WL_CONNECTED) {
-      Serial.println(F("Reconnection successful!"));
-    } else {
-      Serial.println(F("Connection attempt failed..."));
-      Serial.println(result);
-      xTimerStart(xTimer, 0);
-    }
+    default:
+      break;
   }
-
-  void onWifiEvent(WiFiEvent_t event) {
-    switch (event) {
-      case SYSTEM_EVENT_STA_START:
-        WiFi.setHostname(settings.network.hostname.c_str());
-        break;
-
-      case SYSTEM_EVENT_STA_DISCONNECTED:
-        updateWiFiState(WiFiState::DISCONNECTED);
-
-        if (hasConnected) {
-          xTimerStart(reconnectTimer, 0);
-        }
-        break;
-
-      case SYSTEM_EVENT_STA_GOT_IP:
-        updateWiFiState(WiFiState::CONNECTED);
-        xTimerStop(reconnectTimer, 0);
-        hasConnected = true;
-        break;
-
-      default:
-        break;
-    }
-  }
+}
 #elif defined(ESP8266)
-  void onWiFiConnected(const WiFiEventStationModeGotIP& event) {
-    updateWiFiState(WiFiState::CONNECTED);
-  }
-  void onWiFiDisconnected(const WiFiEventStationModeDisconnected& event) {
-    updateWiFiState(WiFiState::DISCONNECTED);
-  }
+void onWiFiConnected(const WiFiEventStationModeGotIP& event) {
+  updateWiFiState(WiFiState::CONNECTED);
+}
+void onWiFiDisconnected(const WiFiEventStationModeDisconnected& event) {
+  updateWiFiState(WiFiState::DISCONNECTED);
+}
 #endif
 
 void wifiManagerConfigSaved() {
@@ -211,15 +184,8 @@ void setup() {
   WiFi.onStationModeGotIP(onWiFiConnected);
   WiFi.onStationModeDisconnected(onWiFiDisconnected);
 #elif defined(ESP32)
-  WiFi.setAutoReconnect(false);
+  WiFi.setAutoReconnect(true);
   WiFi.onEvent(onWifiEvent);
-  reconnectTimer = xTimerCreate(
-    "wifiReconnectTimer",
-    pdMS_TO_TICKS(2000),
-    pdFALSE,
-    (void*)0,
-    wifiReconnectCallback
-  );
 #endif
 
   char setupSsid[20];
