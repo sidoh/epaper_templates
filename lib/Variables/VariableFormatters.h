@@ -25,7 +25,7 @@ public:
   TimeVariableFormatter(const String& timeFormat, Timezone& timezone);
 
   virtual String format(const String& value) const;
-  static std::shared_ptr<const TimeVariableFormatter> build(const JsonObject& args);
+  static std::shared_ptr<const TimeVariableFormatter> build(JsonObject args);
 
 protected:
   String timeFormat;
@@ -34,7 +34,7 @@ protected:
 
 class CasesVariableFormatter : public VariableFormatter {
 public:
-  CasesVariableFormatter(const JsonObject& args);
+  CasesVariableFormatter(JsonObject args);
 
   virtual String format(const String& value) const;
 
@@ -55,15 +55,15 @@ private:
 
 class VariableFormatterFactory {
 public:
-  VariableFormatterFactory(const JsonObject& referenceFormatters);
+  VariableFormatterFactory(JsonObject referenceFormatters);
 
-  std::shared_ptr<const VariableFormatter> create(const JsonObject& spec);
+  std::shared_ptr<const VariableFormatter> create(JsonObject spec);
 
 private:
   std::map<String, std::shared_ptr<const VariableFormatter>> internedFormatters;
-  const JsonObject& referenceFormatters;
+  JsonObject referenceFormatters;
 
-  std::shared_ptr<const VariableFormatter> _createInternal(const JsonObject& spec, bool allowReference);
+  std::shared_ptr<const VariableFormatter> _createInternal(JsonObject spec, bool allowReference);
   std::shared_ptr<const VariableFormatter> defaultFormatter;
 };
 

@@ -1,6 +1,11 @@
 #include <Region.h>
 #include <EnvironmentConfig.h>
 
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_GFX.h>
+
+#include <memory>
+
 #ifndef _BITMAP_REGION
 #define _BITMAP_REGION
 
@@ -17,7 +22,7 @@ public:
   );
   ~BitmapRegion();
 
-  virtual void render(GxEPD* display);
+  virtual void render(GxEPD2_GFX* display);
 };
 
 #endif

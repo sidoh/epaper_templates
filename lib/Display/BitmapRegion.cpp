@@ -14,7 +14,7 @@ BitmapRegion::BitmapRegion(
 
 BitmapRegion::~BitmapRegion() { }
 
-void BitmapRegion::render(GxEPD* display) {
+void BitmapRegion::render(GxEPD2_GFX* display) {
   if (! SPIFFS.exists(variableValue)) {
     Serial.print(F("WARN - tried to render bitmap file that doesn't exist: "));
     Serial.println(variableValue);
@@ -22,11 +22,11 @@ void BitmapRegion::render(GxEPD* display) {
     File file = SPIFFS.open(variableValue, "r");
     size_t size = w*h/8;
     uint8_t bits[size];
-    size_t readBytes = file.readBytes(reinterpret_cast<char*>(bits), size);
+    file.readBytes(reinterpret_cast<char*>(bits), size);
 
     file.close();
-    display->drawBitmap(bits, x, y, w, h, color);
-  }
 
-  this->dirty = false;
+    display->fillRect(x, y, w, h, GxEPD_WHITE);
+    display->drawBitmap(x, y, bits, w, h, color);
+  }
 }

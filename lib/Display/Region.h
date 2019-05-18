@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <memory>
 #include <VariableFormatters.h>
-#include <GxEPD.h>
+#include <GxEPD2_GFX.h>
 
 #ifndef _REGIONS_H
 #define _REGIONS_H
@@ -25,9 +25,9 @@ public:
   ~Region();
 
   virtual bool updateValue(const String& value);
-  virtual void render(GxEPD* display) = 0;
+  virtual void render(GxEPD2_GFX* display) = 0;
 
-  virtual Rectangle updateScreen(GxEPD* display);
+  virtual Rectangle updateScreen(GxEPD2_GFX* display);
   virtual bool isDirty() const;
   virtual void clearDirty();
   virtual const String& getVariableName() const;

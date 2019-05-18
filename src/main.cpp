@@ -1,37 +1,47 @@
 #include <Arduino.h>
-#include <EnvironmentConfig.h>
 
-#include <GxEPD.h>
-#include <GxGDEW042T2/GxGDEW042T2.cpp>
-#include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
-#include <GxIO/GxIO.cpp>
+// Make sure TimeLib.h is included first so that Time.h doesn't get included.
+// This breaks builds on case-sensitive filesystems.
+#include <TimeLib.h>
+#include <EnvironmentConfig.h>
+#include <Bleeper.h>
+
+#if defined(ESP32)
+#include <WebServer.h>
+#elif defined(ESP8266)
+#include <ESP8266WebServer.h>
+#define WEBSERVER_H
+#endif
+#include <ESPAsyncWebServer.h>
 
 #include <WiFiManager.h>
-#include <ESPAsyncWebServer.h>
-#include <TimeLib.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Timezone.h>
 
+#include <GxEPD2.h>
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_BW.h>
+#include <GxEPD2_GFX.h>
+#include <DisplayTypeHelpers.h>
+
+#include <Settings.h>
 #include <DisplayTemplateDriver.h>
 #include <EpaperWebServer.h>
 #include <MqttClient.h>
-
-GxIO_Class* io = NULL;
-GxEPD_Class* display = NULL;
 
 enum class WiFiState {
   CONNECTED, DISCONNECTED
 };
 
 Settings settings;
-
+GxEPD2_GFX* display = NULL;
 DisplayTemplateDriver* driver = NULL;
 EpaperWebServer* webServer = NULL;
 MqttClient* mqttClient = NULL;
 
 // Don't attempt to reconnect to wifi if we've never connected
-volatile bool hasConnected = false; 
+volatile bool hasConnected = false;
 volatile bool shouldRestart = false;
 
 WiFiUDP ntpUDP;
@@ -40,22 +50,23 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 uint8_t lastSecond = 60;
 
 void initDisplay() {
-  if (io != NULL) {
-    delete io;
-    io = NULL;
-  }
-  io = new GxIO_Class(SPI, SS, settings.dcPin, settings.rstPin);
-
-  if (display != NULL) {
+  if (display) {
     delete display;
     display = NULL;
   }
-  display = new GxEPD_Class(*io, settings.rstPin, settings.busyPin);
+
+  display = DisplayTypeHelpers::buildDisplay(
+    settings.display.display_type,
+    settings.hardware.dc_pin,
+    settings.hardware.rst_pin,
+    settings.hardware.busy_pin
+  );
 
   if (driver != NULL) {
     delete driver;
     driver = NULL;
   }
+
   driver = new DisplayTemplateDriver(display, settings);
   driver->init();
 }
@@ -63,11 +74,11 @@ void initDisplay() {
 void applySettings() {
   Serial.println(F("Applying settings"));
 
-  if (hasConnected && settings.wifiSsid.length() > 0 && settings.wifiSsid != WiFi.SSID()) {
+  if (hasConnected && settings.network.wifi_ssid.length() > 0 && settings.network.wifi_ssid != WiFi.SSID()) {
     Serial.println(F("Switching WiFi networks"));
 
     WiFi.disconnect(true);
-    WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
+    WiFi.begin(settings.network.wifi_ssid.c_str(), settings.network.wifi_password.c_str());
   }
 
   if (mqttClient != NULL) {
@@ -75,13 +86,13 @@ void applySettings() {
     mqttClient = NULL;
   }
 
-  if (settings.mqttServer().length() > 0) {
+  if (settings.mqtt.serverHost().length() > 0) {
     mqttClient = new MqttClient(
-      settings.mqttServer(),
-      settings.mqttPort(),
-      settings.mqttVariablesTopicPattern,
-      settings.mqttUsername,
-      settings.mqttPassword
+      settings.mqtt.serverHost(),
+      settings.mqtt.serverPort(),
+      settings.mqtt.variables_topic_pattern,
+      settings.mqtt.username,
+      settings.mqtt.password
     );
     mqttClient->onVariableUpdate([](const String& variable, const String& value) {
       driver->updateVariable(variable, value);
@@ -89,15 +100,16 @@ void applySettings() {
     mqttClient->begin();
   }
 
-  if (settings.templatePath.length() > 0) {
-    driver->setTemplate(settings.templatePath);
+  if (settings.display.template_name.length() > 0) {
+    driver->setTemplate(settings.display.template_name);
   }
 
   if (webServer == NULL) {
     webServer = new EpaperWebServer(driver, settings);
+    webServer->onSettingsChange(applySettings);
     webServer->begin();
   // Get stupid exceptions when trying to tear down old webserver.  Easier to just restart.
-  } else if (settings.webPort != webServer->getPort()) {
+  } else if (settings.web.port != webServer->getPort()) {
     shouldRestart = true;
   }
 }
@@ -110,63 +122,39 @@ void updateWiFiState(WiFiState state) {
 }
 
 #if defined(ESP32)
-  TimerHandle_t reconnectTimer;
+void onWifiEvent(WiFiEvent_t event) {
+  switch (event) {
+    case SYSTEM_EVENT_STA_START:
+      WiFi.setHostname(settings.network.hostname.c_str());
+      break;
 
-  void wifiReconnectCallback(TimerHandle_t xTimer) {
-    Serial.print(F("Attempting to reconnect to wifi... ssid = "));
-    Serial.println(WiFi.SSID());
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      updateWiFiState(WiFiState::DISCONNECTED);
+      break;
 
-    // Force disconnect seems necessary on ESP32:
-    // https://github.com/espressif/arduino-esp32/issues/653
-    WiFi.disconnect(true);
-    WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
-    uint8_t result = WiFi.waitForConnectResult();
+    case SYSTEM_EVENT_STA_GOT_IP:
+      updateWiFiState(WiFiState::CONNECTED);
+      break;
 
-    if (result == WL_CONNECTED) {
-      Serial.println(F("Reconnection successful!"));
-    } else {
-      Serial.println(F("Connection attempt failed..."));
-      Serial.println(result);
-      xTimerStart(xTimer, 0);
-    }
+    default:
+      break;
   }
-
-  void onWifiEvent(WiFiEvent_t event) {
-    switch (event) {
-      case SYSTEM_EVENT_STA_START:
-        WiFi.setHostname(settings.hostname.c_str());
-        break;
-
-      case SYSTEM_EVENT_STA_DISCONNECTED:
-        updateWiFiState(WiFiState::DISCONNECTED);
-
-        if (hasConnected) {
-          xTimerStart(reconnectTimer, 0);
-        }
-        break;
-
-      case SYSTEM_EVENT_STA_GOT_IP:
-        updateWiFiState(WiFiState::CONNECTED);
-        xTimerStop(reconnectTimer, 0);
-        hasConnected = true;
-        break;
-    }
-  }
+}
 #elif defined(ESP8266)
-  void onWiFiConnected(const WiFiEventStationModeGotIP& event) {
-    updateWiFiState(WiFiState::CONNECTED);
-  }
-  void onWiFiDisconnected(const WiFiEventStationModeDisconnected& event) {
-    updateWiFiState(WiFiState::DISCONNECTED);
-  }
+void onWiFiConnected(const WiFiEventStationModeGotIP& event) {
+  updateWiFiState(WiFiState::CONNECTED);
+}
+void onWiFiDisconnected(const WiFiEventStationModeDisconnected& event) {
+  updateWiFiState(WiFiState::DISCONNECTED);
+}
 #endif
 
 void wifiManagerConfigSaved() {
   Serial.println(F("Config saved"));
 
-  settings.wifiSsid = WiFi.SSID();
-  settings.wifiPassword = WiFi.psk();
-  settings.save();
+  settings.network.wifi_ssid = WiFi.SSID();
+  settings.network.wifi_password = WiFi.psk();
+  Bleeper.storage.persist();
 
   // Restart for good measure
   ESP.restart();
@@ -183,37 +171,38 @@ void setup() {
     Serial.println(F("Failed to mount SPIFFS!"));
   }
 
-  Settings::load(settings);
-  settings.onUpdate(applySettings);
+  Bleeper
+    .verbose()
+    .configuration
+      .set(&settings)
+      .done()
+    .storage
+      .set(new SPIFFSStorage())
+      .done()
+    .init();
+
   initDisplay();
 
   WiFiManager wifiManager;
 
 #if defined(ESP8266)
   WiFi.setAutoReconnect(true);
-  WiFi.hostname(settings.hostname);
+  WiFi.hostname(settings.network.hostname);
   WiFi.onStationModeGotIP(onWiFiConnected);
   WiFi.onStationModeDisconnected(onWiFiDisconnected);
 #elif defined(ESP32)
-  WiFi.setAutoReconnect(false);
+  WiFi.setAutoReconnect(true);
   WiFi.onEvent(onWifiEvent);
-  reconnectTimer = xTimerCreate(
-    "wifiReconnectTimer",
-    pdMS_TO_TICKS(2000),
-    pdFALSE,
-    (void*)0,
-    wifiReconnectCallback
-  );
 #endif
 
   char setupSsid[20];
   sprintf(setupSsid, "epaper_%d", ESP_CHIP_ID());
 
   wifiManager.setSaveConfigCallback(wifiManagerConfigSaved);
-  wifiManager.autoConnect(setupSsid, settings.setupApPassword.c_str());
+  wifiManager.autoConnect(setupSsid, settings.network.setup_ap_password.c_str());
 
-  if (settings.mdnsName.length() > 0) {
-    if (! MDNS.begin(settings.mdnsName.c_str())) {
+  if (settings.network.mdns_name.length() > 0) {
+    if (! MDNS.begin(settings.network.mdns_name.c_str())) {
       Serial.println(F("Error setting up MDNS responder"));
     } else {
       MDNS.addService("http", "tcp", 80);

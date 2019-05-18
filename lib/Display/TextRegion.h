@@ -1,5 +1,10 @@
 #include <Region.h>
+
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_GFX.h>
 #include <Adafruit_GFX.h>
+
+#include <memory>
 
 #ifndef _TEXT_REGION_H
 #define _TEXT_REGION_H
@@ -20,7 +25,7 @@ public:
   );
   ~TextRegion();
 
-  virtual void render(GxEPD* display);
+  virtual void render(GxEPD2_GFX* display);
   virtual Rectangle getBoundingBox();
 
 protected:

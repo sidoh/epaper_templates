@@ -15,9 +15,9 @@ module.exports = {
   },
   module: {
     rules: [
-      { 
-        test: /\.jsx?$/, 
-        loader: 'babel-loader', 
+      {
+        test: /\.jsx?$/,
+        loader: 'babel-loader',
         exclude: /node_modules/,
         query: {
           presets: ["es2016", "react"]
@@ -34,11 +34,11 @@ module.exports = {
       },
       {
         test: /\.less$/,
-        loader: [ 'file-loader', 'css-loader', 'less-loader' ]
+        loader: [ 'style-loader', 'css-loader', 'less-loader' ]
       },
       {
         test: /\.scss$/,
-        use: [ 'file-loader', 'css-loader', 'sass-loader' ]
+        use: [ 'style-loader', 'css-loader', 'sass-loader' ]
       }
     ]
   },
@@ -50,7 +50,7 @@ module.exports = {
     historyApiFallback: {
       rewrites: [
         { from: /^\/templates$/, to: '/templates.json' },
-        { 
+        {
           from: /^\/templates\/(.*)$/,
           to: context => (`/t/${context.match[1]}`)
         }
@@ -70,9 +70,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'E-Paper Display',
       template: 'src/index.html',
-      inlineSource: '.(js)$' // embed all javascript
+      inlineSource: '.(js|css)$' // embed all javascript
     }),
-    // new HtmlWebpackInlineSourcePlugin(),
+    new HtmlWebpackInlineSourcePlugin(),
     new CompressionPlugin({
       include: /\.html$/
     }),
