@@ -33,6 +33,8 @@ bool Region::updateValue(const String &value) {
     return false;
   }
 
+  Serial.printf_P(PSTR("Formatted value: %s\n"), newValue.c_str());
+
   this->variableValue = newValue;
   this->dirty = true;
 
