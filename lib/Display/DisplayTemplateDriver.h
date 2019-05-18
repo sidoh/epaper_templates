@@ -36,6 +36,8 @@ extern "C" {
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
 
+#include <memory>
+
 class DisplayTemplateDriver {
 public:
   DisplayTemplateDriver(

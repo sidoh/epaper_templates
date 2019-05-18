@@ -4,6 +4,8 @@
 #include <GxEPD2_GFX.h>
 #include <Adafruit_GFX.h>
 
+#include <memory>
+
 #ifndef _TEXT_REGION_H
 #define _TEXT_REGION_H
 

@@ -8,10 +8,10 @@ DisplayTemplateDriver::DisplayTemplateDriver(
   Settings& settings
 )
   : display(display)
-  ,  settings(settings)
-  ,  dirty(true)
-  ,  shouldFullUpdate(false)
-  ,  lastFullUpdate(0)
+  , settings(settings)
+  , dirty(true)
+  , shouldFullUpdate(false)
+  , lastFullUpdate(0)
 {
 #if defined(ESP32)
   mutex = xSemaphoreCreateMutex();

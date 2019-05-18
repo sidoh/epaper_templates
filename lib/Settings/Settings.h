@@ -4,7 +4,9 @@
 #include <Timezone.h>
 #include <Timezones.h>
 #include <Bleeper.h>
-
+#include <GxEPD2.h>
+#include <GxEPD2_GFX.h>
+#include <DisplayTypeHelpers.h>
 #include <AuthProviders.h>
 
 #ifndef _SETTINGS_H
@@ -102,6 +104,17 @@ public:
       char buf[n+1];
       snprintf(buf, n+1, "%llu", full_refresh_period);
       full_refresh_periodString = String(buf);
+    }
+  );
+  persistentVar(
+    GxEPD2::Panel,
+    display_type,
+    DisplayTypeHelpers::DEFAULT_PANEL,
+    {
+      display_type = DisplayTypeHelpers::stringToDisplayType(display_typeString);
+    },
+    {
+      display_typeString = DisplayTypeHelpers::displayTypeToString(display_type);
     }
   );
 };

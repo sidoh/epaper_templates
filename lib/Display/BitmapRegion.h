@@ -4,6 +4,8 @@
 #include <GxEPD2_EPD.h>
 #include <GxEPD2_GFX.h>
 
+#include <memory>
+
 #ifndef _BITMAP_REGION
 #define _BITMAP_REGION
 

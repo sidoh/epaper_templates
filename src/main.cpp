@@ -6,8 +6,6 @@
 #include <EnvironmentConfig.h>
 #include <Bleeper.h>
 
-#include <Settings.h>
-
 #if defined(ESP32)
 #include <WebServer.h>
 #elif defined(ESP8266)
@@ -21,13 +19,16 @@
 #include <WiFiUdp.h>
 #include <Timezone.h>
 
-#include <DisplayTemplateDriver.h>
-#include <EpaperWebServer.h>
-#include <MqttClient.h>
-
+#include <GxEPD2.h>
 #include <GxEPD2_EPD.h>
 #include <GxEPD2_BW.h>
 #include <GxEPD2_GFX.h>
+#include <DisplayTypeHelpers.h>
+
+#include <Settings.h>
+#include <DisplayTemplateDriver.h>
+#include <EpaperWebServer.h>
+#include <MqttClient.h>
 
 enum class WiFiState {
   CONNECTED, DISCONNECTED
@@ -49,17 +50,23 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 uint8_t lastSecond = 60;
 
 void initDisplay() {
-  if (display != NULL) {
+  if (display) {
     delete display;
+    display = NULL;
   }
-  display = new GxEPD2_BW<GxEPD2_420, GxEPD2_420::HEIGHT>(
-    GxEPD2_420(SS, settings.hardware.dc_pin, settings.hardware.rst_pin, settings.hardware.busy_pin)
+
+  display = DisplayTypeHelpers::buildDisplay(
+    settings.display.display_type,
+    settings.hardware.dc_pin,
+    settings.hardware.rst_pin,
+    settings.hardware.busy_pin
   );
 
   if (driver != NULL) {
     delete driver;
     driver = NULL;
   }
+
   driver = new DisplayTemplateDriver(display, settings);
   driver->init();
 }
