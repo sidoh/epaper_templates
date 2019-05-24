@@ -219,6 +219,10 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 
   display->fillScreen(parseColor(tmpl["background_color"]));
 
+  if (tmpl.containsKey("rotation")) {
+    display->setRotation(tmpl["rotation"]);
+  }
+
   JsonObject formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
