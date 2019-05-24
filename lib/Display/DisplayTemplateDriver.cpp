@@ -117,7 +117,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
         Rectangle bb = region->getBoundingBox();
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-          display->display(bb.x, bb.y, bb.w, bb.h);
+          display->displayWindow(bb.x, bb.y, bb.w, bb.h);
           // display->display(true);
           flushedRegions.add(bb);
         }
