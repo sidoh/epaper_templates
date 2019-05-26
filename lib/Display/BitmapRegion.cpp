@@ -9,7 +9,7 @@ BitmapRegion::BitmapRegion(
   uint16_t h,
   uint16_t color,
   std::shared_ptr<const VariableFormatter> formatter
-) : Region(variable, x, y, w, h, color, formatter)
+) : Region(variable, {x, y, w, h}, color, formatter)
 { }
 
 BitmapRegion::~BitmapRegion() { }
@@ -20,13 +20,13 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
     Serial.println(variableValue);
   } else {
     File file = SPIFFS.open(variableValue, "r");
-    size_t size = w*h/8;
+    size_t size = (boundingBox.w * boundingBox.h) / 8;
     uint8_t bits[size];
     file.readBytes(reinterpret_cast<char*>(bits), size);
 
     file.close();
 
-    display->fillRect(x, y, w, h, GxEPD_WHITE);
-    display->drawBitmap(x, y, bits, w, h, color);
+    display->fillRect(boundingBox.x, boundingBox.y, boundingBox.w, boundingBox.h, GxEPD_WHITE);
+    display->drawBitmap(boundingBox.x, boundingBox.y, bits, boundingBox.w, boundingBox.h, color);
   }
 }

@@ -114,10 +114,15 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
       if (region->isDirty()) {
         region->clearDirty();
 
-        Rectangle bb = region->getBoundingBox();
+        Rectangle bb = region->getBoundingBox().rounded();
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-          display->displayWindow(bb.x, bb.y, bb.w, bb.h);
+          display->displayWindow(
+            bb.x,
+            bb.y,
+            bb.w,
+            bb.h
+          );
           // display->display(true);
           flushedRegions.add(bb);
         }
@@ -333,7 +338,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatter
 }
 
 std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonObject spec) {
-  int16_t bbx = -1, bby = -1, bbw = -1, bbh = -1;
+  std::shared_ptr<Rectangle> fixedBound = nullptr;
 
   if (spec.containsKey("update_rect")) {
     JsonObject updateParams =
@@ -341,10 +346,12 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFa
         ? updateRects[spec["update_rect"].as<const char*>()]
         : spec["update_rect"];
 
-    bbx = JSON_VAL_OR_DEFAULT(updateParams, "x", -1);
-    bby = JSON_VAL_OR_DEFAULT(updateParams, "y", -1);
-    bbw = JSON_VAL_OR_DEFAULT(updateParams, "w", -1);
-    bbh = JSON_VAL_OR_DEFAULT(updateParams, "h", -1);
+    fixedBound = std::shared_ptr<Rectangle>(new Rectangle({
+      updateParams["x"],
+      updateParams["y"],
+      updateParams["w"],
+      updateParams["h"]
+    }));
   }
 
   std::shared_ptr<Region> region(
@@ -352,10 +359,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFa
       spec["variable"].as<const char*>(),
       spec["x"].as<uint16_t>(),
       spec["y"].as<uint16_t>(),
-      bbx,
-      bby,
-      bbw,
-      bbh,
+      fixedBound,
       extractColor(spec),
       parseFont(spec["font"].as<const char*>()),
       formatterFactory.create(spec)

@@ -6,17 +6,20 @@ TextRegion::TextRegion(
   const String& variable,
   uint16_t x,
   uint16_t y,
-  int16_t fixedBbX,
-  int16_t fixedBbY,
-  int16_t fixedBbW,
-  int16_t fixedBbH,
+  std::shared_ptr<Rectangle> fixedBound,
   uint16_t color,
   const GFXfont* font,
   std::shared_ptr<const VariableFormatter> formatter
-) : Region(variable, x, y, 0, 0, color, formatter), font(font),
-    bbX(x), bbY(y),
-    fixedBbX(fixedBbX), fixedBbY(fixedBbY), fixedBbW(fixedBbW), fixedBbH(fixedBbH),
-    prevX(x), prevY(y), prevW(w), prevH(h)
+) : Region(
+      variable,
+      {x, y, 0, 0},
+      color,
+      formatter
+    )
+  , font(font)
+  , fixedBound(fixedBound)
+  , currentBound({x, y, 0, 0})
+  , previousBound({x, y, 0, 0})
 { }
 
 TextRegion::~TextRegion() { }
@@ -24,11 +27,17 @@ TextRegion::~TextRegion() { }
 void TextRegion::render(GxEPD2_GFX* display) {
   // Clear the previous text
   // TODO: expose setting for background color
-  display->fillRect(this->bbX, this->bbY, this->w, this->h, GxEPD_WHITE);
+  display->fillRect(
+    this->currentBound.x,
+    this->currentBound.y,
+    this->currentBound.w,
+    this->currentBound.h,
+    GxEPD_WHITE
+  );
 
   display->setTextColor(color);
   display->setFont(font);
-  display->setCursor(x, y);
+  display->setCursor(this->boundingBox.x, this->boundingBox.y);
   display->print(variableValue);
 
   // Find and persist bounding box.  Need to persist in case it shrinks next
@@ -38,24 +47,21 @@ void TextRegion::render(GxEPD2_GFX* display) {
   char valueCpy[variableValue.length() + 1];
   strcpy(valueCpy, variableValue.c_str());
 
-  display->getTextBounds(valueCpy, x, y, &x1, &y1, &w, &h);
+  display->getTextBounds(valueCpy, this->boundingBox.x, this->boundingBox.y, &x1, &y1, &w, &h);
 
-  this->prevX = this->bbX;
-  this->prevY = this->bbY;
-  this->prevW = this->w;
-  this->prevH = this->h;
-
-  this->bbX = x1;
-  this->bbY = y1;
-  this->w = w;
-  this->h = h;
+  this->previousBound = this->currentBound;
+  this->currentBound = {x1, y1, w, h};
 }
 
 Rectangle TextRegion::getBoundingBox() {
-  return {
-    .x = BB_COORD(fixedBbX, _min(this->bbX, this->prevX)),
-    .y = BB_COORD(fixedBbY, _min(this->bbY, this->prevY)),
-    .w = BB_COORD(fixedBbW, _max(this->w, this->prevW)),
-    .h = BB_COORD(fixedBbH, _max(this->h, this->prevH))
-  };
+  if (fixedBound != nullptr) {
+    return *fixedBound;
+  } else {
+    return {
+      .x = std::min(this->currentBound.x, this->previousBound.x),
+      .y = std::min(this->currentBound.y, this->previousBound.y),
+      .w = std::max(this->currentBound.w, this->previousBound.w),
+      .h = std::max(this->currentBound.h, this->previousBound.h)
+    };
+  }
 }

@@ -15,10 +15,7 @@ public:
     const String& variable,
     uint16_t x,
     uint16_t y,
-    int16_t fixedBbX,
-    int16_t fixedBbY,
-    int16_t fixedBbW,
-    int16_t fixedBbH,
+    std::shared_ptr<Rectangle> fixedBoundingBox,
     uint16_t color,
     const GFXfont* font,
     std::shared_ptr<const VariableFormatter> formatter
@@ -33,21 +30,13 @@ protected:
 
   // Track current bounding box start coordinates separately from (x, y), which
   // is the position we set the cursor at.
-  uint16_t bbX;
-  uint16_t bbY;
+  Rectangle currentBound;
 
-  // Users can optionally manually specify a bounding rectangle.  If the values are
-  // negative, use computed values.
-  int16_t fixedBbX;
-  int16_t fixedBbY;
-  int16_t fixedBbW;
-  int16_t fixedBbH;
+  // Users can optionally manually specify a bounding rectangle.
+  std::shared_ptr<Rectangle> fixedBound;
 
   // Previous bounding box coordinates
-  uint16_t prevX;
-  uint16_t prevY;
-  uint16_t prevW;
-  uint16_t prevH;
+  Rectangle previousBound;
 };
 
 #endif

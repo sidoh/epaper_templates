@@ -2,13 +2,13 @@
 
 Region::Region(
   const String& variable,
-  uint16_t x,
-  uint16_t y,
-  uint16_t w,
-  uint16_t h,
+  Rectangle boundingBox,
   uint16_t color,
   std::shared_ptr<const VariableFormatter> formatter
-) : variable(variable), x(x), y(y), w(w), h(h), color(color), formatter(formatter)
+) : variable(variable)
+  , boundingBox(boundingBox)
+  , color(color)
+  , formatter(formatter)
 { }
 
 Region::~Region() { }
@@ -48,10 +48,5 @@ Rectangle Region::updateScreen(GxEPD2_GFX* display) {
 }
 
 Rectangle Region::getBoundingBox() {
-  return {
-    .x = this->x,
-    .y = this->y,
-    .w = this->w,
-    .h = this->h
-  };
+  return boundingBox;
 }
