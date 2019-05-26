@@ -123,7 +123,6 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
             bb.w,
             bb.h
           );
-          // display->display(true);
           flushedRegions.add(bb);
         }
       }
