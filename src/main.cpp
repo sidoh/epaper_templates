@@ -163,14 +163,6 @@ void wifiManagerConfigSaved() {
 void setup() {
   Serial.begin(115200);
 
-#if defined(ESP8266)
-  if (! SPIFFS.begin()) {
-#elif defined(ESP32)
-  if (! SPIFFS.begin(true)) {
-#endif
-    Serial.println(F("Failed to mount SPIFFS!"));
-  }
-
   Bleeper
     .verbose()
     .configuration
