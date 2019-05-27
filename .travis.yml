@@ -6,7 +6,7 @@ cache:
   directories:
     - "~/.platformio"
 install:
-  - pip install -U https://github.com/platformio/platformio-core/archive/develop.zip
+  - pip install -U platformio
   - platformio lib install
 script:
   - platformio run
