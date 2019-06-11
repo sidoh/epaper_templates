@@ -21,7 +21,7 @@ mkdir -p dist
 
 if [ -e "./pio/build" ]; then
   firmware_prefix="./pio/build/"
-elif
+else
   firmware_pefix="./pioenvs/"
 fi
 
