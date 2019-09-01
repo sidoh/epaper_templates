@@ -1,8 +1,4 @@
 import React, {Component} from 'react';
-import {TextSetting} from './TextSetting';
-import {updateSetting, saveSettings} from '../actions';
-import {Button} from 'react-bootstrap';
-import { connect } from 'react-redux'
 import SettingsGroup from './SettingsGroup';
 
 const SETTINGS = {
@@ -17,7 +13,7 @@ const SETTINGS = {
     name: "Web Server Port",
     type: 'number'
   },
-  "web.mdns_name": {
+  "network.mdns_name": {
     name: "mDNS Name"
   }
 }

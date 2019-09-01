@@ -2,17 +2,17 @@ import React, {Component} from 'react';
 import SettingsGroup from './SettingsGroup';
 
 const SETTINGS = {
-  "wifi.setup_ap_password": {
+  "network.setup_ap_password": {
     name: "Setup WiFi Network Password",
     type: 'password'
   },
-  "wifi.hostname": {
+  "network.hostname": {
     name: "Hostname"
   },
-  "wifi.ssid": {
+  "network.wifi_ssid": {
     name: "WiFi Network"
   },
-  "wifi.password": {
+  "network.wifi_password": {
     name: "WiFi Password",
     type: 'password'
   }

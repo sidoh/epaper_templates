@@ -14,11 +14,15 @@ static const char APPLICATION_JSON[] = "application/json";
 
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 
+using namespace std::placeholders;
+
 EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
   : driver(driver),
     settings(settings),
-    port(settings.webPort),
-    server(AsyncWebServer(settings.webPort))
+    authProvider(settings.web),
+    server(RichHttpServer<RichHttpConfig>(settings.web.port, authProvider)),
+    port(settings.web.port),
+    changeFn(nullptr)
 { }
 
 EpaperWebServer::~EpaperWebServer() {
@@ -30,154 +34,138 @@ uint16_t EpaperWebServer::getPort() const {
 }
 
 void EpaperWebServer::begin() {
-  on("/variables", HTTP_PUT, handleUpdateVariables());
-  on("/variables", HTTP_GET, handleServeFile(VariableDictionary::FILENAME, APPLICATION_JSON));
+  server
+    .buildHandler("/")
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeGzip_P, this, TEXT_HTML, index_html_gz, index_html_gz_len, _1));
 
-  onUpload("/templates", HTTP_POST, handleCreateFile(TEMPLATES_DIRECTORY));
-  onPattern("/templates/:filename", HTTP_DELETE, handleDeleteTemplate());
-  onPattern("/templates/:filename", HTTP_GET, handleShowTemplate());
-  onPattern("/templates/:filename", HTTP_PUT, handleUpdateTemplate());
-  on("/templates", HTTP_GET, handleListDirectory(TEMPLATES_DIRECTORY));
+  server
+    .buildHandler("/variables")
+    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeFile, this, VariableDictionary::FILENAME, APPLICATION_JSON, "", _1));
 
-  onUpload("/bitmaps", HTTP_POST, handleCreateFile(BITMAPS_DIRECTORY));
-  onPattern("/bitmaps/:filename", HTTP_DELETE, handleDeleteBitmap());
-  onPattern("/bitmaps/:filename", HTTP_GET, handleShowBitmap());
-  on("/bitmaps", HTTP_GET, handleListDirectory(BITMAPS_DIRECTORY));
+  server
+    .buildHandler("/templates")
+    .on(
+      HTTP_POST,
+      std::bind(&EpaperWebServer::handleNoOp, this),
+      std::bind(&EpaperWebServer::handleCreateFile, this, TEMPLATES_DIRECTORY, _1)
+    )
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleListDirectory, this, TEMPLATES_DIRECTORY, _1));
 
-  on("/settings", HTTP_GET, handleListSettings());
-  on("/settings", HTTP_PUT, handleUpdateSettings());
+  server
+    .buildHandler("/templates/:filename")
+    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteTemplate, this, _1))
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowTemplate, this, _1))
+    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateTemplate, this, _1));
 
-  on("/about", HTTP_GET, handleAbout());
-  onUpload("/firmware", HTTP_POST, handleOtaSuccess(), handleOtaUpdate());
+  server
+    .buildHandler("/bitmaps")
+    .on(
+      HTTP_POST,
+      std::bind(&EpaperWebServer::handleNoOp, this),
+      std::bind(&EpaperWebServer::handleCreateFile, this, BITMAPS_DIRECTORY, _1)
+    )
+    .on(
+      HTTP_GET,
+      std::bind(&EpaperWebServer::handleListDirectory, this, BITMAPS_DIRECTORY, _1)
+    );
+  server
+    .buildHandler("/bitmaps/:filename")
+    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteBitmap, this, _1))
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowBitmap, this, _1));
 
-  on("/", HTTP_GET, handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len));
+  server
+    .buildHandler("/settings")
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSettings, this, _1))
+    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateSettings, this, _1));
 
+  server
+    .buildHandler("/about")
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleAbout, this, _1));
+
+  server
+    .buildHandler("/firmware")
+    .handleOTA();
+
+  server.onNotFound([this](AsyncWebServerRequest *request) {
+    if (request->url().startsWith("/app/")) {
+      _handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len, request);
+    } else {
+      request->send(404);
+    }
+  });
+
+  server.clearBuilders();
   server.begin();
 }
 
-ArRequestHandlerFunction EpaperWebServer::handleOtaSuccess() {
-  return [this](AsyncWebServerRequest* request) {
-    request->send_P(200, TEXT_PLAIN, PSTR("Update successful.  Device will now reboot.\n\n"));
+void EpaperWebServer::handleNoOp() { }
 
-    delay(1000);
+void EpaperWebServer::handleAbout(RequestContext& request) {
+  // Measure before allocating buffers
+  uint32_t freeHeap = ESP.getFreeHeap();
 
-    ESP.restart();
-  };
+  request.response.json["version"] = QUOTE(EPAPER_TEMPLATES_VERSION);
+  request.response.json["variant"] = QUOTE(FIRMWARE_VARIANT);
+  request.response.json["free_heap"] = freeHeap;
+  request.response.json["sdk_version"] = ESP.getSdkVersion();
 }
 
-ArUploadHandlerFunction EpaperWebServer::handleOtaUpdate() {
-  return [this](
-    AsyncWebServerRequest *request,
-    const String& filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  ) {
-    if (index == 0) {
-      if (request->contentLength() > 0) {
-        Update.begin(request->contentLength());
-      } else {
-        Serial.println(F("OTA Update: ERROR - Content-Length header required, but not present."));
-      }
-    }
+void EpaperWebServer::handleUpdateVariables(RequestContext& request) {
+  JsonObject vars = request.getJsonBody().as<JsonObject>();
 
-    if (Update.size() > 0) {
-      if (Update.write(data, len) != len) {
-        Update.printError(Serial);
+  if (vars.isNull()) {
+    request.response.setCode(400);
+    request.response.json["error"] = F("Invalid JSON");
+    return;
+  }
 
-#if defined(ESP32)
-        Update.abort();
-#endif
-      }
+  for (JsonObject::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
+    driver->updateVariable(itr->key().c_str(), itr->value().as<String>());
+  }
 
-      if (isFinal) {
-        if (!Update.end(true)) {
-          Update.printError(Serial);
-#if defined(ESP32)
-          Update.abort();
-#endif
-        }
-      }
-    }
-  };
+  request.response.json["success"] = true;
 }
 
-ArRequestHandlerFunction EpaperWebServer::handleAbout() {
-  return [this](AsyncWebServerRequest* request) {
-    // Measure before allocating buffers
-    uint32_t freeHeap = ESP.getFreeHeap();
-
-    StaticJsonBuffer<150> buffer;
-    JsonObject& res = buffer.createObject();
-
-    res["version"] = QUOTE(EPAPER_TEMPLATES_VERSION);
-    res["variant"] = QUOTE(FIRMWARE_VARIANT);
-    res["free_heap"] = freeHeap;
-    res["sdk_version"] = ESP.getSdkVersion();
-
-    String body;
-    res.printTo(body);
-
-    request->send(200, APPLICATION_JSON, body);
-  };
-}
-
-ArRequestHandlerFunction EpaperWebServer::sendSuccess() {
-  return [this](AsyncWebServerRequest* request) {
-    request->send(200, APPLICATION_JSON, "true");
-  };
-}
-
-ArBodyHandlerFunction EpaperWebServer::handleUpdateVariables() {
-  return [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
-    DynamicJsonBuffer buffer;
-    JsonObject& vars = buffer.parseObject(data);
-
-    if (! vars.success()) {
-      request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
-      return;
-    }
-
-    for (JsonObject::iterator itr = vars.begin(); itr != vars.end(); ++itr) {
-      driver->updateVariable(itr->key, itr->value);
-    }
-
-    request->send_P(200, APPLICATION_JSON, PSTR("true"));
-  };
-}
-
-ArRequestHandlerFunction EpaperWebServer::handleServeGzip_P(
+void EpaperWebServer::handleServeGzip_P(
   const char* contentType,
   const uint8_t* text,
-  size_t length) {
-
-  return [this, contentType, text, length](AsyncWebServerRequest* request) {
-    AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, text, length);
-    response->addHeader("Content-Encoding", "gzip");
-    request->send(response);
-  };
+  size_t length,
+  RequestContext& request
+) {
+  _handleServeGzip_P(contentType, text, length, request.rawRequest);
 }
 
-ArRequestHandlerFunction EpaperWebServer::handleServeFile(
+void EpaperWebServer::_handleServeGzip_P(
+  const char* contentType,
+  const uint8_t* text,
+  size_t length,
+  AsyncWebServerRequest* request
+) {
+  AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, text, length);
+  response->addHeader("Content-Encoding", "gzip");
+  request->send(response);
+}
+
+void EpaperWebServer::handleServeFile(
   const char* filename,
   const char* contentType,
-  const char* defaultText) {
-
-  return [this, filename, contentType, defaultText](AsyncWebServerRequest* request) {
-    if (!serveFile(request, filename, contentType)) {
-      if (defaultText) {
-        request->send(200, contentType, defaultText);
-      } else {
-        request->send(404);
-      }
+  const char* defaultText,
+  RequestContext& request
+) {
+  if (! serveFile(filename, contentType, request)) {
+    if (defaultText) {
+      request.response.sendRaw(200, contentType, defaultText);
+    } else {
+      request.response.setCode(404);
+      request.response.json["error"] = F("Not found");
     }
-  };
+  }
 }
 
-bool EpaperWebServer::serveFile(AsyncWebServerRequest* request, const char* file, const char* contentType) {
+bool EpaperWebServer::serveFile(const char* file, const char* contentType, RequestContext& request) {
   if (SPIFFS.exists(file)) {
-    request->send(SPIFFS, file, contentType);
+    request.rawRequest->send(SPIFFS, file, contentType);
     return true;
   }
 
@@ -188,433 +176,183 @@ bool EpaperWebServer::serveFile(AsyncWebServerRequest* request, const char* file
 // CRUD handlers for bitmaps
 // ---------
 
-PatternHandler::TPatternHandlerFn EpaperWebServer::handleShowBitmap() {
-  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
-    if (bindings->hasBinding("filename")) {
-      const char* filename = bindings->get("filename");
-      String path = String(BITMAPS_DIRECTORY) + "/" + filename;
-
-      request->send(SPIFFS, path, "application/octet-stream");
-    } else {
-      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
-    }
-  };
+void EpaperWebServer::handleShowBitmap(RequestContext& request) {
+  const char* filename = request.pathVariables.get("filename");
+  String path = String(BITMAPS_DIRECTORY) + "/" + filename;
+  request.rawRequest->send(SPIFFS, path, "application/octet-stream");
 }
 
-PatternHandler::TPatternHandlerFn EpaperWebServer::handleDeleteBitmap() {
-  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
-    if (bindings->hasBinding("filename")) {
-      const char* filename = bindings->get("filename");
-      String path = String(BITMAPS_DIRECTORY) + "/" + filename;
-
-      if (SPIFFS.exists(path)) {
-        if (SPIFFS.remove(path)) {
-          request->send_P(200, TEXT_PLAIN, PSTR("success"));
-        } else {
-          request->send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
-        }
-      } else {
-        request->send(404, TEXT_PLAIN);
-      }
-    } else {
-      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
-    }
-  };
+void EpaperWebServer::handleDeleteBitmap(RequestContext& request) {
+  const char* filename = request.pathVariables.get("filename");
+  String path = String(BITMAPS_DIRECTORY) + "/" + filename;
+  handleDeleteFile(filename, request);
 }
 
-ArRequestHandlerFunction EpaperWebServer::handleListDirectory(const char* dirName) {
-  return [this, dirName](AsyncWebServerRequest* request) {
-    DynamicJsonBuffer buffer;
-    JsonArray& responseObj = buffer.createArray();
+void EpaperWebServer::handleListDirectory(const char* dirName, RequestContext& request) {
+  JsonArray responseObj = request.response.json.to<JsonArray>();
 
 #if defined(ESP8266)
-    Dir dir = SPIFFS.openDir(dirName);
+  Dir dir = SPIFFS.openDir(dirName);
 
-    while (dir.next()) {
-      JsonObject& file = buffer.createObject();
-      file["name"] = dir.fileName();
-      file["size"] = dir.fileSize();
-      responseObj.add(file);
-    }
+  while (dir.next()) {
+    JsonObject file = responseObj.createNestedObject();
+    file["name"] = dir.fileName();
+    file["size"] = dir.fileSize();
+  }
 #elif defined(ESP32)
-    File dir = SPIFFS.open(dirName);
+  File dir = SPIFFS.open(dirName);
 
-    if (!dir || !dir.isDirectory()) {
-      Serial.print(F("Path is not a directory - "));
-      Serial.println(dirName);
+  if (!dir || !dir.isDirectory()) {
+    Serial.print(F("Path is not a directory - "));
+    Serial.println(dirName);
 
-      request->send_P(500, TEXT_PLAIN, PSTR("Expected path to be a directory, but wasn't"));
-      return;
-    }
+    request.response.setCode(500);
+    request.response.json["error"] = F("Expected path to be a directory, but wasn't");
+    return;
+  }
 
-    while (File dirFile = dir.openNextFile()) {
-      JsonObject& file = buffer.createObject();
+  while (File dirFile = dir.openNextFile()) {
+    JsonObject file = responseObj.createNestedObject();
 
-      file["name"] = String(dirFile.name());
-      file["size"] = dirFile.size();
-
-      responseObj.add(file);
-    }
+    file["name"] = String(dirFile.name());
+    file["size"] = dirFile.size();
+  }
 #endif
-
-    String response;
-    responseObj.printTo(response);
-
-    request->send(200, APPLICATION_JSON, response);
-  };
 }
 
 // ---------
 // CRUD handlers for templates
 // ---------
 
-PatternHandler::TPatternHandlerFn EpaperWebServer::handleShowTemplate() {
-  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
-    if (bindings->hasBinding("filename")) {
-      const char* filename = bindings->get("filename");
-      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
+void EpaperWebServer::handleShowTemplate(RequestContext& request) {
+  const char* filename = request.pathVariables.get("filename");
+  String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
 
-      if (SPIFFS.exists(path.c_str())) {
-        request->send(SPIFFS, path, APPLICATION_JSON);
-      } else {
-        request->send_P(404, TEXT_PLAIN, PSTR("File not found."));
-      }
+  if (SPIFFS.exists(path.c_str())) {
+    request.rawRequest->send(SPIFFS, path, APPLICATION_JSON);
+  } else {
+    request.response.json["error"] = F("File not found");
+    request.response.setCode(404);
+  }
+}
+
+void EpaperWebServer::handleDeleteFile(const String& path, RequestContext& request) {
+  if (SPIFFS.exists(path)) {
+    if (SPIFFS.remove(path)) {
+      request.response.json["success"] = true;
     } else {
-      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
+      request.response.setCode(500);
+      request.response.json["error"] = F("Failed to delete file");
     }
-  };
+  } else {
+    request.response.setCode(404);
+    request.response.json["error"] = F("File not found");
+  }
 }
 
-PatternHandler::TPatternHandlerBodyFn EpaperWebServer::handleUpdateTemplate() {
-  return [this](
-    const UrlTokenBindings* bindings,
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  ) {
-    if (bindings->hasBinding("filename")) {
-      const char* filename = bindings->get("filename");
-      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
-      handleUpdateJsonFile(path, request, data, len);
-    }
-  };
+void EpaperWebServer::handleUpdateTemplate(RequestContext& request) {
+  const char* filename = request.pathVariables.get("filename");
+  String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
+  handleUpdateJsonFile(path, request);
 }
 
-PatternHandler::TPatternHandlerFn EpaperWebServer::handleDeleteTemplate() {
-  return [this](const UrlTokenBindings* bindings, AsyncWebServerRequest* request) {
-    if (bindings->hasBinding("filename")) {
-      const char* filename = bindings->get("filename");
-      String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
-
-      if (SPIFFS.exists(path)) {
-        if (SPIFFS.remove(path)) {
-          request->send_P(200, TEXT_PLAIN, PSTR("success"));
-        } else {
-          request->send_P(500, TEXT_PLAIN, PSTR("Failed to delete file"));
-        }
-      } else {
-        request->send(404, TEXT_PLAIN);
-      }
-    } else {
-      request->send_P(400, TEXT_PLAIN, PSTR("You must provide a filename"));
-    }
-  };
+void EpaperWebServer::handleDeleteTemplate(RequestContext& request) {
+  const char* filename = request.pathVariables.get("filename");
+  String path = String(TEMPLATES_DIRECTORY) + "/" + filename;
+  handleDeleteFile(path, request);
 }
 
-ArUploadHandlerFunction EpaperWebServer::handleCreateFile(const char* filePrefix) {
-  return [this, filePrefix](
-    AsyncWebServerRequest *request,
-    const String& filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  ) {
-    static File updateFile;
+void EpaperWebServer::handleCreateFile(const char* filePrefix, RequestContext& request) {
+  static File updateFile;
 
-    if (index == 0) {
-      String path = String(filePrefix) + "/" + filename;
-      updateFile = SPIFFS.open(path, FILE_WRITE);
-      Serial.println("Writing to file: ");
-      Serial.println(path);
+  if (request.upload.index == 0) {
+    String path = String(filePrefix) + "/" + request.upload.filename;
+    updateFile = SPIFFS.open(path, FILE_WRITE);
 
-      if (!updateFile) {
-        Serial.println(F("Failed to open file"));
-        request->send(500);
-        return;
-      }
+    if (!updateFile) {
+      request.response.setCode(500);
+      request.response.json["error"] = F("Failed to open file");
+      return;
     }
+  }
 
-    if (!updateFile || updateFile.write(data, len) != len) {
-      Serial.println(F("Failed to write to file"));
-      request->send(500);
-    }
+  if (!updateFile || updateFile.write(request.upload.data, request.upload.length) != request.upload.length) {
+    request.response.setCode(500);
+    request.response.json["error"] = F("Failed to write to file");
+  }
 
-    if (updateFile && isFinal) {
-      updateFile.close();
-      request->send(200);
-    }
-  };
+  if (updateFile && request.upload.isFinal) {
+    updateFile.close();
+    request.response.json["success"] = true;
+  }
 }
 
-void EpaperWebServer::handleUpdateJsonFile(const String& path, AsyncWebServerRequest* request, uint8_t* data, size_t len) {
-  DynamicJsonBuffer requestBuffer;
-  JsonObject& body = requestBuffer.parseObject(data);
+void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& request) {
+  JsonObject body = request.getJsonBody().as<JsonObject>();
 
-  if (! body.success()) {
-    request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
+  if (body.isNull()) {
+    request.response.json["error"] = F("Invalid JSON");
+    request.response.setCode(400);
     return;
   }
 
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
 
-    DynamicJsonBuffer fileBuffer;
-    JsonObject& tmpl = fileBuffer.parse(file);
+    DynamicJsonDocument fileBuffer(4096);
+    deserializeJson(fileBuffer, file);
     file.close();
+    JsonObject tmpl = fileBuffer.as<JsonObject>();
 
-    if (! tmpl.success()) {
-      request->send_P(500, TEXT_PLAIN, PSTR("Failed to load persisted file"));
+    if (tmpl.isNull()) {
+      request.response.json["error"] = F("Failed to load persisted file");
+      request.response.setCode(500);
       return;
     }
 
     for (JsonObject::iterator itr = body.begin(); itr != body.end(); ++itr) {
-      tmpl[itr->key] = itr->value;
+      tmpl[itr->key()] = itr->value();
     }
 
     file = SPIFFS.open(path, "w");
-    tmpl.printTo(file);
+    serializeJson(tmpl, file);
     file.close();
 
-    String response;
-    tmpl.printTo(response);
-    request->send(200, APPLICATION_JSON, response);
-  } else {
-    request->send(404, TEXT_PLAIN);
-  }
-}
-
-ArBodyHandlerFunction EpaperWebServer::handleUpdateSettings() {
-  return [this](
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  ) {
-    DynamicJsonBuffer buffer;
-    JsonObject& req = buffer.parse(data);
-
-    if (! req.success()) {
-      request->send_P(400, TEXT_PLAIN, PSTR("Invalid JSON"));
-      return;
-    }
-
-    settings.patch(req);
-    settings.save();
-
-    request->send(200);
-  };
-}
-
-ArRequestHandlerFunction EpaperWebServer::handleListSettings() {
-  return [this](AsyncWebServerRequest* request) {
-    request->send(200, APPLICATION_JSON, settings.toJson());
-  };
-}
-
-bool EpaperWebServer::isAuthenticated(AsyncWebServerRequest* request) {
-  if (settings.hasAuthSettings()) {
-    if (request->authenticate(settings.adminUsername.c_str(), settings.adminPassword.c_str())) {
-      return true;
-    } else {
-      request->send_P(403, TEXT_PLAIN, PSTR("Authentication required"));
-      return false;
+    for (JsonObject::iterator itr = tmpl.begin(); itr != tmpl.end(); ++itr) {
+      request.response.json[itr->key()] = itr->value();
     }
   } else {
-    return true;
+    request.response.setCode(404);
   }
 }
 
-void EpaperWebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerFn fn) {
-  PatternHandler::TPatternHandlerFn authedFn = [this, fn](const UrlTokenBindings* b, AsyncWebServerRequest* request) {
-    if (isAuthenticated(request)) {
-      fn(b, request);
-    }
-  };
+void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
+  JsonObject req = request.getJsonBody().as<JsonObject>();
 
-  server.addHandler(new PatternHandler(pattern.c_str(), method, authedFn, NULL));
-}
-
-void EpaperWebServer::onPattern(const String& pattern, const WebRequestMethod method, PatternHandler::TPatternHandlerBodyFn fn) {
-  PatternHandler::TPatternHandlerBodyFn authedFn = [this, fn](
-    const UrlTokenBindings* bindings,
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  ) {
-    if (isAuthenticated(request)) {
-      fn(bindings, request, data, len, index, total);
-    }
-  };
-
-  server.addHandler(new PatternHandler(pattern.c_str(), method, NULL, authedFn));
-}
-
-void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArRequestHandlerFunction fn) {
-  ArRequestHandlerFunction authedFn = [this, fn](AsyncWebServerRequest* request) {
-    if (isAuthenticated(request)) {
-      fn(request);
-    }
-  };
-
-  server.on(path.c_str(), method, authedFn);
-}
-
-void EpaperWebServer::on(const String& path, const WebRequestMethod method, ArBodyHandlerFunction fn) {
-  ArBodyHandlerFunction authedFn = [this, fn](
-    AsyncWebServerRequest* request,
-    uint8_t* data,
-    size_t len,
-    size_t index,
-    size_t total
-  ) {
-    if (isAuthenticated(request)) {
-      fn(request, data, len, index, total);
-    }
-  };
-
-  server.addHandler(new EpaperWebServer::BodyHandler(path.c_str(), method, authedFn));
-}
-
-void EpaperWebServer::onUpload(const String& path, const WebRequestMethod method, ArUploadHandlerFunction fn) {
-  ArUploadHandlerFunction authedFn = [this, fn](
-    AsyncWebServerRequest *request,
-    const String& filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  ) {
-    if (isAuthenticated(request)) {
-      fn(request, filename, index, data, len, isFinal);
-    }
-  };
-
-  server.addHandler(new EpaperWebServer::UploadHandler(path.c_str(), method, authedFn));
-}
-
-void EpaperWebServer::onUpload(const String& path, const WebRequestMethod method, ArRequestHandlerFunction onCompleteFn, ArUploadHandlerFunction fn) {
-  ArUploadHandlerFunction authedFn = [this, fn](
-    AsyncWebServerRequest *request,
-    const String& filename,
-    size_t index,
-    uint8_t *data,
-    size_t len,
-    bool isFinal
-  ) {
-    if (isAuthenticated(request)) {
-      fn(request, filename, index, data, len, isFinal);
-    }
-  };
-
-  ArRequestHandlerFunction authedOnCompleteFn = [this, onCompleteFn](AsyncWebServerRequest* request) {
-    if (isAuthenticated(request)) {
-      onCompleteFn(request);
-    }
-  };
-
-  server.addHandler(new EpaperWebServer::UploadHandler(path.c_str(), method, authedOnCompleteFn, authedFn));
-}
-
-EpaperWebServer::UploadHandler::UploadHandler(
-  const char* uri,
-  const WebRequestMethod method,
-  ArRequestHandlerFunction onCompleteFn,
-  ArUploadHandlerFunction handler
-) : uri(new char[strlen(uri) + 1]),
-    method(method),
-    handler(handler),
-    onCompleteFn(onCompleteFn)
-{
-  strcpy(this->uri, uri);
-}
-
-EpaperWebServer::UploadHandler::UploadHandler(
-  const char* uri,
-  const WebRequestMethod method,
-  ArUploadHandlerFunction handler
-) : UploadHandler(uri, method, NULL, handler)
-{ }
-
-EpaperWebServer::UploadHandler::~UploadHandler() {
-  delete uri;
-}
-
-bool EpaperWebServer::UploadHandler::canHandle(AsyncWebServerRequest *request) {
-  if (this->method != HTTP_ANY && this->method != request->method()) {
-    return false;
+  if (req.isNull()) {
+    request.response.json["error"] = F("Invalid JSON");
+    request.response.setCode(400);
+    return;
   }
 
-  return request->url() == this->uri;
-}
+  settings.patch(req);
+  settings.save();
 
-void EpaperWebServer::UploadHandler::handleUpload(
-  AsyncWebServerRequest *request,
-  const String &filename,
-  size_t index,
-  uint8_t *data,
-  size_t len,
-  bool isFinal
-) {
-  handler(request, filename, index, data, len, isFinal);
-}
-
-void EpaperWebServer::UploadHandler::handleRequest(AsyncWebServerRequest* request) {
-  if (onCompleteFn == NULL) {
-    request->send(200);
-  } else {
-    onCompleteFn(request);
-  }
-}
-
-EpaperWebServer::BodyHandler::BodyHandler(
-  const char* uri,
-  const WebRequestMethod method,
-  ArBodyHandlerFunction handler
-) : uri(new char[strlen(uri) + 1]),
-    method(method),
-    handler(handler)
-{
-  strcpy(this->uri, uri);
-}
-
-EpaperWebServer::BodyHandler::~BodyHandler() {
-  delete uri;
-}
-
-bool EpaperWebServer::BodyHandler::canHandle(AsyncWebServerRequest *request) {
-  if (this->method != HTTP_ANY && this->method != request->method()) {
-    return false;
+  if (this->changeFn) {
+    this->changeFn();
   }
 
-  return request->url() == this->uri;
+  request.response.json["success"] = true;
 }
 
-void EpaperWebServer::BodyHandler::handleRequest(AsyncWebServerRequest* request) {
-  request->send(200);
+void EpaperWebServer::handleGetSettings(RequestContext& request) {
+  AsyncResponseStream* stream = request.rawRequest->beginResponseStream(APPLICATION_JSON);
+  stream->setCode(200);
+  settings.dump(*stream);
+
+  request.rawRequest->send(stream);
 }
 
-void EpaperWebServer::BodyHandler::handleBody(
-  AsyncWebServerRequest *request,
-  uint8_t *data,
-  size_t len,
-  size_t index,
-  size_t total
-) {
-  handler(request, data, len, index, total);
+void EpaperWebServer::onSettingsChange(std::function<void()> changeFn) {
+  this->changeFn = changeFn;
 }

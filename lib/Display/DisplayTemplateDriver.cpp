@@ -4,15 +4,15 @@
 #define JSON_VAL_OR_DEFAULT(json, key, d) (json.containsKey(key) ? json[key] : d)
 
 DisplayTemplateDriver::DisplayTemplateDriver(
-  GxEPD* display,
+  GxEPD2_GFX* display,
   Settings& settings
 )
-  : display(display),
-    dirty(true),
-    shouldFullUpdate(false),
-    lastFullUpdate(0),
-    settings(settings)
-{ 
+  : display(display)
+  , settings(settings)
+  , dirty(true)
+  , shouldFullUpdate(false)
+  , lastFullUpdate(0)
+{
 #if defined(ESP32)
   mutex = xSemaphoreCreateMutex();
 
@@ -23,7 +23,8 @@ DisplayTemplateDriver::DisplayTemplateDriver(
 }
 
 void DisplayTemplateDriver::init() {
-  display->init();
+  display->init(115200);
+  display->mirror(false);
   vars.load();
 }
 
@@ -33,6 +34,8 @@ void DisplayTemplateDriver::loop() {
 #endif
 
   if (newTemplate.length() > 0) {
+    Serial.printf_P(PSTR("Loading new template: %s\n"), newTemplate.c_str());
+
     // Delete regions so we don't have unused regions hanging around
     regions.clear();
 
@@ -50,7 +53,7 @@ void DisplayTemplateDriver::loop() {
   if (shouldFullUpdate || dirty) {
     time_t now = millis();
 
-    if (shouldFullUpdate || now > (lastFullUpdate + settings.fullRefreshPeriod)) {
+    if (shouldFullUpdate || now > (lastFullUpdate + settings.display.full_refresh_period)) {
       shouldFullUpdate = false;
       lastFullUpdate = now;
       fullUpdate();
@@ -111,16 +114,23 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
       if (region->isDirty()) {
         region->clearDirty();
 
-        Rectangle bb = region->getBoundingBox();
+        Rectangle bb = region->getBoundingBox().rounded();
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-          display->updateWindow(bb.x, bb.y, bb.w, bb.h);
+          display->displayWindow(
+            bb.x,
+            bb.y,
+            bb.w,
+            bb.h
+          );
           flushedRegions.add(bb);
         }
       }
 
       curr = curr->next;
     }
+
+    display->powerOff();
   }
 }
 
@@ -130,7 +140,7 @@ bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rec
   while (curr != NULL) {
     Rectangle other = curr->data;
 
-    if (r.x >= other.x 
+    if (r.x >= other.x
       && r.y >= other.y
       && (r.x + r.w) <= (other.x + other.w)
       && (r.y + r.h) <= (other.y + other.h)
@@ -146,7 +156,8 @@ bool DisplayTemplateDriver::regionContainedIn(Rectangle& r, DoublyLinkedList<Rec
 
 void DisplayTemplateDriver::fullUpdate() {
   flushDirtyRegions(false);
-  display->update();
+  display->setFullWindow();
+  display->display(false);
 }
 
 void DisplayTemplateDriver::updateVariable(const String& key, const String& value) {
@@ -194,14 +205,16 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 
   File file = SPIFFS.open(templateFilename, "r");
 
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& tmpl = jsonBuffer.parseObject(file);
+  DynamicJsonDocument jsonBuffer(JSON_TEMPLATE_BUFFER_SIZE);
+  deserializeJson(jsonBuffer, file);
   file.close();
+
+  JsonObject tmpl = jsonBuffer.as<JsonObject>();
 
   Serial.print(F("Free heap - "));
   Serial.println(ESP.getFreeHeap());
 
-  if (!tmpl.success()) {
+  if (tmpl.isNull()) {
     Serial.println(F("WARN - could not parse template file"));
     printError("Could not parse template!");
 
@@ -210,13 +223,17 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 
   display->fillScreen(parseColor(tmpl["background_color"]));
 
-  const JsonObject& formatters = tmpl["formatters"];
+  if (tmpl.containsKey("rotation")) {
+    display->setRotation(tmpl["rotation"]);
+  }
+
+  JsonObject formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
-  const JsonObject& updateRects = tmpl["update_rects"];
+  JsonObject updateRects = tmpl["update_rects"];
 
   if (tmpl.containsKey("lines")) {
-    renderLines(tmpl["lines"]);
+    renderLines(tmpl["lines"].as<JsonArray>());
   }
 
   if (tmpl.containsKey("bitmaps")) {
@@ -224,7 +241,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(formatterFactory, updateRects, tmpl["text"]);
+    renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>());
   }
 }
 
@@ -238,15 +255,16 @@ void DisplayTemplateDriver::renderBitmap(const String &filename, uint16_t x, uin
   File file = SPIFFS.open(filename, "r");
   size_t size = w*h/8;
   uint8_t bits[size];
-  size_t readBytes = file.readBytes(reinterpret_cast<char*>(bits), size);
+  file.readBytes(reinterpret_cast<char*>(bits), size);
 
   file.close();
-  display->drawBitmap(bits, x, y, w, h, color);
+
+  display->writeImage(bits, x, y, w, h, color);
 }
 
-void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFactory, ArduinoJson::JsonArray &bitmaps) {
+void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray bitmaps) {
   for (size_t i = 0; i < bitmaps.size(); i++) {
-    JsonObject& bitmap = bitmaps[i];
+    JsonObject bitmap = bitmaps[i];
 
     const uint16_t x = bitmap["x"];
     const uint16_t y = bitmap["y"];
@@ -255,7 +273,7 @@ void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFac
     const uint16_t color = extractColor(bitmap);
 
     if (bitmap.containsKey("static")) {
-      renderBitmap(bitmap.get<const char*>("static"), x, y, w, h, color);
+      renderBitmap(bitmap["static"].as<const char*>(), x, y, w, h, color);
     }
 
     if (bitmap.containsKey("variable")) {
@@ -266,9 +284,9 @@ void DisplayTemplateDriver::renderBitmaps(VariableFormatterFactory& formatterFac
   }
 }
 
-void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, ArduinoJson::JsonArray &texts) {
+void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonArray texts) {
   for (size_t i = 0; i < texts.size(); i++) {
-    JsonObject& text = texts[i];
+    JsonObject text = texts[i];
 
     uint16_t x = text["x"];
     uint16_t y = text["y"];
@@ -282,28 +300,29 @@ void DisplayTemplateDriver::renderTexts(VariableFormatterFactory& formatterFacto
     display->setTextColor(extractColor(text));
 
     if (text.containsKey("static")) {
-      display->print(text.get<const char*>("static"));
+      display->print(text["static"].as<const char*>());
     }
 
     if (text.containsKey("variable")) {
-      const String& variable = text.get<const char*>("variable");
+      const String& variable = text["variable"].as<const char*>();
       std::shared_ptr<Region> region = addTextRegion(formatterFactory, updateRects, text);
       region->updateValue(vars.get(variable));
     }
   }
 }
 
-void DisplayTemplateDriver::renderLines(ArduinoJson::JsonArray &lines) {
+void DisplayTemplateDriver::renderLines(JsonArray lines) {
   for (JsonArray::iterator it = lines.begin(); it != lines.end(); ++it) {
-    JsonObject& line = *it;
-    display->drawLine(line["x1"], line["y1"], line["x2"], line["y2"], extractColor(line));
+    JsonObject line = it->as<JsonObject>();
+
+    display->writeLine(line["x1"], line["y1"], line["x2"], line["y2"], extractColor(line));
   }
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec) {
+std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatterFactory& formatterFactory, JsonObject spec) {
   std::shared_ptr<Region> region(
     new BitmapRegion(
-      spec.get<const char*>("variable"),
+      spec["variable"].as<const char*>(),
       spec["x"],
       spec["y"],
       spec["w"],
@@ -317,32 +336,31 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(VariableFormatter
   return region;
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, const JsonObject& spec) {
-  int16_t bbx = -1, bby = -1, bbw = -1, bbh = -1;
+std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonObject spec) {
+  std::shared_ptr<Rectangle> fixedBound = nullptr;
 
   if (spec.containsKey("update_rect")) {
-    JsonObject& updateParams =
-      spec.is<const char*>("update_rect") 
-        ? updateRects[spec.get<const char*>("update_rect")] 
+    JsonObject updateParams =
+      spec["update_rect"].is<const char*>()
+        ? updateRects[spec["update_rect"].as<const char*>()]
         : spec["update_rect"];
 
-    bbx = JSON_VAL_OR_DEFAULT(updateParams, "x", -1);
-    bby = JSON_VAL_OR_DEFAULT(updateParams, "y", -1);
-    bbw = JSON_VAL_OR_DEFAULT(updateParams, "w", -1);
-    bbh = JSON_VAL_OR_DEFAULT(updateParams, "h", -1);
+    fixedBound = std::shared_ptr<Rectangle>(new Rectangle({
+      updateParams["x"],
+      updateParams["y"],
+      updateParams["w"],
+      updateParams["h"]
+    }));
   }
 
   std::shared_ptr<Region> region(
     new TextRegion(
-      spec.get<const char*>("variable"),
-      spec.get<uint16_t>("x"),
-      spec.get<uint16_t>("y"),
-      bbx,
-      bby,
-      bbw,
-      bbh,
+      spec["variable"].as<const char*>(),
+      spec["x"].as<uint16_t>(),
+      spec["y"].as<uint16_t>(),
+      fixedBound,
       extractColor(spec),
-      parseFont(spec.get<const char*>("font")),
+      parseFont(spec["font"].as<const char*>()),
       formatterFactory.create(spec)
     )
   );
@@ -352,11 +370,14 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFa
 }
 
 void DisplayTemplateDriver::printError(const char *message) {
+  Serial.printf_P(PSTR("Printing error to screen: %s\n"), message);
+
   display->fillScreen(GxEPD_BLACK);
   display->setFont(&FreeMonoBold9pt7b);
   display->setTextColor(GxEPD_WHITE);
   display->setCursor(0, display->height() / 2);
   display->print(message);
+  display->display(false);
 }
 
 const GFXfont* DisplayTemplateDriver::parseFont(const String &fontName) {
@@ -388,7 +409,7 @@ const uint16_t DisplayTemplateDriver::parseColor(const String &colorName) {
   }
 }
 
-const uint16_t DisplayTemplateDriver::extractColor(const ArduinoJson::JsonObject &spec) {
+const uint16_t DisplayTemplateDriver::extractColor(JsonObject spec) {
   if (spec.containsKey("color")) {
     return parseColor(spec["color"]);
   } else {

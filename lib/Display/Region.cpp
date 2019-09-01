@@ -2,13 +2,13 @@
 
 Region::Region(
   const String& variable,
-  uint16_t x,
-  uint16_t y,
-  uint16_t w,
-  uint16_t h,
+  Rectangle boundingBox,
   uint16_t color,
   std::shared_ptr<const VariableFormatter> formatter
-) : variable(variable), x(x), y(y), w(w), h(h), color(color), formatter(formatter)
+) : variable(variable)
+  , boundingBox(boundingBox)
+  , color(color)
+  , formatter(formatter)
 { }
 
 Region::~Region() { }
@@ -33,23 +33,20 @@ bool Region::updateValue(const String &value) {
     return false;
   }
 
+  Serial.printf_P(PSTR("Formatted value: %s\n"), newValue.c_str());
+
   this->variableValue = newValue;
   this->dirty = true;
 
   return true;
 }
 
-Rectangle Region::updateScreen(GxEPD *display) {
+Rectangle Region::updateScreen(GxEPD2_GFX* display) {
   Rectangle r = getBoundingBox();
-  display->updateWindow(r.x, r.y, r.w, r.h);
+  display->refresh(r.x, r.y, r.w, r.h);
   return r;
 }
 
 Rectangle Region::getBoundingBox() {
-  return {
-    .x = this->x, 
-    .y = this->y, 
-    .w = this->w, 
-    .h = this->h
-  };
+  return boundingBox;
 }

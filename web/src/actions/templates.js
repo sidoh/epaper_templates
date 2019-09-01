@@ -36,7 +36,7 @@ export const saveTemplate = (templateName, templateContents) => {
 export const loadTemplates = () => {
   return (dispatch, getState) => {
     dispatch(loadingTemplates());
-    fetch(
+    return fetch(
       '/templates',
       {
         credentials: 'same-origin'
@@ -94,16 +94,29 @@ export const loadTemplatesError = (message) => ({
 export const loadTemplate = (templateName) => {
   return (dispatch, getState) => {
     dispatch(loadingTemplate(templateName));
-    fetch(
+    return fetch(
       `/templates/${templateName}`,
       {
         credentials: 'same-origin'
       }
     )
     .then(handleFetchErrors)
-    .then(response => response.json())
+    .then(response => response.text())
     .then(body => {
       dispatch(templateLoaded(templateName, body))
+      return body;
+    })
+    .then(body => {
+      var contents = body;
+
+      try {
+        contents = JSON.stringify(JSON.parse(contents), null, 2);
+      } catch (err) {
+        const errorMessage = `Invalid JSON.\n\n ${err.message}`;
+        dispatch(loadTemplateError(templateName, errorMessage));
+      }
+
+      return body;
     })
     .catch(e => {
       console.log(e);

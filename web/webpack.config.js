@@ -9,15 +9,17 @@ var HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   entry: './src/index.js',
+  mode: 'production',
+  devtool: false,
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'index_bundle.js'
   },
   module: {
     rules: [
-      { 
-        test: /\.jsx?$/, 
-        loader: 'babel-loader', 
+      {
+        test: /\.jsx?$/,
+        loader: 'babel-loader',
         exclude: /node_modules/,
         query: {
           presets: ["es2016", "react"]
@@ -50,7 +52,7 @@ module.exports = {
     historyApiFallback: {
       rewrites: [
         { from: /^\/templates$/, to: '/templates.json' },
-        { 
+        {
           from: /^\/templates\/(.*)$/,
           to: context => (`/t/${context.match[1]}`)
         }
@@ -70,7 +72,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'E-Paper Display',
       template: 'src/index.html',
-      inlineSource: '.(js|css)$' // embed all javascript and css inline
+      inlineSource: '.(js|css)$' // embed all javascript
     }),
     new HtmlWebpackInlineSourcePlugin(),
     new CompressionPlugin({

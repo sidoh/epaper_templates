@@ -6,9 +6,10 @@ import Loadable from 'react-loading-overlay';
 import { loadSettings } from '../actions';
 
 import WebSettings from './WebSettings';
-import WiFiSettings from './WifiSettings';
+import WiFiSettings from './WiFiSettings';
 import MQTTSettings from './MQTTSettings';
 import HardwareSettings from './HardwareSettings';
+import DisplaySettings from './DisplaySettings';
 
 class Settings extends React.Component {
   componentDidMount() {
@@ -30,6 +31,9 @@ class Settings extends React.Component {
           </Tab>
           <Tab eventKey={4} title="Hardware">
             <HardwareSettings />
+          </Tab>
+          <Tab eventKey={5} title="Display">
+            <DisplaySettings />
           </Tab>
         </Tabs>
       // </Loadable>

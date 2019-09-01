@@ -1,6 +1,6 @@
 #include <EnvironmentConfig.h>
 #include <FS.h>
-#include <GxEPD.h>
+#include <GxEPD2_BW.h>
 #include <gfxfont.h>
 #include <ArduinoJson.h>
 #include <memory>
@@ -36,10 +36,12 @@ extern "C" {
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
 
+#include <memory>
+
 class DisplayTemplateDriver {
 public:
   DisplayTemplateDriver(
-    GxEPD* display,
+    GxEPD2_GFX* display,
     Settings& settings
   );
 
@@ -66,7 +68,7 @@ public:
   void init();
 
 private:
-  GxEPD* display;
+  GxEPD2_GFX* display;
   VariableDictionary vars;
   String templateFilename;
   Settings& settings;
@@ -90,17 +92,17 @@ private:
   void printError(const char* message);
   void loadTemplate(const String& templateFilename);
 
-  void renderLines(JsonArray& lines);
-  void renderTexts(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, JsonArray& text);
-  void renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray& bitmaps);
+  void renderLines(JsonArray lines);
+  void renderTexts(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonArray text);
+  void renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray bitmaps);
   void renderBitmap(const String& filename, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 
-  std::shared_ptr<Region> addTextRegion(VariableFormatterFactory& formatterFactory, const JsonObject& updateRects, const JsonObject& spec);
-  std::shared_ptr<Region> addBitmapRegion(VariableFormatterFactory& formatterFactory, const JsonObject& spec);
+  std::shared_ptr<Region> addTextRegion(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonObject spec);
+  std::shared_ptr<Region> addBitmapRegion(VariableFormatterFactory& formatterFactory, JsonObject spec);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);
-  const uint16_t extractColor(const JsonObject& spec);
+  const uint16_t extractColor(JsonObject spec);
 
   static bool regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others);
 };
