@@ -33,6 +33,7 @@
   "dependencies": {
     "bootstrap": "^3",
     "jquery": "^3.3.1",
+    "js-yaml": "^3.13.1",
     "popper.js": "^1.14.3",
     "react": "^16.3.1",
     "react-ace": "^6.0.0",
