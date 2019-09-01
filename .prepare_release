@@ -25,7 +25,7 @@ else
   firmware_pefix="./pioenvs/"
 fi
 
-for file in $(ls .pio/build/**/firmware.bin); do
+for file in $(ls ${firmware_prefix}/**/firmware.bin); do
   env_dir=$(dirname "$file")
   env=$(basename "$env_dir")
 

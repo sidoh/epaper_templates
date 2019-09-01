@@ -137,7 +137,7 @@ void MqttClient::messageCallback(
   payloadCopy[len] = 0;
 
   #ifdef MQTT_DEBUG
-    printf_P(PSTR("MqttClient - Got message on topic: %s\n%s\n"), topic, payloadCopy);
+    Serial.printf("MqttClient - Got message on topic: %s\n%s\n", topic, payloadCopy);
   #endif
 
   if (this->variableUpdateCallback != NULL) {
