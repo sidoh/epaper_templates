@@ -1,7 +1,7 @@
 import React from 'react';
 import {render} from 'react-dom';
 import injectTapEventPlugin from 'react-tap-event-plugin';
-import App from './App'; 
+import App from './App';
 
 import * as reducers from './reducers';
 
@@ -9,7 +9,7 @@ import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, combineReducers } from 'redux'
 import thunk from 'redux-thunk';
 import { Provider as AlertProvider } from 'react-alert'
-import AlertTemplate from './Components/AlertTemplate'
+import AlertTemplate from './components/AlertTemplate'
 
 const appReducers = combineReducers(reducers);
 const store = createStore(

@@ -1,3 +1,4 @@
+#include <TimeLib.h>
 #include <VariableFormatters.h>
 #include <Timezones.h>
 #include <time.h>
@@ -13,12 +14,12 @@ TimeVariableFormatter::TimeVariableFormatter(const String& timeFormat, Timezone&
     timezone(timezone)
 { }
 
-std::shared_ptr<const TimeVariableFormatter> TimeVariableFormatter::build(const JsonObject& args) {
+std::shared_ptr<const TimeVariableFormatter> TimeVariableFormatter::build(JsonObject args) {
   Timezone& tz = Timezones.getTimezone(args[TIMEZONE_ARG_NAME]);
   String timeFormat;
 
   if (args.containsKey(FORMAT_ARG_NAME)) {
-    timeFormat = args.get<const char*>(FORMAT_ARG_NAME);
+    timeFormat = args[FORMAT_ARG_NAME].as<const char*>();
   } else {
     timeFormat = DEFAULT_TIME_FORMAT;
   }
