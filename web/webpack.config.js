@@ -1,25 +1,23 @@
-const path = require('path');
+const path = require("path");
 
-var HtmlWebpackPlugin = require('html-webpack-plugin')
-  , HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
-  , CompressionPlugin = require("compression-webpack-plugin")
-  , GenerateHeaderFile = require('./util/generate-header')
-  , webpack = require('webpack')
-  ;
-
+var HtmlWebpackPlugin = require("html-webpack-plugin"),
+  HtmlWebpackInlineSourcePlugin = require("html-webpack-inline-source-plugin"),
+  CompressionPlugin = require("compression-webpack-plugin"),
+  GenerateHeaderFile = require("./util/generate-header"),
+  webpack = require("webpack");
 module.exports = {
-  entry: './src/index.js',
-  mode: 'production',
+  entry: "./src/index.js",
+  mode: "production",
   devtool: false,
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'index_bundle.js'
+    path: path.resolve(__dirname, "dist"),
+    filename: "index_bundle.js"
   },
   module: {
     rules: [
       {
         test: /\.jsx?$/,
-        loader: 'babel-loader',
+        loader: "babel-loader",
         exclude: /node_modules/,
         query: {
           presets: ["es2016", "react"]
@@ -30,17 +28,17 @@ module.exports = {
         use: {
           loader: "url-loader",
           options: {
-            limit: 50000,
-          },
+            limit: 50000
+          }
         }
       },
       {
         test: /\.less$/,
-        loader: [ 'style-loader', 'css-loader', 'less-loader' ]
+        loader: ["style-loader", "css-loader", "less-loader"]
       },
       {
         test: /\.scss$/,
-        use: [ 'style-loader', 'css-loader', 'sass-loader' ]
+        use: ["style-loader", "css-loader", "sass-loader"]
       }
     ]
   },
@@ -51,17 +49,17 @@ module.exports = {
     ],
     historyApiFallback: {
       rewrites: [
-        { from: /^\/templates$/, to: '/templates.json' },
+        { from: /^\/templates$/, to: "/templates.json" },
         {
           from: /^\/templates\/(.*)$/,
-          to: context => (`/t/${context.match[1]}`)
+          to: context => `/t/${context.match[1]}`
         }
       ]
     }
   },
   optimization: {
     splitChunks: {
-      chunks: 'all'
+      chunks: "all"
     }
   },
   plugins: [
@@ -70,9 +68,9 @@ module.exports = {
       jQuery: "jquery"
     }),
     new HtmlWebpackPlugin({
-      title: 'E-Paper Display',
-      template: 'src/index.html',
-      inlineSource: '.(js|css)$' // embed all javascript
+      title: "E-Paper Display",
+      template: "src/index.html",
+      inlineSource: ".(js|css)$" // embed all javascript
     }),
     new HtmlWebpackInlineSourcePlugin(),
     new CompressionPlugin({

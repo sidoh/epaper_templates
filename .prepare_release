@@ -25,8 +25,6 @@ else
   firmware_prefix=".pioenvs"
 fi
 
-echo $firmware_prefix
-
 for file in $(ls ${firmware_prefix}/**/firmware.bin); do
   env_dir=$(dirname "$file")
   env=$(basename "$env_dir")
