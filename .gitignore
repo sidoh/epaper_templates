@@ -10,3 +10,4 @@ data
 /web/build
 .vscode/.browse.c_cpp.db*
 .vscode/launch.json
+/dist
