@@ -28,12 +28,12 @@ public:
 protected:
   const GFXfont* font;
 
+  // Users can optionally manually specify a bounding rectangle.
+  std::shared_ptr<Rectangle> fixedBound;
+
   // Track current bounding box start coordinates separately from (x, y), which
   // is the position we set the cursor at.
   Rectangle currentBound;
-
-  // Users can optionally manually specify a bounding rectangle.
-  std::shared_ptr<Rectangle> fixedBound;
 
   // Previous bounding box coordinates
   Rectangle previousBound;
