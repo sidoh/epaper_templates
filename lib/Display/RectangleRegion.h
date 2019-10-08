@@ -23,32 +23,9 @@ public:
     DimensionType type;
     uint16_t value;
 
-    static bool hasVariable(JsonObject spec) {
-      return spec["width"].containsKey("variable")
-        || spec["height"].containsKey("variable");
-    }
-
-    static String extractVariable(JsonObject spec) {
-      JsonVariant vw = spec["width"]["variable"];
-      if (! vw.isNull()) {
-        return vw.as<const char*>();
-      }
-
-      JsonVariant vh = spec["height"]["variable"];
-      if (! vh.isNull()) {
-        return vh.as<const char*>();
-      }
-
-      return "";
-    }
-
-    static Dimension fromSpec(JsonObject spec) {
-      if (spec.containsKey("static")) {
-        return { DimensionType::STATIC, spec["static"] };
-      } else {
-        return { DimensionType::DYNAMIC, spec["max"] };
-      }
-    }
+    static bool hasVariable(JsonObject spec);
+    static String extractVariable(JsonObject spec);
+    static Dimension fromSpec(JsonObject spec);
   };
 
   RectangleRegion(

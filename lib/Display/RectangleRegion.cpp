@@ -53,3 +53,30 @@ RectangleRegion::RectangleStyle RectangleRegion::styleFromString(const String& s
     return RectangleRegion::RectangleStyle::OUTLINE;
   }
 }
+
+bool RectangleRegion::Dimension::hasVariable(JsonObject spec) {
+  return spec["width"].containsKey("variable")
+    || spec["height"].containsKey("variable");
+}
+
+String RectangleRegion::Dimension::extractVariable(JsonObject spec) {
+  JsonVariant vw = spec["width"]["variable"];
+  if (! vw.isNull()) {
+    return vw.as<const char*>();
+  }
+
+  JsonVariant vh = spec["height"]["variable"];
+  if (! vh.isNull()) {
+    return vh.as<const char*>();
+  }
+
+  return "";
+}
+
+RectangleRegion::Dimension RectangleRegion::Dimension::fromSpec(JsonObject spec) {
+  if (spec.containsKey("static")) {
+    return { DimensionType::STATIC, spec["static"] };
+  } else {
+    return { DimensionType::DYNAMIC, spec["max"] };
+  }
+}
