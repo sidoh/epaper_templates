@@ -18,7 +18,8 @@ public:
     std::shared_ptr<Rectangle> fixedBoundingBox,
     uint16_t color,
     const GFXfont* font,
-    std::shared_ptr<const VariableFormatter> formatter
+    std::shared_ptr<const VariableFormatter> formatter,
+    uint8_t size
   );
   ~TextRegion();
 
@@ -37,6 +38,8 @@ protected:
 
   // Previous bounding box coordinates
   Rectangle previousBound;
+
+  uint8_t size;
 };
 
 #endif

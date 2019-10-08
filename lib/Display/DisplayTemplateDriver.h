@@ -6,6 +6,7 @@
 #include <memory>
 #include <TextRegion.h>
 #include <BitmapRegion.h>
+#include <RectangleRegion.h>
 
 #include <VariableDictionary.h>
 #include <DoublyLinkedList.h>
@@ -93,16 +94,19 @@ private:
   void loadTemplate(const String& templateFilename);
 
   void renderLines(JsonArray lines);
+  void renderRectangles(VariableFormatterFactory& formatterFactory, JsonArray lines);
   void renderTexts(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonArray text);
   void renderBitmaps(VariableFormatterFactory& formatterFactory, JsonArray bitmaps);
   void renderBitmap(const String& filename, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 
   std::shared_ptr<Region> addTextRegion(VariableFormatterFactory& formatterFactory, JsonObject updateRects, JsonObject spec);
   std::shared_ptr<Region> addBitmapRegion(VariableFormatterFactory& formatterFactory, JsonObject spec);
+  std::shared_ptr<Region> addRectangleRegion(VariableFormatterFactory& formatterFactory, JsonObject spec);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);
   const uint16_t extractColor(JsonObject spec);
+  const uint8_t extractTextSize(JsonObject spec);
 
   static bool regionContainedIn(Rectangle& r, DoublyLinkedList<Rectangle>& others);
 };

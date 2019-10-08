@@ -9,7 +9,8 @@ TextRegion::TextRegion(
   std::shared_ptr<Rectangle> fixedBound,
   uint16_t color,
   const GFXfont* font,
-  std::shared_ptr<const VariableFormatter> formatter
+  std::shared_ptr<const VariableFormatter> formatter,
+  uint8_t size
 ) : Region(
       variable,
       {x, y, 0, 0},
@@ -20,6 +21,7 @@ TextRegion::TextRegion(
   , fixedBound(fixedBound)
   , currentBound({x, y, 0, 0})
   , previousBound({x, y, 0, 0})
+  , size(size)
 { }
 
 TextRegion::~TextRegion() { }
@@ -37,6 +39,7 @@ void TextRegion::render(GxEPD2_GFX* display) {
 
   display->setTextColor(color);
   display->setFont(font);
+  display->setTextSize(size);
   display->setCursor(this->boundingBox.x, this->boundingBox.y);
   display->print(variableValue);
 

@@ -74,6 +74,7 @@ void MqttClient::begin() {
   mqttClient.onConnect(std::bind(&MqttClient::connectCallback, this, _1));
   mqttClient.onDisconnect(std::bind(&MqttClient::disconnectCallback, this, _1));
   mqttClient.onMessage(std::bind(&MqttClient::messageCallback, this, _1, _2, _3, _4, _5, _6));
+  mqttClient.setKeepAlive(60);
 
   // Configure client
   char nameBuffer[30];
