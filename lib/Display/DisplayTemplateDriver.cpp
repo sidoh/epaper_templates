@@ -94,7 +94,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
     std::shared_ptr<Region> region = curr->data;
 
     if (region->isDirty()) {
-      printf("Rendering %s\n", region->getVariableName().c_str());
+      Serial.printf_P(PSTR("Rendering %s\n"), region->getVariableName().c_str());
       region->render(display);
     }
 

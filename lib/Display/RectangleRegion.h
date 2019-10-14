@@ -16,12 +16,14 @@ public:
   };
 
   enum class DimensionType {
-    STATIC, DYNAMIC
+    STATIC, DYNAMIC, DYNAMIC_PCT
   };
 
   struct Dimension {
     DimensionType type;
     uint16_t value;
+
+    uint16_t getValue(const String& variableValue) const;
 
     static bool hasVariable(JsonObject spec);
     static String extractVariable(JsonObject spec);

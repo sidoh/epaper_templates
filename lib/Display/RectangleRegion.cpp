@@ -23,19 +23,8 @@ RectangleRegion::RectangleRegion(
 RectangleRegion::~RectangleRegion() { }
 
 void RectangleRegion::render(GxEPD2_GFX* display) {
-  uint16_t width, height;
-
-  if (w.type == DimensionType::STATIC) {
-    width = w.value;
-  } else {
-    width = min(static_cast<uint16_t>(w.value), static_cast<uint16_t>(variableValue.toInt()));
-  }
-
-  if (h.type == DimensionType::STATIC) {
-    height = h.value;
-  } else {
-    height = min(static_cast<uint16_t>(h.value), static_cast<uint16_t>(variableValue.toInt()));
-  }
+  uint16_t width = w.getValue(variableValue);
+  uint16_t height = h.getValue(variableValue);
 
   display->writeFillRect(boundingBox.x, boundingBox.y, boundingBox.w, boundingBox.h, GxEPD_WHITE);
 
@@ -51,6 +40,21 @@ RectangleRegion::RectangleStyle RectangleRegion::styleFromString(const String& s
     return RectangleRegion::RectangleStyle::FILLED;
   } else {
     return RectangleRegion::RectangleStyle::OUTLINE;
+  }
+}
+
+uint16_t RectangleRegion::Dimension::getValue(const String& variableValue) const {
+  if (this->type == RectangleRegion::DimensionType::STATIC) {
+    return this->value;
+  } else {
+    const uint16_t value = variableValue.toInt();
+
+    if (this->type == RectangleRegion::DimensionType::DYNAMIC) {
+      return min(this->value, value);
+    } else {
+      const uint16_t valueFromPct = round(value * (this->value / 100.0));
+      return min(this->value, valueFromPct);
+    }
   }
 }
 
@@ -74,9 +78,11 @@ String RectangleRegion::Dimension::extractVariable(JsonObject spec) {
 }
 
 RectangleRegion::Dimension RectangleRegion::Dimension::fromSpec(JsonObject spec) {
-  if (spec.containsKey("static")) {
-    return { DimensionType::STATIC, spec["static"] };
+  if (spec.containsKey(F("static"))) {
+    return { DimensionType::STATIC, spec[F("static")] };
+  } else if (spec.containsKey(F("variable_mode")) && spec[F("variable_mode")] == F("percent")) {
+    return { DimensionType::DYNAMIC_PCT, spec[F("max")] };
   } else {
-    return { DimensionType::DYNAMIC, spec["max"] };
+    return { DimensionType::DYNAMIC, spec[F("max")] };
   }
 }
