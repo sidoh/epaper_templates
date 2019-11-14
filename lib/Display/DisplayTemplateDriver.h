@@ -49,6 +49,7 @@ public:
   // Updates the value for the given variable, and marks any regions bound to
   // that variable as dirty.
   void updateVariable(const String& name, const String& value);
+  void deleteVariable(const String& name);
 
   // Sets the JSON template to load from SPIFFS.  Clears any regions that may
   // have been parsed from the previous template.

@@ -1,0 +1,19 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.site-loader {
+  svg {
+    fill: theme-color("primary");
+    display: block;
+  }
+
+  &.lg svg {
+    margin-top: 10em;
+    margin-bottom: 10em;
+  }
+
+  svg {
+    margin: 0 auto;
+  }
+}

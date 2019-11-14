@@ -37,20 +37,26 @@ private:
 
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);
+  void handleDeleteVariable(RequestContext& request);
 
-  void handleNoOp();
+  void handleNoOp(RequestContext& request);
 
   // General info routes
-  void handleAbout(RequestContext& request);
+  void handleGetSystem(RequestContext& request);
+  void handlePostSystem(RequestContext& request);
 
   // General helpers
   void handleListDirectory(const char* dir, RequestContext& request);
   void handleCreateFile(const char* filePrefix, RequestContext& request);
   void handleDeleteFile(const String& file, RequestContext& request);
+  void listDirectory(const char* dir, JsonArray result);
 
   // CRUD handlers for Bitmaps
   void handleDeleteBitmap(RequestContext& request);
   void handleShowBitmap(RequestContext& request);
+  void handleCreateBitmap(RequestContext& request);
+  void handleCreateBitmapFinish(RequestContext& request);
+  void handleListBitmaps(RequestContext& request);
 
   // CRUD handlers for Templates
   void handleDeleteTemplate(RequestContext& request);

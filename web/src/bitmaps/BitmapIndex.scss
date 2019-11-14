@@ -1,0 +1,73 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+a.new-bitmap {
+  display: block;
+  width: 150px;
+  height: 150px;
+  border: 1px solid theme-color("secondary");
+  color: theme-color("primary");
+  margin: 1em;
+  text-align: center;
+  padding: 0.5em;
+
+  &:hover {
+    color: theme-color("primary");
+    background-color: darken(theme-color("secondary"), 10%);
+    text-decoration: none;
+  }
+
+  svg {
+    display: block;
+    height: 100px !important;
+    width: 100px !important;
+    margin-bottom: 0.5em;
+  }
+}
+
+ul.bitmap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+
+  .bitmap-link {
+    text-decoration: none;
+  }
+
+  li {
+    width: 150px;
+    height: 150px;
+    border: 1px solid theme-color("secondary");
+    padding: 0.5em;
+    margin: 1em;
+
+    &:hover {
+      background-color: darken(theme-color("secondary"), 10%);
+    }
+
+    .filename {
+      color: lighten(theme-color("secondary"), 20%);
+      word-break: keep-all;
+      overflow: hidden;
+      width: 100%;
+      display: block;
+      padding: 0 1em;
+      text-align: center;
+      margin-top: 1em;
+      font-size: 0.8em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  canvas.thumbnail-preview {
+    max-width: 100%;
+    max-height: calc(100% - 2em);
+
+    margin: 0 auto;
+    display: block;
+  }
+}

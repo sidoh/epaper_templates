@@ -20,6 +20,8 @@
 #define TEMPLATES_DIRECTORY "/t"
 #endif
 
+static const char BITMAP_METADATA_DIRECTORY[] = "/m";
+
 #define XQUOTE(x) #x
 #define QUOTE(x) XQUOTE(x)
 
@@ -117,6 +119,17 @@ public:
       display_typeString = DisplayTypeHelpers::displayTypeToString(display_type);
     }
   );
+  persistentVar(
+    bool,
+    windowed_updates,
+    false,
+    {
+      windowed_updates = windowed_updatesString.equalsIgnoreCase("true");
+    },
+    {
+      windowed_updatesString = (windowed_updates ? "true" : "false");
+    }
+  )
 };
 
 class SystemSettings : public Configuration {

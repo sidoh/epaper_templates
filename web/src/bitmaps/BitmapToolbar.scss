@@ -1,0 +1,97 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.bitmap-toolbar {
+  border: 1px solid theme-color("light");
+  width: 100%;
+  height: 40px;
+  margin-bottom: 2em;
+
+  .spacer {
+    width: 15px;
+  }
+
+  ul.tool-list {
+    list-style: none;
+    padding: 0;
+
+    li {
+      display: inline-block;
+      border-color: lighten(theme-color("secondary"), 15%);
+      border-width: 0;
+      border-style: solid;
+
+      border-right-width: 1px;
+
+      &:first-child {
+        border-left-width: 1px;
+      }
+    }
+
+    .btn {
+      border-radius: 0;
+      background-color: theme-color("secondary");
+      border-color: theme-color("secondary");
+      height: 38px;
+      min-width: 38px;
+
+      &.btn-success {
+        background-color: darken(theme-color("success"), 10%);
+      }
+
+      &:hover {
+        background-color: lighten(theme-color("secondary"), 10%);
+      }
+
+      &.active {
+        background-color: lighten(theme-color("primary"), 25%);
+        border-color: lighten(theme-color("primary"), 25%);
+      }
+
+      &.color-picker {
+        &.white,
+        &.white.active {
+          background-color: #fff;
+        }
+        &.black,
+        &.black.active {
+          background-color: #000;
+        }
+        &.active {
+          border: 3px solid theme-color("primary");
+        }
+      }
+    }
+  }
+
+  .inline-button {
+    text-shadow: 0 0 10px;
+  }
+
+  label {
+    background-color: lighten($body-bg, 10%);
+    margin: 0;
+    padding: 0 0.5em;
+    height: 100%;
+    line-height: 2.5em;
+    font-weight: bold;
+    font-size: 0.8em;
+    line-height: 3em;
+    color: lighten(theme-color("secondary"), 25%);
+  }
+
+  .dimension-editor {
+    display: inline-flex;
+
+    input {
+      text-align: center;
+      width: 4em;
+      background-color: lighten($body-bg, 5%);
+      border: 0;
+      color: inherit;
+      height: 100%;
+      border-bottom: 1px dashed lighten(theme-color("secondary"), 20%);
+    }
+  }
+}

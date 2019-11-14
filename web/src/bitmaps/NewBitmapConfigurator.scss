@@ -1,0 +1,28 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+form.new-bitmap {
+  max-width: 450px;
+  margin: 0 auto;
+
+  label.error {
+    color: theme-color("danger");
+    font-weight: bold;
+
+    .error-message {
+      font-weight: normal;
+      margin-left: 1em;
+    }
+  }
+}
+
+.dimensions-inputs {
+  .input-group {
+    &:not(:last-child) {
+      margin-right: 2em;
+    }
+
+    max-width: 300px;
+  }
+}
