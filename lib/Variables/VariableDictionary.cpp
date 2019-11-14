@@ -5,6 +5,8 @@ static const char DEFAULT_VALUE[] = "";
 const char VariableDictionary::FILENAME[] = "/variables.json";
 
 VariableDictionary::VariableDictionary()
+  : lastFlush(0)
+  , dirty(false)
 { }
 
 void VariableDictionary::load() {
@@ -45,6 +47,9 @@ void VariableDictionary::save() {
   if (!SPIFFS.rename(tmpName, FILENAME)) {
     Serial.println(F("VariableDictionary - WARN: could not move tmp file over"));
   }
+
+  this->dirty = false;
+  this->lastFlush = millis();
 }
 
 void VariableDictionary::registerVariable(const String& key) {
@@ -60,14 +65,15 @@ bool VariableDictionary::containsKey(const String &key) {
 void VariableDictionary::set(const String &key, const String &value) {
   this->vars[key] = value;
 
-  // Don't save timestamp, as it's updated every second
+  // TODO: generalize and don't make a string to do this
   if (key != "timestamp") {
-    save();
+    this->dirty = true;
   }
 }
 
 void VariableDictionary::erase(const String &key) {
   this->vars.erase(key);
+  this->dirty = true;
 }
 
 String VariableDictionary::get(const String &key) {
@@ -75,5 +81,11 @@ String VariableDictionary::get(const String &key) {
     return this->vars[key];
   } else {
     return DEFAULT_VALUE;
+  }
+}
+
+void VariableDictionary::loop() {
+  if (this->dirty && (this->lastFlush - millis()) > 1000) {
+    save();
   }
 }

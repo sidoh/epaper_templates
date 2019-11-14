@@ -19,9 +19,12 @@ public:
 
   void save();
   void load();
+  void loop();
 
 private:
   std::map<String, String> vars;
+  time_t lastFlush;
+  bool dirty;
 };
 
 #endif

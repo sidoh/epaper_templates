@@ -29,6 +29,8 @@ void DisplayTemplateDriver::init() {
 }
 
 void DisplayTemplateDriver::loop() {
+  vars.loop();
+
 #if defined(ESP32)
   xSemaphoreTake(mutex, portMAX_DELAY);
 #endif
