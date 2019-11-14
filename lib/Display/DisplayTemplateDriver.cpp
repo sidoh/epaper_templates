@@ -283,6 +283,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(VariableFormat
     RectangleRegion::styleFromString(spec["style"])
   );
   regions.add(region);
+  region->updateValue(vars.get(variable));
   return region;
 }
 
