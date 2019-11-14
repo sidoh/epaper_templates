@@ -27,7 +27,9 @@ def build_web():
                 print(check_output(["npm", "install"]))
                 print(check_output(["npm", "run", "build"]))
 
-            os.mkdir("../dist")
+            if not os.path.exists("../dist"):
+                os.mkdir("../dist")
+
             copyfile("build/web_assets.h", "../dist/web_assets.h")
         finally:
             os.chdir("..");
