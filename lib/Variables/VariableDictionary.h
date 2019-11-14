@@ -13,6 +13,7 @@ public:
 
   String get(const String& key);
   void set(const String& key, const String& value);
+  void erase(const String& key);
   void registerVariable(const String& key);
   bool containsKey(const String& key);
 

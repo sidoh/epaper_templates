@@ -117,17 +117,24 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
         Rectangle bb = region->getBoundingBox().rounded();
 
         if (! DisplayTemplateDriver::regionContainedIn(bb, flushedRegions)) {
-          display->displayWindow(
-            bb.x,
-            bb.y,
-            bb.w,
-            bb.h
-          );
+          if (settings.display.windowed_updates) {
+            display->displayWindow(
+              bb.x,
+              bb.y,
+              bb.w,
+              bb.h
+            );
+          }
           flushedRegions.add(bb);
         }
       }
 
       curr = curr->next;
+    }
+
+    // If we didn't issue windowed updates, do an update of the whole screen in partial mode.
+    if (! settings.display.windowed_updates){
+      display->display(true);
     }
 
     display->powerOff();
@@ -182,6 +189,11 @@ void DisplayTemplateDriver::updateVariable(const String& key, const String& valu
 #if defined(ESP32)
   xSemaphoreGive(mutex);
 #endif
+}
+
+void DisplayTemplateDriver::deleteVariable(const String& key) {
+  updateVariable(key, "");
+  vars.erase(key);
 }
 
 void DisplayTemplateDriver::setTemplate(const String& templateFilename) {

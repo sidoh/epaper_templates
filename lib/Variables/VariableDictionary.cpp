@@ -66,6 +66,10 @@ void VariableDictionary::set(const String &key, const String &value) {
   }
 }
 
+void VariableDictionary::erase(const String &key) {
+  this->vars.erase(key);
+}
+
 String VariableDictionary::get(const String &key) {
   if (containsKey(key)) {
     return this->vars[key];

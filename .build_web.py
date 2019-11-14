@@ -22,23 +22,12 @@ def build_web():
         try:
             if platform.system() == "Windows":
                 print(check_output(["npm.cmd", "install", "--only=dev"]))
-                print(check_output(["yarn.cmd", "run", "build"]))
+                print(check_output(["npm.cmd", "run", "build"]))
             else:
-                print(check_output(["yarn", "install"]))
-                print(check_output(["yarn", "run", "build"]))
-            copyfile("dist/index.html.gz.h", "../dist/index.html.gz.h")
-        except OSError as e:
-            print("Encountered error OSError building webpage:", e)
-            if e.filename:
-                print("Filename is", e.filename)
-            print("WARNING: Failed to build web package. Using pre-built page.")
-        except CalledProcessError as e:
-            print(e.output)
-            print("Encountered error CalledProcessError building webpage:", e)
-            print("WARNING: Failed to build web package. Using pre-built page.")
-        except Exception as e:
-            print("Encountered error", type(e).__name__, "building webpage:", e)
-            print("WARNING: Failed to build web package. Using pre-built page.")
+                print(check_output(["npm", "install"]))
+                print(check_output(["npm", "run", "build"]))
+
+            copyfile("build/web_assets.h", "../dist/web_assets.h")
         finally:
             os.chdir("..");
 

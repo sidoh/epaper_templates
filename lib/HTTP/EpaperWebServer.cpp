@@ -1,5 +1,5 @@
 #include <EpaperWebServer.h>
-#include <index.html.gz.h>
+#include <web_assets.h>
 
 #if defined(ESP8266)
 #include <Updater.h>
@@ -7,12 +7,13 @@
 #include <Update.h>
 #endif
 
-static const char INDEX_FILENAME[] = "/index.html";
 static const char TEXT_HTML[] = "text/html";
 static const char TEXT_PLAIN[] = "text/plain";
 static const char APPLICATION_JSON[] = "application/json";
 
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
+static const char METADATA_FILENAME[] = "metadata.json";
+static const char TMP_DIRECTORY[] = "/x";
 
 using namespace std::placeholders;
 
@@ -20,7 +21,7 @@ EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& setti
   : driver(driver),
     settings(settings),
     authProvider(settings.web),
-    server(RichHttpServer<RichHttpConfig>(settings.web.port, authProvider)),
+    server(RichHttpServer<RichHttpConfig>(settings.web.port == 0 ? 80 : settings.web.port, authProvider)),
     port(settings.web.port),
     changeFn(nullptr)
 { }
@@ -34,62 +35,75 @@ uint16_t EpaperWebServer::getPort() const {
 }
 
 void EpaperWebServer::begin() {
-  server
-    .buildHandler("/")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeGzip_P, this, TEXT_HTML, index_html_gz, index_html_gz_len, _1));
+  for (auto it = WEB_ASSET_CONTENTS.begin(); it != WEB_ASSET_CONTENTS.end(); ++it) {
+    const char* filename = it->first;
+    const uint8_t* contents = it->second;
+    const size_t length = WEB_ASSET_LENGTHS.at(filename);
+    const char* contentType = WEB_ASSET_CONTENT_TYPES.at(filename);
+
+    server
+      .buildHandler(filename)
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeGzip_P, this, contentType, contents, length, _1));
+  }
 
   server
-    .buildHandler("/variables")
+    .buildHandler("/api/v1/variables")
     .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeFile, this, VariableDictionary::FILENAME, APPLICATION_JSON, "", _1));
 
   server
-    .buildHandler("/templates")
+    .buildHandler("/api/v1/variables/:variable_name")
+    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
+
+  server
+    .buildHandler("/api/v1/templates")
     .on(
       HTTP_POST,
-      std::bind(&EpaperWebServer::handleNoOp, this),
+      std::bind(&EpaperWebServer::handleNoOp, this, _1),
       std::bind(&EpaperWebServer::handleCreateFile, this, TEMPLATES_DIRECTORY, _1)
     )
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleListDirectory, this, TEMPLATES_DIRECTORY, _1));
 
   server
-    .buildHandler("/templates/:filename")
+    .buildHandler("/api/v1/templates/:filename")
     .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteTemplate, this, _1))
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowTemplate, this, _1))
     .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateTemplate, this, _1));
 
   server
-    .buildHandler("/bitmaps")
+    .buildHandler("/api/v1/bitmaps")
     .on(
       HTTP_POST,
-      std::bind(&EpaperWebServer::handleNoOp, this),
-      std::bind(&EpaperWebServer::handleCreateFile, this, BITMAPS_DIRECTORY, _1)
+      std::bind(&EpaperWebServer::handleCreateBitmapFinish, this, _1),
+      std::bind(&EpaperWebServer::handleCreateBitmap, this, _1)
     )
     .on(
       HTTP_GET,
-      std::bind(&EpaperWebServer::handleListDirectory, this, BITMAPS_DIRECTORY, _1)
+      std::bind(&EpaperWebServer::handleListBitmaps, this, _1)
     );
+
   server
-    .buildHandler("/bitmaps/:filename")
+    .buildHandler("/api/v1/bitmaps/:filename")
     .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteBitmap, this, _1))
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowBitmap, this, _1));
 
   server
-    .buildHandler("/settings")
+    .buildHandler("/api/v1/settings")
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSettings, this, _1))
     .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateSettings, this, _1));
 
   server
-    .buildHandler("/about")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleAbout, this, _1));
+    .buildHandler("/api/v1/system")
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSystem, this, _1))
+    .on(HTTP_POST, std::bind(&EpaperWebServer::handlePostSystem, this, _1));
 
   server
     .buildHandler("/firmware")
     .handleOTA();
 
   server.onNotFound([this](AsyncWebServerRequest *request) {
-    if (request->url().startsWith("/app/")) {
-      _handleServeGzip_P(TEXT_HTML, index_html_gz, index_html_gz_len, request);
+    if (request->url() == "/" || request->url().startsWith("/app")) {
+      _handleServeGzip_P(TEXT_HTML, INDEX_HTML_GZ, INDEX_HTML_GZ_LENGTH, request);
     } else {
       request->send(404);
     }
@@ -99,9 +113,33 @@ void EpaperWebServer::begin() {
   server.begin();
 }
 
-void EpaperWebServer::handleNoOp() { }
+void EpaperWebServer::handleNoOp(RequestContext& request) {
+  request.response.json[F("success")] = true;
+  request.response.setCode(200);
+}
 
-void EpaperWebServer::handleAbout(RequestContext& request) {
+void EpaperWebServer::handlePostSystem(RequestContext& request) {
+  JsonObject body = request.getJsonBody().as<JsonObject>();
+  JsonVariant command = body[F("command")];
+
+  if (command.isNull()) {
+    request.response.json[F("error")] = F("Command not specified");
+    request.response.setCode(400);
+    return;
+  }
+
+  String strCommand = command.as<String>();
+
+  if (strCommand.equalsIgnoreCase("reboot")) {
+    ESP.restart();
+    request.response.json[F("success")] = true;
+  } else {
+    request.response.json[F("error")] = F("Unhandled command");
+    request.response.setCode(400);
+  }
+}
+
+void EpaperWebServer::handleGetSystem(RequestContext& request) {
   // Measure before allocating buffers
   uint32_t freeHeap = ESP.getFreeHeap();
 
@@ -109,6 +147,13 @@ void EpaperWebServer::handleAbout(RequestContext& request) {
   request.response.json["variant"] = QUOTE(FIRMWARE_VARIANT);
   request.response.json["free_heap"] = freeHeap;
   request.response.json["sdk_version"] = ESP.getSdkVersion();
+}
+
+void EpaperWebServer::handleDeleteVariable(RequestContext& request) {
+  const char* variableName = request.pathVariables.get("variable_name");
+  driver->deleteVariable(variableName);
+
+  request.response.json["success"] = true;
 }
 
 void EpaperWebServer::handleUpdateVariables(RequestContext& request) {
@@ -176,6 +221,80 @@ bool EpaperWebServer::serveFile(const char* file, const char* contentType, Reque
 // CRUD handlers for bitmaps
 // ---------
 
+void EpaperWebServer::handleCreateBitmapFinish(RequestContext& request) {
+  char tmpMetadataFile[32];
+  snprintf_P(tmpMetadataFile, 31, PSTR("%s/%s"), TMP_DIRECTORY, METADATA_FILENAME);
+
+  auto param = request.rawRequest->getParam(F("bitmap"), true, true);
+
+  if (param == nullptr) {
+    request.response.json[F("error")] = F("file upload named \"bitmap\" not found in request");
+    request.response.setCode(400);
+    return;
+  }
+
+  if (SPIFFS.exists(tmpMetadataFile)) {
+    char metadataFile[32];
+    snprintf_P(metadataFile, 31, PSTR("%s/%s"), BITMAP_METADATA_DIRECTORY, param->value().c_str());
+
+    Serial.printf_P(PSTR("%s -> %s\n"), tmpMetadataFile, metadataFile);
+    SPIFFS.remove(metadataFile);
+
+    if (SPIFFS.rename(tmpMetadataFile, metadataFile)) {
+      request.response.json[F("success")] = true;
+      request.response.json[F("metadata_file")] = metadataFile;
+    } else {
+      SPIFFS.remove(tmpMetadataFile);
+
+      request.response.json[F("error")] = F("failure while persisting image metadata");
+      request.response.setCode(500);
+    }
+  } else {
+    request.response.json[F("warn")] = F("no metadata.json file found.");
+  }
+}
+
+void EpaperWebServer::handleListBitmaps(RequestContext& request) {
+  JsonArray responseObj = request.response.json.to<JsonArray>();
+  listDirectory(BITMAPS_DIRECTORY, responseObj);
+  char buffer[32];
+  StaticJsonDocument<1024> metadataBuffer;
+
+  for (JsonObject it : responseObj) {
+    const char* path = it["name"];
+
+    if (path == nullptr) {
+      continue;
+    }
+
+    const char* filename = strrchr(path, '/');
+
+    if (filename != nullptr) {
+      snprintf(buffer, 31, "%s%s", BITMAP_METADATA_DIRECTORY, filename);
+
+      File f = SPIFFS.open(buffer);
+
+      if (f && f.available()) {
+        JsonObject metadata = it.createNestedObject("metadata");
+
+        deserializeJson(metadataBuffer, f);
+        f.close();
+
+        // ArduinoJson will make a copy
+        metadata.set(metadataBuffer.as<JsonObject>());
+      }
+    }
+  }
+}
+
+void EpaperWebServer::handleCreateBitmap(RequestContext& request) {
+  if (request.upload.filename == METADATA_FILENAME) {
+    handleCreateFile(TMP_DIRECTORY, request);
+  } else {
+    handleCreateFile(BITMAPS_DIRECTORY, request);
+  }
+}
+
 void EpaperWebServer::handleShowBitmap(RequestContext& request) {
   const char* filename = request.pathVariables.get("filename");
   String path = String(BITMAPS_DIRECTORY) + "/" + filename;
@@ -185,17 +304,15 @@ void EpaperWebServer::handleShowBitmap(RequestContext& request) {
 void EpaperWebServer::handleDeleteBitmap(RequestContext& request) {
   const char* filename = request.pathVariables.get("filename");
   String path = String(BITMAPS_DIRECTORY) + "/" + filename;
-  handleDeleteFile(filename, request);
+  handleDeleteFile(path, request);
 }
 
-void EpaperWebServer::handleListDirectory(const char* dirName, RequestContext& request) {
-  JsonArray responseObj = request.response.json.to<JsonArray>();
-
+void EpaperWebServer::listDirectory(const char* dirName, JsonArray result) {
 #if defined(ESP8266)
   Dir dir = SPIFFS.openDir(dirName);
 
   while (dir.next()) {
-    JsonObject file = responseObj.createNestedObject();
+    JsonObject file = result.createNestedObject();
     file["name"] = dir.fileName();
     file["size"] = dir.fileSize();
   }
@@ -206,18 +323,21 @@ void EpaperWebServer::handleListDirectory(const char* dirName, RequestContext& r
     Serial.print(F("Path is not a directory - "));
     Serial.println(dirName);
 
-    request.response.setCode(500);
-    request.response.json["error"] = F("Expected path to be a directory, but wasn't");
     return;
   }
 
   while (File dirFile = dir.openNextFile()) {
-    JsonObject file = responseObj.createNestedObject();
+    JsonObject file = result.createNestedObject();
 
     file["name"] = String(dirFile.name());
     file["size"] = dirFile.size();
   }
 #endif
+}
+
+void EpaperWebServer::handleListDirectory(const char* dirName, RequestContext& request) {
+  JsonArray responseObj = request.response.json.to<JsonArray>();
+  listDirectory(dirName, responseObj);
 }
 
 // ---------
@@ -237,8 +357,8 @@ void EpaperWebServer::handleShowTemplate(RequestContext& request) {
 }
 
 void EpaperWebServer::handleDeleteFile(const String& path, RequestContext& request) {
-  if (SPIFFS.exists(path)) {
-    if (SPIFFS.remove(path)) {
+  if (SPIFFS.exists(path.c_str())) {
+    if (SPIFFS.remove(path.c_str())) {
       request.response.json["success"] = true;
     } else {
       request.response.setCode(500);
@@ -283,7 +403,6 @@ void EpaperWebServer::handleCreateFile(const char* filePrefix, RequestContext& r
 
   if (updateFile && request.upload.isFinal) {
     updateFile.close();
-    request.response.json["success"] = true;
   }
 }
 
@@ -328,6 +447,8 @@ void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& r
 
 void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
   JsonObject req = request.getJsonBody().as<JsonObject>();
+
+  serializeJson(req, Serial);
 
   if (req.isNull()) {
     request.response.json["error"] = F("Invalid JSON");

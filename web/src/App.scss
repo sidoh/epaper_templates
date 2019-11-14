@@ -1,0 +1,43 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.navbar-top {
+  .nav-link.active {
+    font-weight: bold;
+  }
+}
+
+.main-content {
+  margin-top: 100px;
+}
+
+form.rjsf {
+  .control-label {
+    font-weight: bold;
+  }
+
+  .help-block {
+    font-size: 0.8em;
+  }
+
+  .checkbox {
+    input[type="checkbox"] {
+      margin-right: 1em;
+    }
+  }
+}
+
+label.react-switch {
+  display: flex;
+
+  span {
+    font-weight: bold;
+    margin-right: 2em;
+    margin-top: 0.5em;
+  }
+}
+
+.react-select {
+  color: #000;
+}
