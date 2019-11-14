@@ -4,7 +4,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 
 ## Demo
 
-[<img src="https://i.imgur.com/Y0VtqgG.gif" width="400" />](https://youtu.be/fBfWT8LcDsM)
+[<img src="https://imgur.com/RhSOGSt.gif" width="400" />](https://youtu.be/Vg_ctuM1Ppc)
 
 ## Requirements
 
@@ -17,6 +17,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
    1. With PlatformIO: for example `pio run -e esp32 -t upload`.
    1. Use a pre-compiled binary from the [releases page](https://github.com/sidoh/epaper_templates/releases).
 1. Setup WiFi.  A setup AP will appear named `epaper_XXXXXX`.  The default password is **waveshare**.
+1. Visit the Web UI to configure further.
 
 ## Variables
 
@@ -25,7 +26,7 @@ Displays are made dynamic by binding _variables_ to certain regions.  When varia
 #### REST API
 
 ```
-$ curl -v -X PUT -H'Content-Type: application/json' -d '{"variable_name":"variable_value"}' http://epaper-display/variables
+$ curl -v -X PUT -H'Content-Type: application/json' -d '{"variable_name":"variable_value"}' http://epaper-display/api/v1/variables
 ```
 
 #### MQTT
@@ -38,7 +39,7 @@ $ curl -v -X PUT -H'Content-Type: application/json' -d '{
   "mqtt_username": "sidoh",
   "mqtt_password": "hunter2",
   "mqtt_variables_topic_pattern": "template-displays/display1/:variable_name"
-}' http://epaper-display/settings
+}' http://epaper-display/api/v1/settings
 ```
 
 You can then publish messages to, for example `template-displays/display1/variable_name` to update the value of the variable `variable_name`.
@@ -159,15 +160,15 @@ Text can be defined statically, or using a variable.  Examples of each:
 
 ### Bitmaps
 
-Bitmaps are in a special compacted format.  [Here is a ruby script](https://gist.github.com/sidoh/41a06173f1e4714cf573de1d05f1651e#file-png_to_bitfield-rb) that converts a PNG to the bitfield format.
+Bitmaps are in a simple compacted format (where each pixel is a single bit).  You can use the Web UI to convert, edit, and resize existing images.  If you prefer to use the API, or want to do this in patch, [here is a ruby script](https://gist.github.com/sidoh/41a06173f1e4714cf573de1d05f1651e#file-png_to_bitfield-rb) that converts a PNG to the bitfield format.
 
 They are referenced via filenames, and can be managed through the REST API:
 
 ```
-$ curl -X POST -F 'my-bitmap.bin=@path/to/bitmap.bin' http://epaper-display/bitmaps
-$ curl -v http://epaper-display/bitmaps
+$ curl -X POST -F 'my-bitmap.bin=@path/to/bitmap.bin' http://epaper-display/api/v1/bitmaps
+$ curl -v http://epaper-display/api/v1/bitmaps
 [{"name":"/b/bitmap.bin","size":512}]
-$ curl -X DELETE http://epaper-display/bitmaps/bitmap.bin
+$ curl -X DELETE http://epaper-display/api/v1/bitmaps/bitmap.bin
 ```
 
 Example:
@@ -203,6 +204,54 @@ Example:
 }
 ```
 
+### Rectangles
+
+Rectangles of static width can be specified like so:
+
+```json
+{
+  "rectangles": [
+    {
+      "style": "outline",
+      "x": 50,
+      "y": 50,
+      "height": {
+        "static": 50
+      },
+      "width": {
+        "static": 50
+      },
+      "color": "black"
+    }
+  ]
+}
+```
+
+Rectangles can also have a dynamic dimension (rectangles with both dimensions being dynamic are currently not supported).  For example:
+
+```json
+{
+  "rectangles": [
+    {
+      "style": "filled",
+      "x": 51,
+      "y": 51,
+      "height": {
+        "static": 488
+      },
+      "width": {
+        "max": 48,
+        "variable": "rectangle-width",
+        "variable_mode": "percent"
+      },
+      "color": "black"
+    }
+  ]
+}
+```
+
+When `variable_mode` is `percent`, you must specify a `max` as well.  The dimension of the rectangle will then be set to the percent of the specified variable (for example, a value of 50 would mean the rectangle would have half of its dimension).
+
 ### Examples
 
 The [examples directory][examples] has a few sample templates.
@@ -212,10 +261,10 @@ The [examples directory][examples] has a few sample templates.
 Templates can be managed via the REST API:
 
 ```
-$ curl -X POST -F 'image=@data/path/to/template.json' http://epaper-display/templates
-$ curl http://epaper-display/templates
+$ curl -X POST -F 'image=@data/path/to/template.json' http://epaper-display/api/v1/templates
+$ curl http://epaper-display/api/v1/templates
 [{"name":"/t/template.json","size":3527}]
-$ curl -X DELETE http://epaper-display/templates/template.json
+$ curl -X DELETE http://epaper-display/api/v1/templates/template.json
 ```
 
 ### Selecting a template
@@ -223,20 +272,21 @@ $ curl -X DELETE http://epaper-display/templates/template.json
 ```
 $ curl -X PUT -H'Content-Type:application/json' \
   -d '{"template_path":"/templates/template.json"}' \
-  http://epaper-display/settings
+  http://epaper-display/api/v1/settings
 ```
 
 ## REST API
 
 The following RESTful routes are available:
 
-1. `/variables` - GET, PUT.
-1. `/templates` - GET, POST.
-1. `/templates/:template_name` - GET, DELETE, PUT
-1. `/bitmaps` - GET, POST.
-1. `/bitmaps/:bitmap_name` - GET, DELETE.
-1. `/settings` - GET, PUT.
-1. `/about` - GET.
+1. `/api/v1/variables` - GET, PUT.
+1. `/api/v1/templates` - GET, POST.
+1. `/api/v1/templates/:template_name` - GET, DELETE, PUT
+1. `/api/v1/bitmaps` - GET, POST.
+1. `/api/v1/bitmaps/:bitmap_name` - GET, DELETE.
+1. `/api/v1/settings` - GET, PUT.
+1. `/api/v1/about` - GET.
+1. `/firmware` - POST.
 1. `/` - GET.
 
 [info-license]:   https://github.com/sidoh/epaper_templates/blob/master/LICENSE

@@ -1,0 +1,114 @@
+{
+  "rotation": 1,
+  "lines": [
+    {
+      "x1": 0,
+      "y1": 55,
+      "x2": 300,
+      "y2": 55
+    },
+    {
+      "x1": 180,
+      "y1": 0,
+      "x2": 180,
+      "y2": 55
+    }
+  ],
+  "formatters": { },
+  "text": [
+    {
+      "x": 0,
+      "y": 50,
+      "font": "FreeSans18pt7b",
+      "font_size": 2,
+      "variable": "timestamp",
+      "formatter": "time",
+      "args": {
+        "timezone": "PT",
+        "format": "%H:%M"
+      }
+    },
+    {
+      "x": 185,
+      "y": 18,
+      "font": "FreeSansBold9pt7b",
+      "variable": "timestamp",
+      "formatter": "time",
+      "update_rect": "datetime",
+      "args": {
+        "timezone": "PT",
+        "format": "%A"
+      }
+    },
+    {
+      "x": 185,
+      "y": 45,
+      "font": "FreeSans9pt7b",
+      "variable": "timestamp",
+      "formatter": "time",
+      "update_rect": "datetime",
+      "args": {
+        "timezone": "PT",
+        "format": "%m/%d/%Y"
+      }
+    },
+    {
+      "x": 5,
+      "y": 72,
+      "font": "FreeSansBold9pt7b",
+      "static": "Sleep"
+    },
+    {
+      "x": "65",
+      "y": 72,
+      "font": "FreeSans9pt7b",
+      "variable": "lights-out-time",
+      "formatter": "time",
+      "args": {
+        "timezone": "PT",
+        "format": "%H:%M"
+      }
+    },
+    {
+      "x": 115,
+      "y": 72,
+      "font": "FreeSansBold9pt7b",
+      "static": "|"
+    },
+    {
+      "x": 120,
+      "y": 72,
+      "font": "FreeSans9pt7b",
+      "variable": "lights-out-time-relative"
+    }
+  ],
+  "bitmaps": [],
+  "rectangles": [
+    {
+      "style": "filled",
+      "x": 6,
+      "y": 80,
+      "height": {
+        "static": 40
+      },
+      "width": {
+        "max": 280,
+        "variable": "sleep-time-percent",
+        "variable_mode": "percent"
+      },
+      "color": "black"
+    },
+    {
+      "style": "outline",
+      "x": 6,
+      "y": 79,
+      "height": {
+        "static": 42
+      },
+      "width": {
+        "static": 282
+      },
+      "color": "black"
+    }
+  ]
+}
