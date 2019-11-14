@@ -94,7 +94,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
     std::shared_ptr<Region> region = curr->data;
 
     if (region->isDirty()) {
-      printf("Rendering %s\n", region->getVariableName().c_str());
+      Serial.printf_P(PSTR("Rendering %s\n"), region->getVariableName().c_str());
       region->render(display);
     }
 
@@ -243,6 +243,40 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   if (tmpl.containsKey("text")) {
     renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>());
   }
+
+  if (tmpl.containsKey("rectangles")) {
+    renderRectangles(formatterFactory, tmpl["rectangles"].as<JsonArray>());
+  }
+}
+
+std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(VariableFormatterFactory& formatterFactory, JsonObject spec) {
+  String variable = RectangleRegion::Dimension::hasVariable(spec)
+    ? RectangleRegion::Dimension::extractVariable(spec)
+    : "";
+
+  RectangleRegion::Dimension
+    w = RectangleRegion::Dimension::fromSpec(spec["width"]),
+    h = RectangleRegion::Dimension::fromSpec(spec["height"]);
+
+  auto region = std::make_shared<RectangleRegion>(
+    variable,
+    spec["x"],
+    spec["y"],
+    w,
+    h,
+    extractColor(spec),
+    formatterFactory.create(spec),
+    RectangleRegion::styleFromString(spec["style"])
+  );
+  regions.add(region);
+  return region;
+}
+
+void DisplayTemplateDriver::renderRectangles(VariableFormatterFactory& formatterFactory, JsonArray rectangles) {
+  for (JsonArray::iterator it = rectangles.begin(); it != rectangles.end(); ++it) {
+    JsonObject rect = it->as<JsonObject>();
+    addRectangleRegion(formatterFactory, rect);
+  }
 }
 
 void DisplayTemplateDriver::renderBitmap(const String &filename, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
@@ -361,7 +395,8 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(VariableFormatterFa
       fixedBound,
       extractColor(spec),
       parseFont(spec["font"].as<const char*>()),
-      formatterFactory.create(spec)
+      formatterFactory.create(spec),
+      extractTextSize(spec)
     )
   );
   regions.add(region);
@@ -406,6 +441,14 @@ const uint16_t DisplayTemplateDriver::parseColor(const String &colorName) {
     return GxEPD_RED;
   } else {
     return GxEPD_WHITE;
+  }
+}
+
+const uint8_t DisplayTemplateDriver::extractTextSize(JsonObject spec) {
+  if (spec.containsKey("font_size")) {
+    return spec["font_size"];
+  } else {
+    return 1;
   }
 }
 

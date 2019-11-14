@@ -8,12 +8,12 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 
 ## Requirements
 
-1. ESP8266/ESP32.  The entire display frame is buffered in memory, so ESP32 may be a more suitable for large displays.
+1. An ESP32.
 2. A WaveShare e-Paper module.  Currently only the 4.2" black/white display is supported.
 
 ## Setup
 
-1. Flash your MCU.  
+1. Flash your MCU.
    1. With PlatformIO: for example `pio run -e esp32 -t upload`.
    1. Use a pre-compiled binary from the [releases page](https://github.com/sidoh/epaper_templates/releases).
 1. Setup WiFi.  A setup AP will appear named `epaper_XXXXXX`.  The default password is **waveshare**.
@@ -51,7 +51,7 @@ mosquitto_pub -h my-mqtt-broker.com -u username -P hunter2 -t 'template-displays
 
 Variables can optionally be passed through a formatting function before being rendered.  The supported formatters are:
 
-#### `time` 
+#### `time`
 
 Format a UNIX epoch timestamp using standard [`strftime`](http://man7.org/linux/man-pages/man3/strftime.3.html) flags.
 
