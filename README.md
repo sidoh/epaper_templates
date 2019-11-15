@@ -111,6 +111,7 @@ Templates are composed of the following types of components:
 1. Lines
 2. Text
 3. Bitmaps
+4. Rectangles
 
 ### Lines
 
