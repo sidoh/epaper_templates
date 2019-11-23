@@ -41,11 +41,16 @@ const buildCppAssetIndex = (definitions) => {
   }
   const source = `#include <map>
 #include <cstring>
+
+#ifndef _CHAR_COMPARATOR_H
+#define _CHAR_COMPARATOR_H
 struct cmp_str {
   bool operator()(char const *a, char const *b) const {
       return std::strcmp(a, b) < 0;
   }
 };
+#endif
+
 ${definitions.map(x => x.pathDefinition).join("\n")}
 ${definitions.map(x => x.progmemDefinition).join("\n")}
 ${definitions.map(x => x.lengthDefinition).join("\n")}

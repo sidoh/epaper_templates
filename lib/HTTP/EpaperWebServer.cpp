@@ -1,5 +1,6 @@
 #include <EpaperWebServer.h>
 #include <web_assets.h>
+#include <DisplayTypeHelpers.h>
 
 #if defined(ESP8266)
 #include <Updater.h>
@@ -56,6 +57,10 @@ void EpaperWebServer::begin() {
     .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
 
   server
+    .buildHandler("/api/v1/formatted_variables")
+    .on(HTTP_POST, std::bind(&EpaperWebServer::handleGetFormattedVariables, this, _1));
+
+  server
     .buildHandler("/api/v1/templates")
     .on(
       HTTP_POST,
@@ -96,6 +101,10 @@ void EpaperWebServer::begin() {
     .buildHandler("/api/v1/system")
     .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSystem, this, _1))
     .on(HTTP_POST, std::bind(&EpaperWebServer::handlePostSystem, this, _1));
+
+  server
+    .buildHandler("/api/v1/screens")
+    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetScreens, this, _1));
 
   server
     .buildHandler("/firmware")
@@ -448,8 +457,6 @@ void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& r
 void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
   JsonObject req = request.getJsonBody().as<JsonObject>();
 
-  serializeJson(req, Serial);
-
   if (req.isNull()) {
     request.response.json["error"] = F("Invalid JSON");
     request.response.setCode(400);
@@ -476,4 +483,33 @@ void EpaperWebServer::handleGetSettings(RequestContext& request) {
 
 void EpaperWebServer::onSettingsChange(std::function<void()> changeFn) {
   this->changeFn = changeFn;
+}
+
+void EpaperWebServer::handleGetScreens(RequestContext& request) {
+  JsonArray screens = request.response.json.createNestedArray(F("screens"));
+
+  for (auto screen : DisplayTypeHelpers::PANELS_BY_NAME) {
+    const char* name = screen.first;
+    const GxEPD2::Panel type = screen.second;
+
+    JsonObject info = screens.createNestedObject();
+    info[F("name")] = name;
+
+    auto elmt = DisplayTypeHelpers::PANEL_SIZES.find(type);
+
+    if (elmt != DisplayTypeHelpers::PANEL_SIZES.end()) {
+      auto dimensions = elmt->second;
+      info[F("width")] = dimensions.first;
+      info[F("height")] = dimensions.second;
+    }
+  }
+}
+
+void EpaperWebServer::handleGetFormattedVariables(RequestContext& request) {
+  JsonObject req = request.getJsonBody().as<JsonObject>();
+
+  JsonArray variables = req[F("variables")];
+  JsonArray response = request.response.json.createNestedArray(F("resolved_variables"));
+
+  driver->resolveVariables(variables, response);
 }

@@ -11,6 +11,10 @@ import { useHistory } from "react-router-dom";
 import "./TemplateEditor.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import api from "../util/api";
+import VisualTemplateEditor from "./VisualTemplateEditor";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
 const RawJsonEditor = ({ value, onChange }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -47,6 +51,7 @@ const RawJsonEditor = ({ value, onChange }) => {
       <Form.Control
         as="textarea"
         className="json-textarea"
+        style={{ height: "400px" }}
         value={internalValue}
         onChange={_onChange}
         onBlur={save}
@@ -66,21 +71,73 @@ const TreeJsonEditor = ({ value, onChange }) => {
   return <ReactJson src={value} onEdit={_onChange} theme="solarized" />;
 };
 
+const EditorModeHandlers = {
+  tree: TreeJsonEditor,
+  json: RawJsonEditor,
+  visual: VisualTemplateEditor
+};
+
 const SwitchableJsonEditor = ({ value, onChange }) => {
+  const [subNav, setSubNav] = useState([]);
   const [mode, setMode] = useState("visual");
-  const ViewComponent = mode === "visual" ? TreeJsonEditor : RawJsonEditor;
+  const [subNavMode, setSubNavMode] = useState(null);
+  const ViewComponent = EditorModeHandlers[mode];
+
+  const updateSubNav = useCallback((items) => {
+    if (subNavMode == null && items.length > 0) {
+      setSubNavMode(items.length > 0 ? items[0].key : null);
+    }
+
+    setSubNav(items);
+  }, [subNavMode])
 
   return (
     <>
-      <Nav variant="pills" activeKey={mode} onSelect={setMode} className="mb-2">
-        <Nav.Item>
-          <Nav.Link eventKey="visual">Visual</Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link eventKey="json">JSON</Nav.Link>
-        </Nav.Item>
-      </Nav>
-      <ViewComponent value={value} onChange={onChange} />
+      <Container fluid className="p-0 m-0">
+        <Row>
+          <Col sm={12} lg={7}>
+            <Nav
+              variant="pills"
+              activeKey={mode}
+              onSelect={setMode}
+              className="mb-2"
+            >
+              <Nav.Item>
+                <Nav.Link eventKey="visual">Visual</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="tree">Tree</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="json">Raw</Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Col>
+          <Col sm={12} lg={5}>
+            <Nav
+              variant="pills"
+              activeKey={subNavMode}
+              onSelect={setSubNavMode}
+              className="mb-2"
+            >
+              {subNav.map(({ key, title }) => (
+                <Nav.Item key={key}>
+                  <Nav.Link eventKey={key}>
+                    {title}
+                  </Nav.Link>
+                </Nav.Item>
+              ))}
+            </Nav>
+          </Col>
+        </Row>
+
+        <ViewComponent
+          value={value}
+          onChange={onChange}
+          setSubNav={updateSubNav}
+          subNavMode={subNavMode}
+        />
+      </Container>
     </>
   );
 };
@@ -152,15 +209,12 @@ export default ({ path, template, triggerReload }) => {
       {(json == null || name == null) && <SiteLoader />}
       {json != null && name != null && (
         <>
-          <Form.Group>
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              disabled={!isNew}
-              name="name"
-              value={name}
-              onChange={onChangeName}
-            />
-          </Form.Group>
+          {isNew && (
+            <Form.Group>
+              <Form.Label>Name</Form.Label>
+              <Form.Control name="name" value={name} onChange={onChangeName} />
+            </Form.Group>
+          )}
 
           <Form.Group>
             <SwitchableJsonEditor value={json} onChange={setJson} />

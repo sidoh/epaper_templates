@@ -16,7 +16,38 @@ const createCanvas = (width, height) => {
   return cvs;
 };
 
-const resizeBitmap = ({ bitmap, width, height, newWidth, newHeight, sensitivity = 0.6 }) => {
+export function binToDataUrl({
+  binData,
+  width,
+  height,
+  color = "rgb(0,0,0)",
+  backgroundColor = "rgb(255,255,255)"
+}) {
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  const bitmap = bitmapFromBin(binData);
+
+  redraw({
+    ctx,
+    bitmap,
+    color,
+    backgroundColor,
+    width,
+    height,
+    pixelDimension: 1
+  });
+
+  return canvas.toDataURL();
+}
+
+const resizeBitmap = ({
+  bitmap,
+  width,
+  height,
+  newWidth,
+  newHeight,
+  sensitivity = 0.6
+}) => {
   const buffer = new Uint8Array(newWidth * newHeight);
   const oldCvs = createCanvas(width, height);
   const newCvs = createCanvas(newWidth, newHeight);
@@ -39,7 +70,7 @@ const resizeBitmap = ({ bitmap, width, height, newWidth, newHeight, sensitivity 
   for (let y = 0; y < newHeight; ++y) {
     for (let x = 0; x < newWidth; ++x) {
       const [r, g, b] = newCvsContext.getImageData(x, y, 1, 1).data;
-      const bit = ((r + g + b) / (3*255)) < sensitivity ? 1 : 0;
+      const bit = (r + g + b) / (3 * 255) < sensitivity ? 1 : 0;
 
       buffer[y * newWidth + x] = bit;
     }

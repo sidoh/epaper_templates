@@ -3,9 +3,9 @@
 #include <GxEPD2_BW.h>
 #include <GxEPD2_3C.h>
 #include <DisplayTypeHelpers.h>
-#include <CharComparator.h>
 
 #include <map>
+#include <utility>
 
 template <class Display>
 inline static GxEPD2_GFX* __gxepd2_build_bw_driver(const uint8_t dc, const uint8_t rst, const uint8_t busy) {
@@ -17,7 +17,7 @@ inline static GxEPD2_GFX* __gxepd2_build_3c_driver(const uint8_t dc, const uint8
   return new GxEPD2_3C<Display, Display::HEIGHT>(Display(SS, dc, rst, busy));
 }
 
-static const std::map<const char*, GxEPD2::Panel, cmp_str> PANELS_BY_NAME = {
+const std::map<const char*, GxEPD2::Panel, cmp_str> DisplayTypeHelpers::PANELS_BY_NAME = {
   { "GDEP015OC1", GxEPD2::Panel::GDEP015OC1 },
   { "GDE0213B1", GxEPD2::Panel::GDE0213B1 },
   { "GDEH0213B72", GxEPD2::Panel::GDEH0213B72 },
@@ -41,6 +41,34 @@ static const std::map<const char*, GxEPD2::Panel, cmp_str> PANELS_BY_NAME = {
   { "GDEW0583Z21", GxEPD2::Panel::GDEW0583Z21 },
   { "GDEW075Z09", GxEPD2::Panel::GDEW075Z09 },
   { "GDEW075Z08", GxEPD2::Panel::GDEW075Z08 }
+};
+
+// Data generated with:
+// ls src/{epd,epd3c}/*.h | xargs -I % bash -c 'grep -Eo "GxEPD2::[^;]+;" % | cut -d":" -f5 | tr -d "\n" && grep -Eo "(WIDTH|HEIGHT)[ ]*=[ ]*\d+" % | grep -Eo "[0-9]+" | tr "\n" "," && echo'
+const std::map<const GxEPD2::Panel, std::pair<uint16_t, uint16_t>> DisplayTypeHelpers::PANEL_SIZES = {
+  { GxEPD2::Panel::GDEP015OC1, std::make_pair<uint16_t, uint16_t>(200,200) },
+  { GxEPD2::Panel::GDE0213B1, std::make_pair<uint16_t, uint16_t>(128,250) },
+  { GxEPD2::Panel::GDEH0213B72, std::make_pair<uint16_t, uint16_t>(128,250) },
+  { GxEPD2::Panel::GDEH0213B73, std::make_pair<uint16_t, uint16_t>(128,250) },
+  { GxEPD2::Panel::GDEW0213I5F, std::make_pair<uint16_t, uint16_t>(104,212) },
+  { GxEPD2::Panel::GDEW026T0, std::make_pair<uint16_t, uint16_t>(152,296) },
+  { GxEPD2::Panel::GDEW027W3, std::make_pair<uint16_t, uint16_t>(176,264) },
+  { GxEPD2::Panel::GDEH029A1, std::make_pair<uint16_t, uint16_t>(128,296) },
+  { GxEPD2::Panel::GDEW029T5, std::make_pair<uint16_t, uint16_t>(128,296) },
+  { GxEPD2::Panel::GDEW0371W7, std::make_pair<uint16_t, uint16_t>(240,416) },
+  { GxEPD2::Panel::GDEW042T2, std::make_pair<uint16_t, uint16_t>(400,300) },
+  { GxEPD2::Panel::GDEW0583T7, std::make_pair<uint16_t, uint16_t>(600,448) },
+  { GxEPD2::Panel::GDEW075T8, std::make_pair<uint16_t, uint16_t>(640,384) },
+  { GxEPD2::Panel::GDEW075T7, std::make_pair<uint16_t, uint16_t>(800,480) },
+  { GxEPD2::Panel::GDEW0154Z04, std::make_pair<uint16_t, uint16_t>(200,200) },
+  { GxEPD2::Panel::GDEW0213Z16, std::make_pair<uint16_t, uint16_t>(104,212) },
+  { GxEPD2::Panel::GDEW027C44, std::make_pair<uint16_t, uint16_t>(176,264) },
+  { GxEPD2::Panel::GDEW029Z10, std::make_pair<uint16_t, uint16_t>(128,296) },
+  { GxEPD2::Panel::GDEW042Z15, std::make_pair<uint16_t, uint16_t>(400,300) },
+  { GxEPD2::Panel::GDEW0583Z21, std::make_pair<uint16_t, uint16_t>(600,448) },
+  { GxEPD2::Panel::GDEW075Z09, std::make_pair<uint16_t, uint16_t>(640,384) },
+  { GxEPD2::Panel::GDEW075Z08, std::make_pair<uint16_t, uint16_t>(800,480) },
+  { GxEPD2::Panel::ED060SCT, std::make_pair<uint16_t, uint16_t>(600, 800) },
 };
 
 const GxEPD2::Panel DisplayTypeHelpers::DEFAULT_PANEL = GxEPD2::Panel::GDEW042T2;

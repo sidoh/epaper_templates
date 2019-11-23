@@ -27,7 +27,6 @@ public:
   uint16_t getPort() const;
 
 private:
-
   DisplayTemplateDriver*& driver;
   Settings& settings;
   PassthroughAuthProvider<WebSettings> authProvider;
@@ -38,6 +37,7 @@ private:
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);
   void handleDeleteVariable(RequestContext& request);
+  void handleGetFormattedVariables(RequestContext& request);
 
   void handleNoOp(RequestContext& request);
 
@@ -65,6 +65,8 @@ private:
 
   void handleUpdateSettings(RequestContext& request);
   void handleGetSettings(RequestContext& request);
+
+  void handleGetScreens(RequestContext& request);
 
   // Misc helpers
   void handleUpdateFile(ArUploadHandlerFunction* request, const char* filename);
