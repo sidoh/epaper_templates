@@ -1,9 +1,22 @@
 #include <VariableFormatters.h>
 
 CasesVariableFormatter::CasesVariableFormatter(JsonObject args) {
-  JsonObject cases = args["cases"];
-  for (JsonObject::iterator itr = cases.begin(); itr != cases.end(); ++itr) {
-    this->cases[itr->key().c_str()] = itr->value().as<String>();
+  JsonVariant cases = args["cases"];
+
+  if (cases.is<JsonObject>()) {
+    for (JsonPair kv : cases.as<JsonObject>()) {
+      this->cases[kv.key().c_str()] = kv.value().as<String>();
+    }
+  } else if (cases.is<JsonArray>()) {
+    for (JsonVariant value : cases.as<JsonArray>()) {
+      JsonObject _value = value.as<JsonObject>();
+      const char* mapFrom = _value["key"].as<const char*>();
+      const char* mapTo = _value["value"].as<const char*>();
+
+      this->cases[mapFrom] = mapTo;
+    }
+  } else {
+    Serial.println(F("CasesVariableFormatter: ERROR - unexpected type for \"cases\" arg"));
   }
 
   this->defaultValue = args["default"].as<const char*>();

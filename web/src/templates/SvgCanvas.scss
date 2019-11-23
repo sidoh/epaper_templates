@@ -1,0 +1,24 @@
+.visual-editor {
+  svg {
+    image, text, line {
+      stroke-width: 1px;
+      cursor: pointer;
+
+      &:hover {
+        stroke-width: 3px;
+      }
+
+      &.active {
+        background-color: #ff9999;
+        font-weight: bold;
+        fill: #cc6 !important;
+        text-decoration: underline;
+        stroke-width: 3px;
+      }
+    }
+
+    line.active {
+      stroke: #cc6 !important;
+    }
+  }
+}

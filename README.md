@@ -9,7 +9,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 ## Requirements
 
 1. An ESP32.
-2. A WaveShare e-Paper module.  Currently only the 4.2" black/white display is supported.
+2. A WaveShare e-Paper module.  Any module [supported by GxEPD2](https://github.com/ZinggJM/GxEPD2#supported-spi-e-paper-panels-from-good-display) will work.
 
 ## Setup
 
@@ -31,7 +31,7 @@ $ curl -v -X PUT -H'Content-Type: application/json' -d '{"variable_name":"variab
 
 #### MQTT
 
-Configure MQTT using the `/settings` endpoint:
+Configure MQTT using the UI, or use the `/settings` endpoint:
 
 ```
 $ curl -v -X PUT -H'Content-Type: application/json' -d '{
