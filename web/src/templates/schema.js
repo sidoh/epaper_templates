@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 const LineFields = {
   type: "object",
+  title: "Lines",
   properties: {
     x1: { $ref: "#/definitions/horizontalPosition" },
     x2: { $ref: "#/definitions/horizontalPosition" },
@@ -12,6 +13,7 @@ const LineFields = {
 
 const RectangleFields = {
   type: "object",
+  title: "Rectangles",
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
@@ -52,6 +54,7 @@ const RectangleFields = {
 
 const TextFields = {
   type: "object",
+  title: "Text",
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
@@ -63,6 +66,7 @@ const TextFields = {
 
 const BitmapFields = {
   type: "object",
+  title: "Bitmaps",
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
@@ -72,121 +76,90 @@ const BitmapFields = {
   }
 };
 
-const FieldTypeDefinitions = {
-  bitmaps: BitmapFields,
-  text: TextFields,
-  rectangles: RectangleFields,
-  lines: LineFields
-};
-
-export default function createSchema({ screenMetadata, selectedFields }) {
-  const uniqueTypes = Array.from(new Set(selectedFields.map(x => x[0])));
-  let enabledFields = {};
-
-  uniqueTypes.forEach(x => {
-    const typeFields = FieldTypeDefinitions[x];
-
-    if (!enabledFields.properties) {
-      enabledFields = { ...typeFields };
-    } else {
-      const overlappingFields = Object.entries(enabledFields.properties).filter(
-        ([k, v]) => typeFields.properties[k]
-      );
-
-      enabledFields = {
-        type: "object",
-        properties: Object.fromEntries(overlappingFields)
-      };
-    }
-  });
-
-  return {
-    ...enabledFields,
-    definitions: {
-      horizontalPosition: {
-        type: "integer",
-        minimum: 0,
-        maximum: screenMetadata.width
-      },
-      verticalPosition: {
-        type: "integer",
-        minimum: 0,
-        maximum: screenMetadata.height
-      },
-      variable: {
-        title: "Variable Name",
-        type: "string"
-      },
-      variableMode: {
+const Definitions = {
+  horizontalPosition: {
+    type: "integer",
+    minimum: 0
+  },
+  verticalPosition: {
+    type: "integer",
+    minimum: 0
+  },
+  variable: {
+    title: "Variable Name",
+    type: "string"
+  },
+  variableMode: {
+    type: "string",
+    enum: ["percent", "absolute"]
+  },
+  font: {
+    type: "string",
+    enum: [
+      "FreeMonoBold24pt7b",
+      "FreeSans18pt7b",
+      "FreeSans9pt7b",
+      "FreeSansBold9pt7b",
+      "FreeMono9pt7b"
+    ]
+  },
+  caseFormatterItem: {},
+  valueChoice: {
+    type: "object",
+    properties: {
+      type: {
         type: "string",
-        enum: ["percent", "absolute"]
-      },
-      font: {
-        type: "string",
-        enum: [
-          "FreeMonoBold24pt7b",
-          "FreeSans18pt7b",
-          "FreeSans9pt7b",
-          "FreeSansBold9pt7b",
-          "FreeMono9pt7b"
+        enum: ["static", "variable"]
+      }
+    },
+    dependencies: {
+      type: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              type: { enum: ["static"] },
+              value: { title: "Value", type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              type: { enum: ["variable"] },
+              variable: { $ref: "#/definitions/variable" },
+              formatter: { $ref: "#/definitions/formatter" }
+            }
+          }
         ]
-      },
-      caseFormatterItem: {},
-      valueChoice: {
-        type: "object",
-        properties: {
-          type: {
-            type: "string",
-            enum: ["static", "variable"],
-            default: "static"
-          }
-        },
-        dependencies: {
-          type: {
-            oneOf: [
-              {
-                type: "object",
-                properties: {
-                  type: { enum: ["static"] },
-                  value: { title: "Value", type: "string" }
-                }
-              },
-              {
-                type: "object",
-                properties: {
-                  type: { enum: ["variable"] },
-                  variable: { $ref: "#/definitions/variable" },
-                  formatter: { $ref: "#/definitions/formatter" }
-                }
+      }
+    }
+  },
+  formatter: {
+    type: "object",
+    properties: {
+      type: {
+        type: "string",
+        enum: ["ref", "identity", "time", "round", "cases"]
+      }
+    },
+    dependencies: {
+      type: {
+        oneOf: [
+          {
+            properties: {
+              type: {
+                enum: ["identity"]
               }
-            ]
-          }
-        }
-      },
-      formatter: {
-        type: "object",
-        properties: {
-          type: {
-            type: "string",
-            enum: ["ref", "identity", "time", "round", "switch"],
-            default: "identity"
-          }
-        },
-        dependencies: {
-          type: {
-            oneOf: [
-              {
-                properties: {
-                  type: {
-                    enum: ["identity"]
-                  }
-                }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["cases"]
               },
-              {
+              args: {
+                type: "object",
                 properties: {
-                  type: {
-                    enum: ["switch"]
-                  },
                   prefix: {
                     title: "Prefix",
                     type: "string"
@@ -213,48 +186,124 @@ export default function createSchema({ screenMetadata, selectedFields }) {
                     }
                   }
                 }
+              }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["time"]
               },
-              {
+              args: {
+                type: "object",
                 properties: {
-                  type: {
-                    enum: ["time"]
-                  },
-                  args: {
-                    type: "object",
-                    properties: {
-                      format: {
-                        title: "strtimef format",
-                        type: "string"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                properties: {
-                  type: {
-                    enum: ["round"]
-                  },
-                  digits: {
-                    title: "Number of digits",
-                    type: "integer"
-                  }
-                }
-              },
-              {
-                properties: {
-                  type: {
-                    enum: ["ref"]
-                  },
-                  ref: {
-                    title: "Formatter Name",
+                  format: {
+                    title: "strtimef format",
                     type: "string"
                   }
                 }
               }
-            ]
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["round"]
+              },
+              digits: {
+                title: "Number of digits",
+                type: "integer"
+              }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["ref"]
+              },
+              ref: {
+                title: "Formatter Name",
+                type: "string"
+              }
+            }
           }
-        }
+        ]
+      }
+    }
+  }
+};
+
+const FieldTypeDefinitions = {
+  bitmaps: BitmapFields,
+  text: TextFields,
+  rectangles: RectangleFields,
+  lines: LineFields
+};
+
+export const Schema = {
+  $id: "https://sidoh.org/epaper-templates/template.schema.json",
+  $schema: "https://json-schema.org/draft-08/schema#",
+  type: "object",
+  definitions: { ...Definitions },
+  properties: {
+    background_color: {
+      type: "string",
+      enum: ["black", "white"]
+    },
+    formatters: {
+      type: "array",
+      items: {
+        $ref: "#/definitions/formatter"
+      }
+    },
+    ...Object.fromEntries(
+      Object.entries(FieldTypeDefinitions).map(([k, v]) => {
+        return [
+          k,
+          {
+            type: "array",
+            items: { ...v }
+          }
+        ];
+      })
+    )
+  }
+};
+
+export default function createSchema({ screenMetadata, selectedFields }) {
+  const uniqueTypes = Array.from(new Set(selectedFields.map(x => x[0])));
+  let enabledFields = {};
+
+  uniqueTypes.forEach(x => {
+    const typeFields = FieldTypeDefinitions[x];
+
+    if (!enabledFields.properties) {
+      enabledFields = { ...typeFields };
+    } else {
+      const overlappingFields = Object.entries(enabledFields.properties).filter(
+        ([k, v]) => typeFields.properties[k]
+      );
+
+      enabledFields = {
+        type: "object",
+        properties: Object.fromEntries(overlappingFields)
+      };
+    }
+  });
+
+  return {
+    ...enabledFields,
+    definitions: {
+      ...Definitions,
+      horizontalPosition: {
+        type: "integer",
+        minimum: 0,
+        maximum: screenMetadata.width
+      },
+      verticalPosition: {
+        type: "integer",
+        minimum: 0,
+        maximum: screenMetadata.height
       }
     }
   };
