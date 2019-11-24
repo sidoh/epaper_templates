@@ -36,7 +36,7 @@
     "react-router-dom": "^5.1.2",
     "react-slider": "^1.0.1",
     "react-switch": "^5.0.1",
-    "react-use": "^13.2.1"
+    "react-use": "^13.9.0"
   },
   "devDependencies": {
     "@neutrinojs/react": "^9.0.0-rc.4",

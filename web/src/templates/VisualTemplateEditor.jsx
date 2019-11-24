@@ -5,8 +5,8 @@ import {
   faChevronUp
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import produce from "immer";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import produce, { produceWithPatches } from "immer";
+import React, { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -22,8 +22,11 @@ import createSchema from "./schema";
 import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
 import { DimensionsEditor } from "./DimensionsEditor";
+import { SelectionEditor } from "./SelectionEditor";
+import { useQueue } from "react-use";
 
 const EditorSections = {
+  selection: SelectionEditor,
   editor: SvgFieldEditor,
   dimensions: DimensionsEditor
 };
@@ -35,31 +38,30 @@ function SvgEditor({
   activeElements,
   subNavMode
 }) {
+  // Do this to work around RJSF using onChange fn from current props to update next props.
+  const currentActiveElements = useRef(null);
+  currentActiveElements.current = activeElements;
+
   const onUpdate = useCallback(
     updateFn => {
-      const updated = produce(
-        value,
-        draft => {
-          activeElements.forEach(path => drillUpdate(draft, path, updateFn));
-        }
-      );
+      const updated = produce(value, draft => {
+        currentActiveElements.current.forEach(path => drillUpdate(draft, path, updateFn));
+      });
       onChange(updated);
     },
-    [value, activeElements]
+    [value, onChange]
   );
+
   const Editor = EditorSections[subNavMode] || SvgFieldEditor;
 
   return (
     <>
-      {activeElements.length == 0 && <i>Select an element.</i>}
-      {activeElements.length > 0 && (
-        <Editor
-          onUpdate={onUpdate}
-          value={value}
-          activeElements={activeElements}
-          screenMetadata={screenMetadata}
-        />
-      )}
+      <Editor
+        onUpdate={onUpdate}
+        value={value}
+        activeElements={activeElements}
+        screenMetadata={screenMetadata}
+      />
     </>
   );
 }
@@ -95,13 +97,14 @@ export function VisualTemplateEditor({
   const [activeEditElements, setActiveEditElements] = useState([]);
 
   useEffect(() => {
-    let editorTitle = "Editor";
-    editorTitle +=
+    let selectionTitle = "Selection";
+    selectionTitle +=
       (activeEditElements.length > 0 && ` (${activeEditElements.length})`) ||
       "";
 
     setSubNav([
-      { key: "editor", title: editorTitle },
+      { key: "selection", title: selectionTitle },
+      { key: "editor", title: "Editor" },
       { key: "dimensions", title: "Dimensions" }
     ]);
     return () => {

@@ -66,7 +66,7 @@ function _deepClearNonMatching(o1, o2) {
     })
     .filter(x => x != null && x[1] != null);
 
-  if (commonFields.length > 1) {
+  if (commonFields.length > 0) {
     return Object.fromEntries(commonFields);
   } else {
     return null;
@@ -74,7 +74,9 @@ function _deepClearNonMatching(o1, o2) {
 }
 
 export function deepClearNonMatching(os) {
-  if (os.length == 1) {
+  if (os.length == 0) {
+    return null;
+  } else if (os.length == 1) {
     return os[0];
   } else {
     const [a, ...rest] = os;
@@ -84,7 +86,7 @@ export function deepClearNonMatching(os) {
 
 export function deepPatch(target, patch) {
   Object.entries(patch).forEach(([k, v]) => {
-    if (v && typeof v === 'object' && typeof target[k] === 'object') {
+    if (v && typeof v === "object" && typeof target[k] === "object") {
       deepPatch(target[k], v);
     } else {
       target[k] = v;
@@ -92,4 +94,16 @@ export function deepPatch(target, patch) {
   });
 
   return target;
+}
+
+export function groupBy(o, fn) {
+  return o.reduce((a, x) => {
+    const key = fn(x);
+    if (a[key]) {
+      a[key].push(x);
+    } else {
+      a[key] = [x];
+    }
+    return a;
+  }, {});
 }
