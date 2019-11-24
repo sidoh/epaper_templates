@@ -2,14 +2,25 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~bootswatch/dist/darkly/bootswatch";
 
-ul.selection-section {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.list-item-badge {
+  min-width: 5em;
+  display: inline-block;
+}
 
-  li {
-    padding: 0.5em;
-    margin: 0.3em 0;
-    background-color: theme-color("secondary");
+.selection-section {
+  &:not(:first-child) {
+    margin-top: 2em;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      padding: 0.5em;
+      margin: 0.3em 0;
+      background-color: theme-color("secondary");
+    }
   }
 }

@@ -15,6 +15,8 @@ import VisualTemplateEditor from "./VisualTemplateEditor";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import produce from "immer";
+import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 
 const RawJsonEditor = ({ value, onChange }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -174,12 +176,23 @@ export default ({ path, template, triggerReload }) => {
 
       const filename = name.endsWith(".json") ? name : `${name}.json`;
 
+      // Filter out items that were marked for deletion
+      const updated = produce(json, draft => {
+        Object.keys(FieldTypeDefinitions).forEach(fieldType => {
+          if (draft[fieldType]) {
+            draft[fieldType] = draft[fieldType].filter(x => x !== MarkedForDeletion)
+          }
+        })
+      })
+
       const data = new FormData();
-      const file = new Blob([JSON.stringify(json)], { type: "text/json" });
+      const file = new Blob([JSON.stringify(updated)], { type: "text/json" });
+
       data.append("file", file, filename);
       api.post("/templates", data).then(() => {
         triggerReload();
         history.push(`/templates/${filename}`);
+        setJson(updated);
       });
     },
     [triggerReload, path, name, json]

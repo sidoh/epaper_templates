@@ -18,17 +18,17 @@ import useGlobalState from "../state/global_state";
 import api from "../util/api";
 import { drillUpdate, drillExtract } from "../util/mungers";
 import SiteLoader from "../util/SiteLoader";
-import createSchema from "./schema";
+import createSchema, { MarkedForDeletion } from "./schema";
 import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
-import { DimensionsEditor } from "./DimensionsEditor";
+import { LocationEditor } from "./LocationEditor";
 import { SelectionEditor } from "./SelectionEditor";
 import { useQueue } from "react-use";
 
 const EditorSections = {
   selection: SelectionEditor,
   editor: SvgFieldEditor,
-  dimensions: DimensionsEditor
+  location: LocationEditor
 };
 
 function SvgEditor({
@@ -36,13 +36,14 @@ function SvgEditor({
   onChange,
   screenMetadata,
   activeElements,
+  setActiveElements,
   subNavMode
 }) {
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
   currentActiveElements.current = activeElements;
 
-  const onUpdate = useCallback(
+  const onUpdateActive = useCallback(
     updateFn => {
       const updated = produce(value, draft => {
         currentActiveElements.current.forEach(path => drillUpdate(draft, path, updateFn));
@@ -52,12 +53,33 @@ function SvgEditor({
     [value, onChange]
   );
 
+  const onDelete = useCallback(path => {
+    let _path = path.slice()
+    const updated = produce(value, draft => {
+      while (_path.length > 0) {
+        const [next, ...rest] = _path;
+
+        if (rest.length > 0) {
+          draft = draft[next];
+        } else {
+          draft.splice(next, 1, MarkedForDeletion);
+        }
+
+        _path = rest;
+      }
+    });
+    onChange(updated);
+    setActiveElements(currentActiveElements.current.filter(x => x != path))
+  }, [value, onChange]);
+
   const Editor = EditorSections[subNavMode] || SvgFieldEditor;
 
   return (
     <>
       <Editor
-        onUpdate={onUpdate}
+        onUpdateActive={onUpdateActive}
+        onUpdate={onChange}
+        onDelete={onDelete}
         value={value}
         activeElements={activeElements}
         screenMetadata={screenMetadata}
@@ -105,8 +127,9 @@ export function VisualTemplateEditor({
     setSubNav([
       { key: "selection", title: selectionTitle },
       { key: "editor", title: "Editor" },
-      { key: "dimensions", title: "Dimensions" }
+      { key: "location", title: "Location" }
     ]);
+
     return () => {
       setSubNav([]);
     };
@@ -140,7 +163,12 @@ export function VisualTemplateEditor({
     () => {
       const variables = ["text", "bitmaps"].flatMap(x => {
         return (value[x] || [])
-          .map(({ value: { variable, formatter } = {} }, i) => {
+          .map((def, i) => {
+            if (def === MarkedForDeletion) {
+              return {};
+            }
+
+            const { value: { variable, formatter } = {} } = def;
             return { variable, formatter, ref: [x, i] };
           })
           .filter(x => x.variable);
@@ -192,6 +220,7 @@ export function VisualTemplateEditor({
                 onChange={onChange}
                 screenMetadata={screenMetadata}
                 activeElements={activeEditElements}
+                setActiveElements={setActiveEditElements}
                 subNavMode={subNavMode}
               />
             </Col>
