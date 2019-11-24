@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 
+export const MarkedForDeletion = "__deleted";
+
 const LineFields = {
   type: "object",
   title: "Lines",
@@ -233,7 +235,7 @@ const Definitions = {
   }
 };
 
-const FieldTypeDefinitions = {
+export const FieldTypeDefinitions = {
   bitmaps: BitmapFields,
   text: TextFields,
   rectangles: RectangleFields,

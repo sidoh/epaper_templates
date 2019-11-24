@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { binToDataUrl } from "../bitmaps/BitmapCanvas";
 import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
+import { MarkedForDeletion } from "./schema";
 
 function SvgLine({ x1, y1, x2, y2, isActive, onClick, color = "black" }) {
   const style = useMemo(
@@ -121,40 +122,48 @@ export function SvgCanvas({
 
   return (
     <svg width={width} height={height} style={svgStyle}>
-      {(definition.lines || []).map((x, i) => (
-        <SvgLine
-          onClick={() => toggleActiveElement("lines", i)}
-          isActive={isRegionActive("lines", i)}
-          key={`line-${i}`}
-          {...x}
-        />
-      ))}
+      {(definition.lines || []).map(
+        (x, i) =>
+          x !== MarkedForDeletion && (
+            <SvgLine
+              onClick={() => toggleActiveElement("lines", i)}
+              isActive={isRegionActive("lines", i)}
+              key={`line-${i}`}
+              {...x}
+            />
+          )
+      )}
 
       {(definition.text || []).map((x, i) => {
         const resolvedValue = resolvedVariables.text[i];
         return (
-          <SvgText
-            onClick={() => toggleActiveElement("text", i)}
-            isActive={isRegionActive("text", i)}
-            key={`text-${i}`}
-            resolvedValue={resolvedValue}
-            {...x}
-          />
+          x !== MarkedForDeletion && (
+            <SvgText
+              onClick={() => toggleActiveElement("text", i)}
+              isActive={isRegionActive("text", i)}
+              key={`text-${i}`}
+              resolvedValue={resolvedValue}
+              {...x}
+            />
+          )
         );
       })}
 
-      {(definition.bitmaps || []).map((x, i) => {
-        const resolvedValue = resolvedVariables.bitmaps[i];
-        return (
-          <SvgBitmap
-            isActive={isRegionActive("bitmaps", i)}
-            onClick={() => toggleActiveElement("bitmaps", i)}
-            key={`bitmap-${i}`}
-            resolvedValue={resolvedValue}
-            {...x}
-          />
-        );
-      })}
+      {(definition.bitmaps || [])
+        .map((x, i) => {
+          const resolvedValue = resolvedVariables.bitmaps[i];
+          return (
+            x !== MarkedForDeletion && (
+              <SvgBitmap
+                isActive={isRegionActive("bitmaps", i)}
+                onClick={() => toggleActiveElement("bitmaps", i)}
+                key={`bitmap-${i}`}
+                resolvedValue={resolvedValue}
+                {...x}
+              />
+            )
+          );
+        })}
     </svg>
   );
 }

@@ -10,15 +10,15 @@ import createSchema from "./schema";
 
 export function SvgFieldEditor({
   value,
-  onUpdate,
+  onUpdateActive,
   screenMetadata,
   activeElements
 }) {
   const onFormChange = useCallback(
     data => {
-      onUpdate(obj => deepPatch(obj, data.formData));
+      onUpdateActive(obj => deepPatch(obj, data.formData));
     },
-    [activeElements, onUpdate]
+    [activeElements, onUpdateActive]
   );
 
   const schema = useMemo(

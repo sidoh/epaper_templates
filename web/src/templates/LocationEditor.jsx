@@ -10,7 +10,7 @@ import ReactSlider from "react-slider";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 
-export function DimensionsEditor({ onUpdate }) {
+export function LocationEditor({ onUpdateActive }) {
   const [nudgeDistance, setNudgeDistance] = useState(1);
   const onUpdateLocation = useCallback(
     (dimension, amount) => {
@@ -22,9 +22,9 @@ export function DimensionsEditor({ onUpdate }) {
         });
       };
 
-      onUpdate(fn);
+      onUpdateActive(fn);
     },
-    [onUpdate]
+    [onUpdateActive]
   );
 
   const onLeft = useCallback(() => onUpdateLocation("x", -nudgeDistance), [
