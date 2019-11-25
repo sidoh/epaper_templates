@@ -4,7 +4,6 @@ import Form from "react-bootstrap/Form";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import SiteLoader from "../util/SiteLoader";
-import ReactJson from "react-json-view";
 import { faSave, faTv, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router-dom";
 
@@ -62,19 +61,7 @@ const RawJsonEditor = ({ value, onChange }) => {
   );
 };
 
-const TreeJsonEditor = ({ value, onChange }) => {
-  const _onChange = useCallback(
-    e => {
-      onChange(e.updated_src);
-    },
-    [onChange]
-  );
-
-  return <ReactJson src={value} onEdit={_onChange} theme="solarized" />;
-};
-
 const EditorModeHandlers = {
-  tree: TreeJsonEditor,
   json: RawJsonEditor,
   visual: VisualTemplateEditor
 };
@@ -85,13 +72,16 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
   const [subNavMode, setSubNavMode] = useState(null);
   const ViewComponent = EditorModeHandlers[mode];
 
-  const updateSubNav = useCallback((items) => {
-    if (subNavMode == null && items.length > 0) {
-      setSubNavMode(items.length > 0 ? items[0].key : null);
-    }
+  const updateSubNav = useCallback(
+    items => {
+      if (subNavMode == null && items.length > 0) {
+        setSubNavMode(items.length > 0 ? items[0].key : null);
+      }
 
-    setSubNav(items);
-  }, [subNavMode])
+      setSubNav(items);
+    },
+    [subNavMode]
+  );
 
   return (
     <>
@@ -108,9 +98,6 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
                 <Nav.Link eventKey="visual">Visual</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey="tree">Tree</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
                 <Nav.Link eventKey="json">Raw</Nav.Link>
               </Nav.Item>
             </Nav>
@@ -124,9 +111,7 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
             >
               {subNav.map(({ key, title }) => (
                 <Nav.Item key={key}>
-                  <Nav.Link eventKey={key}>
-                    {title}
-                  </Nav.Link>
+                  <Nav.Link eventKey={key}>{title}</Nav.Link>
                 </Nav.Item>
               ))}
             </Nav>
@@ -180,10 +165,12 @@ export default ({ path, template, triggerReload }) => {
       const updated = produce(json, draft => {
         Object.keys(FieldTypeDefinitions).forEach(fieldType => {
           if (draft[fieldType]) {
-            draft[fieldType] = draft[fieldType].filter(x => x !== MarkedForDeletion)
+            draft[fieldType] = draft[fieldType].filter(
+              x => x !== MarkedForDeletion
+            );
           }
-        })
-      })
+        });
+      });
 
       const data = new FormData();
       const file = new Blob([JSON.stringify(updated)], { type: "text/json" });
@@ -200,10 +187,12 @@ export default ({ path, template, triggerReload }) => {
 
   const onDelete = useCallback(
     e => {
-      api.delete(`/templates/${path}`).then(() => {
-        triggerReload();
-        history.push("/templates");
-      });
+      if (confirm("Are you sure you want to delete this template?")) {
+        api.delete(`/templates/${path}`).then(() => {
+          triggerReload();
+          history.push("/templates");
+        });
+      }
     },
     [triggerReload, path, name, json]
   );

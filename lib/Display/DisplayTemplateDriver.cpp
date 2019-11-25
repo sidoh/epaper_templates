@@ -239,7 +239,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
     display->setRotation(tmpl["rotation"]);
   }
 
-  JsonObject formatters = tmpl["formatters"];
+  JsonVariant formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
   JsonObject updateRects = tmpl["update_rects"];
@@ -304,6 +304,8 @@ void DisplayTemplateDriver::renderBitmap(const String& filename,
     return;
   }
 
+  Serial.printf_P(PSTR("Rendering bitmap: %s\n"), filename.c_str());
+
   File file = SPIFFS.open(filename, "r");
   size_t size = w * h / 8;
   uint8_t bits[size];
@@ -311,7 +313,8 @@ void DisplayTemplateDriver::renderBitmap(const String& filename,
 
   file.close();
 
-  display->writeImage(bits, x, y, w, h, color);
+  display->fillRect(x, y, w, h, GxEPD_WHITE);
+  display->drawBitmap(x, y, bits, w, h, color);
 }
 
 void DisplayTemplateDriver::renderBitmaps(
@@ -332,12 +335,14 @@ void DisplayTemplateDriver::renderBitmaps(
 
       if (bitmap["type"] == "static") {
         renderBitmap(bitmap["value"].as<const char*>(), x, y, w, h, color);
+        return;
       }
       // fall back on v1 format where "static" and "variable" are inline with
       // the definition
     } else {
       if (bitmap.containsKey("static")) {
         renderBitmap(bitmap["static"].as<const char*>(), x, y, w, h, color);
+        return;
       }
     }
 
@@ -498,15 +503,22 @@ void DisplayTemplateDriver::resolveVariables(JsonArray toResolve,
                                              JsonArray response) {
   File file = SPIFFS.open(templateFilename, "r");
   DynamicJsonDocument jsonBuffer(JSON_TEMPLATE_BUFFER_SIZE);
-  deserializeJson(jsonBuffer, file);
+  auto error = deserializeJson(jsonBuffer, file);
   file.close();
+
+  if (error) {
+    Serial.print(F("Error parsing template file: "));
+    Serial.println(error.c_str());
+    return;
+  }
+
   JsonObject tmpl = jsonBuffer.as<JsonObject>();
 
   if (tmpl.isNull()) {
     return;
   }
 
-  JsonObject formatters = tmpl["formatters"];
+  JsonVariant formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
   for (JsonObject var : toResolve) {

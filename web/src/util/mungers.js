@@ -96,13 +96,17 @@ export function deepPatch(target, patch) {
   return target;
 }
 
-export function groupBy(o, fn) {
+export function groupBy(o, fn, { unique = false } = {}) {
   return o.reduce((a, x) => {
     const key = fn(x);
-    if (a[key]) {
-      a[key].push(x);
+    if (unique) {
+      a[key] = x;
     } else {
-      a[key] = [x];
+      if (a[key]) {
+        a[key].push(x);
+      } else {
+        a[key] = [x];
+      }
     }
     return a;
   }, {});

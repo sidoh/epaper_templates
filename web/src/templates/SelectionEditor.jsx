@@ -1,13 +1,16 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import { groupBy, drillExtract } from "../util/mungers";
-import { Schema } from "./schema";
+import { FieldTypeDefinitions, Schema } from "./schema";
 
 import "./SelectionEditor.scss";
 import Button from "react-bootstrap/Button";
 import Badge from "react-bootstrap/Badge";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faWindowClose } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import produce from "immer";
+import { faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { useBoolean } from "react-use";
+import Form from "react-bootstrap/Form";
 
 function BadgedText({ badge, variant = "primary", children, ...props }) {
   return (
@@ -20,7 +23,7 @@ function BadgedText({ badge, variant = "primary", children, ...props }) {
   );
 }
 
-const valueTitleGenerator = el => {
+const valueTitleGenerator = (el = {}) => {
   const { value } = el;
 
   if (value) {
@@ -38,7 +41,7 @@ const valueTitleGenerator = el => {
   return <i>Unrecognized format</i>;
 };
 
-const fieldTitleGenerator = el => {
+const fieldTitleGenerator = (el = {}) => {
   return (
     <span>
       {Object.entries(el)
@@ -63,23 +66,48 @@ const SectionListItemTitleGenerators = {
   rectangles: defaultTitleGenerator
 };
 
-function SectionListItem({ id, type, value, onDelete }) {
+function SectionListItem({ id, type, value, onDelete, onDeselect }) {
   const titleGenerator = SectionListItemTitleGenerators[type];
-  const _onDelete = useCallback(() => {
-    onDelete(id);
-  }, [onDelete, id]);
+  const _onDelete = useCallback(
+    e => {
+      e.preventDefault();
+
+      if (confirm("Are you sure you want to delete this element?")) {
+        onDelete([id]);
+      }
+    },
+    [onDelete, id]
+  );
+
+  const _onDeselect = useCallback(
+    e => {
+      e.preventDefault();
+      onDeselect(id);
+    },
+    [onDeselect, id]
+  );
 
   return (
-    <div className="d-flex">
+    <div className="d-flex button-list">
       <span className="mr-auto">{titleGenerator(value)}</span>
-      <a className="text-danger" href="#" onClick={_onDelete}>
+
+      <a
+        href="#"
+        className="text-primary"
+        onClick={_onDeselect}
+        title="Deselect"
+      >
+        <FontAwesomeIcon icon={faWindowClose} />
+      </a>
+
+      <a className="text-danger" href="#" onClick={_onDelete} title="Delete">
         <FontAwesomeIcon icon={faTrash} />
       </a>
     </div>
   );
 }
 
-function SectionList({ title, items, onDelete }) {
+function SectionList({ title, items, onDelete, onDeselect }) {
   return (
     <div className="selection-section">
       <h5>
@@ -88,7 +116,11 @@ function SectionList({ title, items, onDelete }) {
       <ul>
         {items.map(x => (
           <li key={x.id}>
-            <SectionListItem {...x} onDelete={onDelete} />
+            <SectionListItem
+              {...x}
+              onDelete={onDelete}
+              onDeselect={onDeselect}
+            />
           </li>
         ))}
       </ul>
@@ -96,12 +128,60 @@ function SectionList({ title, items, onDelete }) {
   );
 }
 
+function AddElementForm({ onAdd }) {
+  const [selection, setSelection] = useState("");
+
+  const handleChange = useCallback(e => {
+    setSelection(e.target.value);
+  }, []);
+
+  const _onAdd = useCallback(() => {
+    onAdd(selection);
+  }, [onAdd, selection]);
+
+  return (
+    <div className="mt-2 d-flex align-items-end">
+      <Form.Group className="flex-grow-1 mb-0">
+        <Form.Label>Type</Form.Label>
+        <Form.Control
+          as="select"
+          value={selection}
+          onChange={handleChange}
+          placeholder="type"
+        >
+          <>
+            <option value=""></option>
+            {Object.entries(FieldTypeDefinitions).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.title}
+              </option>
+            ))}
+          </>
+        </Form.Control>
+      </Form.Group>
+
+      <Button
+        variant="success"
+        className="ml-2"
+        disabled={selection === ""}
+        onClick={_onAdd}
+      >
+        Add
+      </Button>
+    </div>
+  );
+}
+
 export function SelectionEditor({
   value,
+  onUpdate,
   onDelete,
   screenMetadata,
-  activeElements
+  activeElements,
+  setActiveElements
 }) {
+  const [showAddForm, toggleShowAddForm] = useBoolean(false);
+
   const groupedSelection = useMemo(() => {
     return Object.entries(
       groupBy(
@@ -115,21 +195,88 @@ export function SelectionEditor({
     ).sort(([a], [b]) => a.localeCompare(b));
   }, [value, activeElements]);
 
+  const onDeselectAll = useCallback(() => {
+    setActiveElements([]);
+  }, []);
+
+  const onDeleteAll = useCallback(() => {
+    if (
+      confirm(
+        `Are you sure you want to delete ${activeElements.length} elements?`
+      )
+    ) {
+      onDelete(activeElements);
+    }
+  }, [activeElements]);
+
+  const onAdd = useCallback(
+    type => {
+      const updated = produce(value, draft => {
+        draft[type].push({});
+      });
+      onUpdate(updated);
+      setActiveElements([...activeElements, [type, updated[type].length - 1]]);
+    },
+    [value, activeElements, onUpdate]
+  );
+
+  const onDeselect = useCallback(
+    id => {
+      const updated = produce(activeElements, draft => {
+        draft.splice(activeElements.findIndex(x => x === id), 1)
+      })
+      setActiveElements(updated);
+    },
+    [activeElements]
+  );
+
   return (
     <>
+      <div className="mt-2 mb-3">
+        <h5>Actions</h5>
+
+        <div className="d-flex button-list">
+          <Button size="sm" variant="primary" onClick={toggleShowAddForm}>
+            <FontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
+            New
+          </Button>
+          {activeElements.length > 0 && (
+            <>
+              <Button size="sm" variant="secondary" onClick={onDeselectAll}>
+                <FontAwesomeIcon icon={faWindowClose} className="fa-fw mr-2" />
+                Deselect All
+              </Button>
+
+              <div className="mr-auto" />
+
+              <Button size="sm" variant="danger" onClick={onDeleteAll}>
+                <FontAwesomeIcon icon={faTrash} className="fa-fw mr-2" />
+                Delete All
+              </Button>
+            </>
+          )}
+        </div>
+
+        {showAddForm && <AddElementForm onAdd={onAdd} />}
+      </div>
+
       {activeElements.length == 0 && <i>Nothing selected.</i>}
-      {activeElements.length > 0 &&
-        groupedSelection.map(([type, elements]) => {
-          const typeTitle = Schema.properties[type].items.title;
-          return (
-            <SectionList
-              key={type}
-              title={typeTitle}
-              items={elements}
-              onDelete={onDelete}
-            />
-          );
-        })}
+      {activeElements.length > 0 && (
+        <>
+          {groupedSelection.map(([type, elements]) => {
+            const typeTitle = Schema.properties[type].items.title;
+            return (
+              <SectionList
+                key={type}
+                title={typeTitle}
+                items={elements}
+                onDelete={onDelete}
+                onDeselect={onDeselect}
+              />
+            );
+          })}
+        </>
+      )}
     </>
   );
 }

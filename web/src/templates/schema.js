@@ -4,7 +4,7 @@ export const MarkedForDeletion = "__deleted";
 
 const LineFields = {
   type: "object",
-  title: "Lines",
+  title: "Line",
   properties: {
     x1: { $ref: "#/definitions/horizontalPosition" },
     x2: { $ref: "#/definitions/horizontalPosition" },
@@ -15,7 +15,7 @@ const LineFields = {
 
 const RectangleFields = {
   type: "object",
-  title: "Rectangles",
+  title: "Rectangle",
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
@@ -68,17 +68,58 @@ const TextFields = {
 
 const BitmapFields = {
   type: "object",
-  title: "Bitmaps",
+  title: "Bitmap",
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
     w: { $ref: "#/definitions/horizontalPosition" },
     h: { $ref: "#/definitions/verticalPosition" },
-    value: { $ref: "#/definitions/valueChoice" }
+    color: { $ref: "#/definitions/color" },
+    value: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["static", "variable"]
+        }
+      },
+      dependencies: {
+        type: {
+          oneOf: [
+            {
+              type: "object",
+              properties: {
+                type: { enum: ["static"] },
+                value: { $ref: "#/definitions/storedBitmap" }
+              }
+            },
+            {
+              type: "object",
+              properties: {
+                type: { enum: ["variable"] },
+                variable: { $ref: "#/definitions/variable" },
+                formatter: { $ref: "#/definitions/formatter" }
+              }
+            }
+          ]
+        }
+      }
+    }
   }
 };
 
 const Definitions = {
+  color: {
+    type: "string",
+    enum: ["black", "white"],
+    default: "black"
+  },
+  storedBitmap: {
+    type: "string"
+  },
+  storedFormatter: {
+    type: "string"
+  },
   horizontalPosition: {
     type: "integer",
     minimum: 0
@@ -223,10 +264,7 @@ const Definitions = {
               type: {
                 enum: ["ref"]
               },
-              ref: {
-                title: "Formatter Name",
-                type: "string"
-              }
+              ref: { $ref: "#/definitions/storedFormatter" }
             }
           }
         ]
@@ -248,14 +286,24 @@ export const Schema = {
   type: "object",
   definitions: { ...Definitions },
   properties: {
-    background_color: {
-      type: "string",
-      enum: ["black", "white"]
-    },
+    background_color: { $ref: "#/definitions/color" },
     formatters: {
       type: "array",
       items: {
-        $ref: "#/definitions/formatter"
+        anyOf: [
+          { $ref: "#/definitions/formatter" },
+          {
+            type: "object",
+            properties: {
+              name: {
+                title: "Reference Name",
+                type: "string",
+                pattern: "^[a-zA-Z0-9_0]+$"
+              }
+            }
+          }
+        ],
+        required: ["name"]
       }
     },
     ...Object.fromEntries(
@@ -272,7 +320,12 @@ export const Schema = {
   }
 };
 
-export default function createSchema({ screenMetadata, selectedFields }) {
+export default function createSchema({
+  screenMetadata,
+  selectedFields,
+  allBitmaps,
+  allFormatters
+}) {
   const uniqueTypes = Array.from(new Set(selectedFields.map(x => x[0])));
   let enabledFields = {};
 
@@ -306,6 +359,14 @@ export default function createSchema({ screenMetadata, selectedFields }) {
         type: "integer",
         minimum: 0,
         maximum: screenMetadata.height
+      },
+      storedBitmap: {
+        type: "string",
+        enum: allBitmaps
+      },
+      storedFormatter: {
+        type: "string",
+        enum: allFormatters
       }
     }
   };
