@@ -12,7 +12,8 @@ export function SvgFieldEditor({
   value,
   onUpdateActive,
   screenMetadata,
-  activeElements
+  activeElements,
+  allBitmaps
 }) {
   const onFormChange = useCallback(
     data => {
@@ -22,8 +23,23 @@ export function SvgFieldEditor({
   );
 
   const schema = useMemo(
-    () => createSchema({ screenMetadata, selectedFields: activeElements }),
-    [screenMetadata, activeElements]
+    () => {
+      let formatters = [];
+
+      if (value && Array.isArray(value.formatters)) {
+        formatters = value.formatters.map(x => {
+          return x && typeof x === "object" && x.name
+        }).filter(x => x)
+      }
+
+      return createSchema({
+        screenMetadata,
+        selectedFields: activeElements,
+        allBitmaps: Object.keys(allBitmaps),
+        allFormatters: formatters
+      })
+    },
+    [value.formatters, screenMetadata, activeElements, allBitmaps]
   );
 
   const hasFields = Object.keys(schema.properties || {}).length > 0;

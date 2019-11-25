@@ -55,7 +55,7 @@ private:
 
 class VariableFormatterFactory {
 public:
-  VariableFormatterFactory(JsonObject referenceFormatters);
+  VariableFormatterFactory(const JsonVariant& referenceFormatters);
 
   std::shared_ptr<const VariableFormatter> create(JsonObject spec);
 

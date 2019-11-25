@@ -2,6 +2,14 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~bootswatch/dist/darkly/bootswatch";
 
+.button-list {
+  button, a {
+    &:not(:last-child) {
+      margin-right: 1em;
+    }
+  }
+}
+
 .navbar-top {
   .nav-link.active {
     font-weight: bold;

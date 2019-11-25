@@ -20,5 +20,12 @@
     line.active {
       stroke: #cc6 !important;
     }
+
+    .image-outline {
+      stroke-width: 1px;
+      stroke: #66c;
+      stroke-dasharray: 3 2;
+      fill: none;
+    }
   }
 }

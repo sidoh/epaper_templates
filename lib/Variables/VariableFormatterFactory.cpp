@@ -1,35 +1,56 @@
 #include <VariableFormatters.h>
 
-VariableFormatterFactory::VariableFormatterFactory(JsonObject referenceFormatters)
-  : defaultFormatter(new IdentityVariableFormatter())
-{
-  for (JsonPair kv : referenceFormatters) {
-    String key = kv.key().c_str();
-    JsonObject formatterSpec = kv.value().as<JsonObject>();
+VariableFormatterFactory::VariableFormatterFactory(
+    const JsonVariant& referenceFormatters)
+    : defaultFormatter(new IdentityVariableFormatter()) {
+  if (referenceFormatters.is<JsonObject>()) {
+    for (JsonPair kv : referenceFormatters.as<JsonObject>()) {
+      String key = kv.key().c_str();
+      JsonObject formatterSpec = kv.value().as<JsonObject>();
 
-    refFormatters[key] = _createInternal(formatterSpec, false);
+      refFormatters[key] = _createInternal(formatterSpec, false);
+    }
+  } else if (referenceFormatters.is<JsonArray>()) {
+    for (JsonObject formatter : referenceFormatters.as<JsonArray>()) {
+      String key = formatter["name"];
+      Serial.printf_P(PSTR("formatter key = %s\n"), key.c_str());
+
+      refFormatters[key] = _createInternal(formatter, false);
+    }
+  } else {
+    Serial.println(
+        F("WARNING: formatter definition block either missing or is of invalid "
+          "type."));
   }
 }
 
-std::shared_ptr<const VariableFormatter> VariableFormatterFactory::create(JsonObject spec) {
+std::shared_ptr<const VariableFormatter> VariableFormatterFactory::create(
+    JsonObject spec) {
   return _createInternal(spec, true);
 }
 
-std::shared_ptr<const VariableFormatter> VariableFormatterFactory::getReference(String refKey, bool allowReference) {
-  if (! allowReference) {
-    Serial.println(F("WARNING: Tried to reference a formatter when references were disallowed (probably because it's a reference to begin with!)"));
+std::shared_ptr<const VariableFormatter> VariableFormatterFactory::getReference(
+    String refKey,
+    bool allowReference) {
+  if (!allowReference) {
+    Serial.println(
+        F("WARNING: Tried to reference a formatter when references were "
+          "disallowed (probably because it's a reference to begin with!)"));
     return defaultFormatter;
   }
 
   if (refFormatters.count(refKey) > 0) {
     return refFormatters[refKey];
   } else {
-    Serial.printf_P(PSTR("WARNING: undefined reference to formatter `%s'\n"), refKey.c_str());
+    Serial.printf_P(PSTR("WARNING: undefined reference to formatter `%s'\n"),
+                    refKey.c_str());
     return defaultFormatter;
   }
 }
 
-std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createInternal(JsonObject spec, bool allowReference) {
+std::shared_ptr<const VariableFormatter>
+VariableFormatterFactory::_createInternal(JsonObject spec,
+                                          bool allowReference) {
   JsonVariant formatterSpec = spec;
 
   if (formatterSpec.containsKey("formatter")) {
@@ -56,8 +77,6 @@ std::shared_ptr<const VariableFormatter> VariableFormatterFactory::_createIntern
 
     if (formatterDef.equalsIgnoreCase("ref")) {
       String refName = formatterSpecObj["ref"];
-      Serial.println("GETTING REF");
-      Serial.println(refName);
       return getReference(refName, allowReference);
     }
 

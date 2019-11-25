@@ -6,7 +6,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import produce, { produceWithPatches } from "immer";
-import React, { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useLayoutEffect
+} from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
@@ -37,40 +44,58 @@ function SvgEditor({
   screenMetadata,
   activeElements,
   setActiveElements,
-  subNavMode
+  subNavMode,
+  allBitmaps
 }) {
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
   currentActiveElements.current = activeElements;
 
+  const [globalState, globalActions] = useGlobalState();
+
+  useEffect(() => {
+    globalActions.loadBitmaps();
+  }, []);
+
   const onUpdateActive = useCallback(
     updateFn => {
       const updated = produce(value, draft => {
-        currentActiveElements.current.forEach(path => drillUpdate(draft, path, updateFn));
+        currentActiveElements.current.forEach(path =>
+          drillUpdate(draft, path, updateFn)
+        );
       });
       onChange(updated);
     },
     [value, onChange]
   );
 
-  const onDelete = useCallback(path => {
-    let _path = path.slice()
-    const updated = produce(value, draft => {
-      while (_path.length > 0) {
-        const [next, ...rest] = _path;
+  const onDelete = useCallback(
+    paths => {
+      const updated = produce(value, draft => {
+        paths.forEach(path => {
+          let _path = path.slice();
+          let curr = draft;
 
-        if (rest.length > 0) {
-          draft = draft[next];
-        } else {
-          draft.splice(next, 1, MarkedForDeletion);
-        }
+          while (_path.length > 0) {
+            const [next, ...rest] = _path;
 
-        _path = rest;
-      }
-    });
-    onChange(updated);
-    setActiveElements(currentActiveElements.current.filter(x => x != path))
-  }, [value, onChange]);
+            if (rest.length > 0) {
+              curr = curr[next];
+            } else {
+              curr.splice(next, 1, MarkedForDeletion);
+            }
+
+            _path = rest;
+          }
+        });
+      });
+      onChange(updated);
+      setActiveElements(
+        currentActiveElements.current.filter(x => !paths.some(p => x === p))
+      );
+    },
+    [value, onChange]
+  );
 
   const Editor = EditorSections[subNavMode] || SvgFieldEditor;
 
@@ -82,7 +107,9 @@ function SvgEditor({
         onDelete={onDelete}
         value={value}
         activeElements={activeElements}
+        setActiveElements={setActiveElements}
         screenMetadata={screenMetadata}
+        allBitmaps={globalState.bitmaps}
       />
     </>
   );
