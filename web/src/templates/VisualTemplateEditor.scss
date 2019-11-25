@@ -1,0 +1,23 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.nav.nav-pills {
+  .nav-item {
+    .nav-link {
+      padding: 0.5em 1em;
+    }
+  }
+}
+
+ul.block-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    padding: 0.5em;
+    margin: 0.3em 0;
+    background-color: theme-color("secondary");
+  }
+}

@@ -163,13 +163,15 @@ export default ({ path, template, triggerReload }) => {
 
       // Filter out items that were marked for deletion
       const updated = produce(json, draft => {
-        Object.keys(FieldTypeDefinitions).forEach(fieldType => {
-          if (draft[fieldType]) {
-            draft[fieldType] = draft[fieldType].filter(
-              x => x !== MarkedForDeletion
-            );
+        ["formatters", ...Object.keys(FieldTypeDefinitions)].forEach(
+          fieldType => {
+            if (draft[fieldType]) {
+              draft[fieldType] = draft[fieldType].filter(
+                x => x !== MarkedForDeletion
+              );
+            }
           }
-        });
+        );
       });
 
       const data = new FormData();
