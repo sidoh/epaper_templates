@@ -1,26 +1,5 @@
-@import "~bootswatch/dist/darkly/variables";
-@import "~bootstrap/scss/bootstrap";
-@import "~bootswatch/dist/darkly/bootswatch";
-
-.list-item-badge {
-  min-width: 5em;
-  display: inline-block;
-}
-
 .selection-section {
   &:not(:first-child) {
     margin-top: 2em;
-  }
-
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-
-    li {
-      padding: 0.5em;
-      margin: 0.3em 0;
-      background-color: theme-color("secondary");
-    }
   }
 }

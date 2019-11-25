@@ -1,41 +1,32 @@
-import {
-  faChevronDown,
-  faChevronLeft,
-  faChevronRight,
-  faChevronUp
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import produce, { produceWithPatches } from "immer";
+import produce from "immer";
 import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState,
   useRef,
-  useLayoutEffect
+  useState
 } from "react";
-import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
-import Form from "react-jsonschema-form";
 import { useDebounce } from "react-use";
-import { binToDataUrl } from "../bitmaps/BitmapCanvas";
 import useGlobalState from "../state/global_state";
 import api from "../util/api";
-import { drillUpdate, drillExtract } from "../util/mungers";
+import { drillUpdate } from "../util/mungers";
 import SiteLoader from "../util/SiteLoader";
-import createSchema, { MarkedForDeletion } from "./schema";
+import { FormatterEditor } from "./FormatterEditor";
+import { LocationEditor } from "./LocationEditor";
+import { MarkedForDeletion } from "./schema";
+import { SelectionEditor } from "./SelectionEditor";
 import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
-import { LocationEditor } from "./LocationEditor";
-import { SelectionEditor } from "./SelectionEditor";
-import { useQueue } from "react-use";
+import "./VisualTemplateEditor.scss";
 
 const EditorSections = {
   selection: SelectionEditor,
   editor: SvgFieldEditor,
-  location: LocationEditor
+  location: LocationEditor,
+  formatters: FormatterEditor
 };
 
 function SvgEditor({
@@ -154,7 +145,8 @@ export function VisualTemplateEditor({
     setSubNav([
       { key: "selection", title: selectionTitle },
       { key: "editor", title: "Editor" },
-      { key: "location", title: "Location" }
+      { key: "location", title: "Location" },
+      { key: "formatters", title: "Formatters" }
     ]);
 
     return () => {

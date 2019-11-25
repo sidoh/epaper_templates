@@ -109,6 +109,18 @@ const BitmapFields = {
 };
 
 const Definitions = {
+  referenceFormatter: {
+    type: "object",
+    properties: {
+      name: {
+        title: "Reference Name",
+        type: "string",
+        pattern: "^[a-zA-Z0-9_0]+$"
+      },
+      formatter: { $ref: "#/definitions/formatter" }
+    },
+    required: ["name"]
+  },
   color: {
     type: "string",
     enum: ["black", "white"],
@@ -179,6 +191,7 @@ const Definitions = {
   },
   formatter: {
     type: "object",
+    required: ["type"],
     properties: {
       type: {
         type: "string",
@@ -289,22 +302,7 @@ export const Schema = {
     background_color: { $ref: "#/definitions/color" },
     formatters: {
       type: "array",
-      items: {
-        anyOf: [
-          { $ref: "#/definitions/formatter" },
-          {
-            type: "object",
-            properties: {
-              name: {
-                title: "Reference Name",
-                type: "string",
-                pattern: "^[a-zA-Z0-9_0]+$"
-              }
-            }
-          }
-        ],
-        required: ["name"]
-      }
+      items: { $ref: "#/definitions/referenceFormatter" }
     },
     ...Object.fromEntries(
       Object.entries(FieldTypeDefinitions).map(([k, v]) => {
@@ -318,6 +316,12 @@ export const Schema = {
       })
     )
   }
+};
+
+export const FormatterSchema = {
+  type: "object",
+  definitions: { ...Definitions },
+  $ref: "#/definitions/referenceFormatter"
 };
 
 export default function createSchema({

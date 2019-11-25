@@ -15,7 +15,7 @@ VariableFormatterFactory::VariableFormatterFactory(
       String key = formatter["name"];
       Serial.printf_P(PSTR("formatter key = %s\n"), key.c_str());
 
-      refFormatters[key] = _createInternal(formatter, false);
+      refFormatters[key] = _createInternal(formatter["formatter"], false);
     }
   } else {
     Serial.println(

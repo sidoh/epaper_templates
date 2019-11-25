@@ -4,24 +4,13 @@ import { FieldTypeDefinitions, Schema } from "./schema";
 
 import "./SelectionEditor.scss";
 import Button from "react-bootstrap/Button";
-import Badge from "react-bootstrap/Badge";
 import { faWindowClose } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import produce from "immer";
 import { faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useBoolean } from "react-use";
 import Form from "react-bootstrap/Form";
-
-function BadgedText({ badge, variant = "primary", children, ...props }) {
-  return (
-    <span {...props} className="list-item-badge">
-      <Badge variant={variant} className="mr-2">
-        {badge}
-      </Badge>
-      {children}
-    </span>
-  );
-}
+import { BadgedText } from "./BadgedText";
 
 const valueTitleGenerator = (el = {}) => {
   const { value } = el;
@@ -113,7 +102,7 @@ function SectionList({ title, items, onDelete, onDeselect }) {
       <h5>
         {title} ({items.length})
       </h5>
-      <ul>
+      <ul className="block-list">
         {items.map(x => (
           <li key={x.id}>
             <SectionListItem
