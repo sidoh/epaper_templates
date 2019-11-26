@@ -167,7 +167,8 @@ export function SelectionEditor({
   onDelete,
   screenMetadata,
   activeElements,
-  setActiveElements
+  setActiveElements,
+  setSubNavMode
 }) {
   const [showAddForm, toggleShowAddForm] = useBoolean(false);
 
@@ -201,10 +202,16 @@ export function SelectionEditor({
   const onAdd = useCallback(
     type => {
       const updated = produce(value, draft => {
-        draft[type].push({});
+        if (!draft[type]) {
+          draft.type = [{}];
+        } else {
+          draft[type].push({});
+        }
       });
+
       onUpdate(updated);
-      setActiveElements([...activeElements, [type, updated[type].length - 1]]);
+      setActiveElements([[type, updated[type].length-1]]);
+      setSubNavMode("editor");
     },
     [value, activeElements, onUpdate]
   );

@@ -123,6 +123,7 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
           onChange={onChange}
           setSubNav={updateSubNav}
           subNavMode={subNavMode}
+          setSubNavMode={setSubNavMode}
         />
       </Container>
     </>
