@@ -36,6 +36,7 @@ function SvgEditor({
   activeElements,
   setActiveElements,
   subNavMode,
+  setSubNavMode,
   allBitmaps
 }) {
   // Do this to work around RJSF using onChange fn from current props to update next props.
@@ -101,6 +102,7 @@ function SvgEditor({
         setActiveElements={setActiveElements}
         screenMetadata={screenMetadata}
         allBitmaps={globalState.bitmaps}
+        setSubNavMode={setSubNavMode}
       />
     </>
   );
@@ -127,7 +129,8 @@ export function VisualTemplateEditor({
   value,
   onChange,
   setSubNav,
-  subNavMode
+  subNavMode,
+  setSubNavMode
 }) {
   const [globalState, globalActions] = useGlobalState();
   const [resolvedVariables, setResolvedVariables] = useState({
@@ -241,6 +244,7 @@ export function VisualTemplateEditor({
                 activeElements={activeEditElements}
                 setActiveElements={setActiveEditElements}
                 subNavMode={subNavMode}
+                setSubNavMode={setSubNavMode}
               />
             </Col>
           </Row>

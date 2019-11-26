@@ -81,7 +81,7 @@ function FormatterListItem({ formatter, index, onEdit, onDelete }) {
       <div className="mr-auto" />
 
       <div className="button-list">
-        <a href="#" onClick={_onEdit}>
+        <a href="#" className="text-primary" onClick={_onEdit}>
           <FontAwesomeIcon icon={faPencilAlt} />
         </a>
 
