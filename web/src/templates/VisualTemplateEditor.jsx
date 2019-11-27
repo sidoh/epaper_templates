@@ -32,6 +32,7 @@ const EditorSections = {
 function SvgEditor({
   value,
   onChange,
+  onUpdateActive,
   screenMetadata,
   activeElements,
   setActiveElements,
@@ -39,27 +40,11 @@ function SvgEditor({
   setSubNavMode,
   allBitmaps
 }) {
-  // Do this to work around RJSF using onChange fn from current props to update next props.
-  const currentActiveElements = useRef(null);
-  currentActiveElements.current = activeElements;
-
   const [globalState, globalActions] = useGlobalState();
 
   useEffect(() => {
     globalActions.loadBitmaps();
   }, []);
-
-  const onUpdateActive = useCallback(
-    updateFn => {
-      const updated = produce(value, draft => {
-        currentActiveElements.current.forEach(path =>
-          drillUpdate(draft, path, updateFn)
-        );
-      });
-      onChange(updated);
-    },
-    [value, onChange]
-  );
 
   const onDelete = useCallback(
     paths => {
@@ -138,6 +123,22 @@ export function VisualTemplateEditor({
     text: {}
   });
   const [activeEditElements, setActiveEditElements] = useState([]);
+
+  // Do this to work around RJSF using onChange fn from current props to update next props.
+  const currentActiveElements = useRef(null);
+  currentActiveElements.current = activeEditElements;
+
+  const onUpdateActive = useCallback(
+    updateFn => {
+      const updated = produce(value, draft => {
+        currentActiveElements.current.forEach(path =>
+          drillUpdate(draft, path, updateFn)
+        );
+      });
+      onChange(updated);
+    },
+    [value, onChange]
+  );
 
   useEffect(() => {
     let selectionTitle = "Selection";
@@ -227,6 +228,7 @@ export function VisualTemplateEditor({
           <Row>
             <Col sm={12} lg={7}>
               <SvgCanvas
+                onUpdateActive={onUpdateActive}
                 width={screenMetadata.width}
                 height={screenMetadata.height}
                 definition={value}
@@ -240,6 +242,7 @@ export function VisualTemplateEditor({
               <SvgEditor
                 value={value}
                 onChange={onChange}
+                onUpdateActive={onUpdateActive}
                 screenMetadata={screenMetadata}
                 activeElements={activeEditElements}
                 setActiveElements={setActiveEditElements}

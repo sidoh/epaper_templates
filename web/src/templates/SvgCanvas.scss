@@ -3,6 +3,7 @@
     image, text, line {
       stroke-width: 1px;
       cursor: pointer;
+      user-select: none;
 
       &:hover {
         stroke-width: 3px;
@@ -14,6 +15,7 @@
         fill: #cc6 !important;
         text-decoration: underline;
         stroke-width: 3px;
+        cursor: move;
       }
     }
 
