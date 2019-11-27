@@ -1,17 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef
+} from "react";
 import { binToDataUrl } from "../bitmaps/BitmapCanvas";
 import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
-import { MarkedForDeletion } from "./schema";
+import { MarkedForDeletion, FieldTypeDefinitions } from "./schema";
 
 function SvgLine({
-  x1 = 0,
-  y1 = 0,
-  x2 = 0,
-  y2 = 0,
+  definition: { x1 = 0, y1 = 0, x2 = 0, y2 = 0, color = "black" },
   isActive,
   onClick,
-  color = "black"
+  className
 }) {
   const style = useMemo(
     () => ({
@@ -22,6 +25,7 @@ function SvgLine({
 
   return (
     <line
+      className={className}
       {...{ x1, y1, x2, y2 }}
       className={isActive ? "active" : ""}
       onClick={onClick}
@@ -31,13 +35,11 @@ function SvgLine({
 }
 
 function SvgText({
-  x = 0,
-  y = 0,
+  definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
   onClick,
   isActive,
-  value: valueDef = {},
   resolvedValue,
-  color = "black"
+  className
 }) {
   const style = useMemo(
     () => ({
@@ -56,6 +58,7 @@ function SvgText({
 
   return (
     <text
+      className={className}
       x={x}
       y={y}
       style={style}
@@ -68,14 +71,12 @@ function SvgText({
 }
 
 function SvgBitmap({
-  x = 0,
-  y = 0,
-  w: width = 0,
-  h: height = 0,
+  definition: { x = 0, y = 0, w: width = 0, h: height = 0 },
   _static,
   resolvedValue,
   isActive,
-  onClick
+  onClick,
+  className
 }) {
   const [globalState, globalActions] = useGlobalState();
   const [src, setSrc] = useState(null);
@@ -100,8 +101,8 @@ function SvgBitmap({
   return (
     <>
       <image
+        className={className}
         {...{ x, y, width, height }}
-        className={isActive ? "active" : ""}
         onClick={onClick}
         xlinkHref={src}
       />
@@ -113,14 +114,49 @@ function SvgBitmap({
   );
 }
 
+const SvgElementsByType = {
+  lines: SvgLine,
+  text: SvgText,
+  bitmaps: SvgBitmap
+};
+
+const WrappedSvgElement = ({
+  toggleActiveElement,
+  isActive,
+  type,
+  id,
+  onUpdateActive,
+  isDragging,
+  ...rest
+}) => {
+  const onClick = useCallback(() => {
+    if (!rest.definition.__drag || !rest.definition.__drag.moved) {
+      toggleActiveElement(type, id);
+    }
+  }, [rest.definition, toggleActiveElement, type, id]);
+  const Element = SvgElementsByType[type];
+
+  return (
+    <Element
+      {...rest}
+      isActive={isActive}
+      onClick={onClick}
+      className={isActive ? "active" : ""}
+    />
+  );
+};
+
 export function SvgCanvas({
   width,
   height,
   definition,
   resolvedVariables,
   activeElements,
-  toggleActiveElement
+  toggleActiveElement,
+  onUpdateActive
 }) {
+  const isDragging = useRef(null);
+
   const svgStyle = useMemo(
     () => ({
       backgroundColor: definition.background_color
@@ -134,49 +170,85 @@ export function SvgCanvas({
     [activeElements]
   );
 
+  const eventListeners = useMemo(
+    () => ({
+      onMouseDown: e => {
+        if (e.target.getAttribute("class") === "active") {
+          isDragging.current = true;
+          onUpdateActive(defn => {
+            const keys = Object.keys(defn);
+            const exFields = (prefix) => (
+              keys.filter(x => x.startsWith(prefix)).map(x => [x, defn[x]])
+            )
+
+            defn.__drag = {
+              start: {
+                x: exFields("x"),
+                y: exFields("y"),
+              },
+              cursor: { x: e.pageX, y: e.pageY }
+            };
+          });
+        }
+      },
+      onClick: e => {
+        if (isDragging.current) {
+          onUpdateActive(defn => {
+            delete defn.__drag;
+          });
+        }
+        isDragging.current = false;
+      },
+      onMouseLeave: e => {
+        onUpdateActive(defn => {
+          delete defn.__drag;
+        });
+        isDragging.current = false;
+      },
+      onMouseMove: e => {
+        if (isDragging.current) {
+          onUpdateActive(dfn => {
+            const ctx = dfn.__drag;
+
+            ctx.moved = true;
+
+            ctx.start.x.forEach(([field, start]) => {
+              dfn[field] = start + (e.pageX - ctx.cursor.x);
+            })
+            ctx.start.y.forEach(([field, start]) => {
+              dfn[field] = start + (e.pageY - ctx.cursor.y);
+            })
+          });
+        }
+      }
+    }),
+    [onUpdateActive]
+  );
+
   return (
-    <svg width={width} height={height} style={svgStyle}>
-      {(definition.lines || []).map(
-        (x, i) =>
-          x !== MarkedForDeletion && (
-            <SvgLine
-              onClick={() => toggleActiveElement("lines", i)}
-              isActive={isRegionActive("lines", i)}
-              key={`line-${i}`}
-              {...x}
-            />
-          )
-      )}
+    <svg {...eventListeners} width={width} height={height} style={svgStyle}>
+      {Object.keys(FieldTypeDefinitions)
+        .flatMap(type =>
+          (definition[type] || []).map((x, i) => {
+            const resolvedValue =
+              resolvedVariables[type] && resolvedVariables[type][i];
 
-      {(definition.text || []).map((x, i) => {
-        const resolvedValue = resolvedVariables.text[i];
-        return (
-          x !== MarkedForDeletion && (
-            <SvgText
-              onClick={() => toggleActiveElement("text", i)}
-              isActive={isRegionActive("text", i)}
-              key={`text-${i}`}
-              resolvedValue={resolvedValue}
-              {...x}
-            />
-          )
-        );
-      })}
-
-      {(definition.bitmaps || []).map((x, i) => {
-        const resolvedValue = resolvedVariables.bitmaps[i];
-        return (
-          x !== MarkedForDeletion && (
-            <SvgBitmap
-              isActive={isRegionActive("bitmaps", i)}
-              onClick={() => toggleActiveElement("bitmaps", i)}
-              key={`bitmap-${i}`}
-              resolvedValue={resolvedValue}
-              {...x}
-            />
-          )
-        );
-      })}
+            return (
+              <WrappedSvgElement
+                isDragging={isDragging.current}
+                onUpdateActive={onUpdateActive}
+                toggleActiveElement={toggleActiveElement}
+                resolvedValue={resolvedValue}
+                key={`${type}-${i}`}
+                isActive={isRegionActive(type, i)}
+                definition={x}
+                type={type}
+                id={i}
+              />
+            );
+          })
+        )
+        .filter(x => x)}
     </svg>
   );
 }

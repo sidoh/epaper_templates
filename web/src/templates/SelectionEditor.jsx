@@ -30,18 +30,21 @@ const valueTitleGenerator = (el = {}) => {
   return <i>Unrecognized format</i>;
 };
 
-const fieldTitleGenerator = (el = {}) => {
-  return (
-    <span>
-      {Object.entries(el)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => (
-          <BadgedText className="mr-2" key={k} badge={k}>
-            {v}
-          </BadgedText>
-        ))}
-    </span>
-  );
+const fieldTitleGenerator = fields => {
+  return (el = {}) => {
+    return (
+      <span>
+        {Object.entries(el)
+          .filter(([k]) => fields.some(f => f === k))
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([k, v]) => (
+            <BadgedText className="mr-2" key={k} badge={k}>
+              {v}
+            </BadgedText>
+          ))}
+      </span>
+    );
+  };
 };
 
 const defaultTitleGenerator = el => {
@@ -51,7 +54,7 @@ const defaultTitleGenerator = el => {
 const SectionListItemTitleGenerators = {
   text: valueTitleGenerator,
   bitmaps: valueTitleGenerator,
-  lines: fieldTitleGenerator,
+  lines: fieldTitleGenerator(["x1", "x2", "y1", "y2"]),
   rectangles: defaultTitleGenerator
 };
 
@@ -210,7 +213,7 @@ export function SelectionEditor({
       });
 
       onUpdate(updated);
-      setActiveElements([[type, updated[type].length-1]]);
+      setActiveElements([[type, updated[type].length - 1]]);
       setSubNavMode("editor");
     },
     [value, activeElements, onUpdate]
@@ -219,8 +222,11 @@ export function SelectionEditor({
   const onDeselect = useCallback(
     id => {
       const updated = produce(activeElements, draft => {
-        draft.splice(activeElements.findIndex(x => x === id), 1)
-      })
+        draft.splice(
+          activeElements.findIndex(x => x === id),
+          1
+        );
+      });
       setActiveElements(updated);
     },
     [activeElements]
