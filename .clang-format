@@ -1,0 +1,12 @@
+BasedOnStyle: Google
+AlignOperands: false
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignAfterOpenBracket: false
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackParameters: false
+BinPackArguments: false
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
