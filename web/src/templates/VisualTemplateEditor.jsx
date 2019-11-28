@@ -234,13 +234,12 @@ export function VisualTemplateEditor({
           e.preventDefault();
           return false;
         } else if (keyCode === 90) {
-          //special case (CTRL-SHIFT-Z) does a redo (on a mac for example)
           if (e.shiftKey === true) {
-            //fire your custom redo logic
             redo();
           } else {
             undo();
           }
+
           e.preventDefault();
           return false;
         }
