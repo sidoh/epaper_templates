@@ -68,10 +68,10 @@ function SvgEditor({
       });
       onChange(updated);
       setActiveElements(
-        currentActiveElements.current.filter(x => !paths.some(p => x === p))
+        activeElements.filter(x => !paths.some(p => x === p))
       );
     },
-    [value, onChange]
+    [value, onChange, activeElements]
   );
 
   const Editor = EditorSections[subNavMode] || SvgFieldEditor;
