@@ -115,7 +115,11 @@ export function VisualTemplateEditor({
   onChange,
   setSubNav,
   subNavMode,
-  setSubNavMode
+  setSubNavMode,
+  undo,
+  redo,
+  collapse,
+  markForCollapse
 }) {
   const [globalState, globalActions] = useGlobalState();
   const [resolvedVariables, setResolvedVariables] = useState({
@@ -220,6 +224,35 @@ export function VisualTemplateEditor({
     [value, globalState.variables]
   );
 
+  useEffect(() => {
+    const undoRedo = e => {
+      var keyCode = e.keyCode;
+
+      if (e.metaKey === true || e.ctrlKey === true) {
+        if (keyCode === 89) {
+          redo();
+          e.preventDefault();
+          return false;
+        } else if (keyCode === 90) {
+          //special case (CTRL-SHIFT-Z) does a redo (on a mac for example)
+          if (e.shiftKey === true) {
+            //fire your custom redo logic
+            redo();
+          } else {
+            undo();
+          }
+          e.preventDefault();
+          return false;
+        }
+      }
+    };
+    document.addEventListener("keydown", undoRedo);
+
+    return () => {
+      document.removeEventListener("keydown", undoRedo);
+    };
+  }, []);
+
   return (
     <div className="visual-editor">
       {!screenMetadata && <SiteLoader />}
@@ -235,6 +268,8 @@ export function VisualTemplateEditor({
                 toggleActiveElement={toggleActive}
                 activeElements={activeEditElements}
                 resolvedVariables={resolvedVariables}
+                markForCollapse={markForCollapse}
+                collapse={collapse}
               />
             </Col>
 

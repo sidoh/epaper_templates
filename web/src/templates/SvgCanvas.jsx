@@ -153,7 +153,9 @@ export function SvgCanvas({
   resolvedVariables,
   activeElements,
   toggleActiveElement,
-  onUpdateActive
+  onUpdateActive,
+  markForCollapse,
+  collapse
 }) {
   const isDragging = useRef(null);
 
@@ -188,6 +190,8 @@ export function SvgCanvas({
               },
               cursor: { x: e.pageX, y: e.pageY }
             };
+
+            markForCollapse();
           });
         }
       },
@@ -197,12 +201,14 @@ export function SvgCanvas({
             delete defn.__drag;
           });
         }
+        collapse();
         isDragging.current = false;
       },
       onMouseLeave: e => {
         onUpdateActive(defn => {
           delete defn.__drag;
         });
+        collapse();
         isDragging.current = false;
       },
       onMouseMove: e => {

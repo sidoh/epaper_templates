@@ -7,6 +7,32 @@ export const SET = "set";
 export const MARK_FOR_COLLAPSE = "mark_for_collapse";
 export const COLLAPSE = "collapse";
 
+function mapReducer(reducer = x => x) {
+  return function(state, action) {
+    const { map } = state;
+
+    switch (action.type) {
+      case UPDATE:
+        const { key, value } = action.payload;
+
+        if (map[key] != value) {
+          return {
+            ...state,
+            map: { ...map, [key]: value }
+          };
+        } else {
+          return state;
+        }
+
+      case SET:
+        return { ...state, map: action.payload };
+
+      default:
+        return reducer(present);
+    }
+  };
+}
+
 function listReducer(reducer = x => x) {
   return function(state, action) {
     const { list } = state;
@@ -51,6 +77,26 @@ export function useUndoableList() {
   const collapse = useCallback(() => dispatch({ type: COLLAPSE }));
 
   return [list, { markForCollapse, collapse, set, updateAt, undo, redo, canUndo, canRedo }];
+}
+
+export function useUndoableMap() {
+  const { state, dispatch, canUndo, canRedo } = useUndoableReducer(
+    mapReducer(),
+    { map: {} }
+  );
+
+  const map = state.map;
+
+  const updateAt = useCallback((key, value) => {
+    dispatch({ type: UPDATE, payload: { key, value } });
+  }, []);
+  const undo = useCallback(() => dispatch({ type: UNDO }));
+  const redo = useCallback(() => dispatch({ type: REDO }));
+  const set = useCallback(value => dispatch({ type: SET, payload: value }));
+  const markForCollapse = useCallback(() => dispatch({ type: MARK_FOR_COLLAPSE }));
+  const collapse = useCallback(() => dispatch({ type: COLLAPSE }));
+
+  return [map, { markForCollapse, collapse, set, updateAt, undo, redo, canUndo, canRedo }];
 }
 
 export function useUndoableReducer(reducer, initialPresent) {

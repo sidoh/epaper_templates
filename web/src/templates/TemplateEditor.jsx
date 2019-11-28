@@ -16,6 +16,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import produce from "immer";
 import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
+import { useUndoableMap } from "../util/use-undo-list";
 
 const RawJsonEditor = ({ value, onChange }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -66,7 +67,7 @@ const EditorModeHandlers = {
   visual: VisualTemplateEditor
 };
 
-const SwitchableJsonEditor = ({ value, onChange }) => {
+const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
   const [subNav, setSubNav] = useState([]);
   const [mode, setMode] = useState("visual");
   const [subNavMode, setSubNavMode] = useState(null);
@@ -124,6 +125,7 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
           setSubNav={updateSubNav}
           subNavMode={subNavMode}
           setSubNavMode={setSubNavMode}
+          {...rest}
         />
       </Container>
     </>
@@ -131,14 +133,18 @@ const SwitchableJsonEditor = ({ value, onChange }) => {
 };
 
 export default ({ path, template, triggerReload }) => {
-  const [json, setJson] = useState(null);
+  // const [json, setJson] = useState(null);
+  const [
+    json,
+    { set: setJson, undo, redo, markForCollapse, collapse }
+  ] = useUndoableMap();
   const [name, setName] = useState(null);
   const isNew = path === "new";
   const history = useHistory();
 
   useEffect(() => {
     setJson(template);
-  }, [setJson, template]);
+  }, [template]);
 
   useEffect(() => {
     if (isNew) {
@@ -222,7 +228,11 @@ export default ({ path, template, triggerReload }) => {
           )}
 
           <Form.Group>
-            <SwitchableJsonEditor value={json} onChange={setJson} />
+            <SwitchableJsonEditor
+              value={json}
+              onChange={setJson}
+              {...{ undo, redo, collapse, markForCollapse }}
+            />
           </Form.Group>
 
           <div className="d-flex">
