@@ -69,6 +69,49 @@ function SvgText({
     </text>
   );
 }
+function SvgRectangle({
+  definition,
+  definition: {
+    x = 0,
+    y = 0,
+    style,
+    color,
+    w: widthDef = {},
+    h: heightDef = {}
+  },
+  onClick,
+  isActive,
+  resolvedValue,
+  className
+}) {
+  const [width, height] = useMemo(() => {
+    const extract = key => {
+      const def = definition[key];
+
+      if (!def) {
+        return 0;
+      }
+
+      if (def.type === "static") {
+        return def.value || 0;
+      } else if (def.variable) {
+        return resolvedValue;
+      } else {
+        return 0;
+      }
+    };
+
+    return [extract("w"), extract("h")];
+  }, [resolvedValue, widthDef, heightDef]);
+
+  const classes = useMemo(() => {
+    return [className, style === "filled" ? "filled" : "outline"];
+  }, [style, className]);
+
+  return (
+    <rect {...{ x, y, width, height }} className={classes.join(" ")} onClick={onClick} />
+  );
+}
 
 function SvgBitmap({
   definition: { x = 0, y = 0, w: width = 0, h: height = 0 },
@@ -117,7 +160,8 @@ function SvgBitmap({
 const SvgElementsByType = {
   lines: SvgLine,
   text: SvgText,
-  bitmaps: SvgBitmap
+  bitmaps: SvgBitmap,
+  rectangles: SvgRectangle
 };
 
 const WrappedSvgElement = ({
@@ -135,6 +179,11 @@ const WrappedSvgElement = ({
     }
   }, [rest.definition, toggleActiveElement, type, id]);
   const Element = SvgElementsByType[type];
+
+  if (!Element) {
+    console.warn("Invalid element type: ", type, ".  Skipping.");
+    return <></>;
+  }
 
   return (
     <Element
@@ -175,18 +224,17 @@ export function SvgCanvas({
   const eventListeners = useMemo(
     () => ({
       onMouseDown: e => {
-        if (e.target.getAttribute("class") === "active") {
+        if (e.target.classList.contains("active")) {
           isDragging.current = true;
           onUpdateActive(defn => {
             const keys = Object.keys(defn);
-            const exFields = (prefix) => (
-              keys.filter(x => x.startsWith(prefix)).map(x => [x, defn[x]])
-            )
+            const exFields = prefix =>
+              keys.filter(x => x.startsWith(prefix)).map(x => [x, defn[x]]);
 
             defn.__drag = {
               start: {
                 x: exFields("x"),
-                y: exFields("y"),
+                y: exFields("y")
               },
               cursor: { x: e.pageX, y: e.pageY }
             };
@@ -220,10 +268,10 @@ export function SvgCanvas({
 
             ctx.start.x.forEach(([field, start]) => {
               dfn[field] = start + (e.pageX - ctx.cursor.x);
-            })
+            });
             ctx.start.y.forEach(([field, start]) => {
               dfn[field] = start + (e.pageY - ctx.cursor.y);
-            })
+            });
           });
         }
       }

@@ -168,7 +168,7 @@ export function FormatterEditor({ value, onUpdate }) {
           </div>
 
           <FormatterList
-            formatters={value.formatters}
+            formatters={value.formatters || []}
             onEdit={onEdit}
             onDelete={onDelete}
           />

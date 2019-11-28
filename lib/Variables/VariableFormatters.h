@@ -53,6 +53,15 @@ private:
   uint8_t digits;
 };
 
+class RatioVariableFormatter : public VariableFormatter {
+public:
+  RatioVariableFormatter(float baseValue);
+
+  virtual String format(const String& value) const;
+private:
+  float baseValue;
+};
+
 class VariableFormatterFactory {
 public:
   VariableFormatterFactory(const JsonVariant& referenceFormatters);

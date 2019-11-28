@@ -67,9 +67,7 @@ function SvgEditor({
         });
       });
       onChange(updated);
-      setActiveElements(
-        activeElements.filter(x => !paths.some(p => x === p))
-      );
+      setActiveElements(activeElements.filter(x => !paths.some(p => x === p)));
     },
     [value, onChange, activeElements]
   );
@@ -188,15 +186,26 @@ export function VisualTemplateEditor({
 
   useDebounce(
     () => {
-      const variables = ["text", "bitmaps"].flatMap(x => {
-        return (value[x] || [])
-          .map((def, i) => {
+      const variables = [
+        ["text", ["value"]],
+        ["bitmaps", ["value"]],
+        ["rectangles", ["w", "h"]]
+      ].flatMap(([type, keys]) => {
+        return (value[type] || [])
+          .flatMap((def, i) => {
             if (def === MarkedForDeletion) {
               return {};
             }
 
-            const { value: { variable, formatter } = {} } = def;
-            return { variable, formatter, ref: [x, i] };
+            return keys
+              .map(k => {
+                const { variable, formatter } = def[k] || {};
+
+                if (variable) {
+                  return { variable, formatter, ref: [type, i, k] };
+                }
+              })
+              .filter(x => x);
           })
           .filter(x => x.variable);
       });
@@ -215,7 +224,7 @@ export function VisualTemplateEditor({
                 a[type][id] = x.value;
                 return a;
               },
-              { bitmaps: {}, text: {} }
+              { bitmaps: {}, text: {}, rectangles: {} }
             )
         );
       });

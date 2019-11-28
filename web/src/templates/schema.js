@@ -19,38 +19,10 @@ const RectangleFields = {
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
-    width: {
-      oneOf: [
-        {
-          title: "Fixed",
-          properties: { static: "#/definitions/horizontalPosition" }
-        },
-        {
-          title: "Dynamic",
-          properties: {
-            max: "#/definitions/horizontalPosition",
-            variable: { type: "#/definitions/variable" },
-            variable_mode: { type: "#/definitions/variableMode" }
-          }
-        }
-      ]
-    },
-    height: {
-      oneOf: [
-        {
-          title: "Fixed",
-          properties: { static: "#/definitions/verticalPosition" }
-        },
-        {
-          title: "Dynamic",
-          properties: {
-            max: "#/definitions/verticalPosition",
-            variable: { type: "#/definitions/variable" },
-            variable_mode: { type: "#/definitions/variableMode" }
-          }
-        }
-      ]
-    }
+    style: { $ref: "#/definitions/fillStyle" },
+    color: { $ref: "#/definitions/color" },
+    w: { title: "Width", $ref: "#/definitions/valueChoice" },
+    h: { title: "Height", $ref: "#/definitions/valueChoice" }
   }
 };
 
@@ -120,6 +92,11 @@ const Definitions = {
       formatter: { $ref: "#/definitions/formatter" }
     },
     required: ["name"]
+  },
+  fillStyle: {
+    type: "string",
+    enum: ["outline", "filled"],
+    default: "outline"
   },
   color: {
     type: "string",
@@ -195,7 +172,7 @@ const Definitions = {
     properties: {
       type: {
         type: "string",
-        enum: ["ref", "identity", "time", "round", "cases"]
+        enum: ["ref", "identity", "time", "round", "cases", "ratio"]
       }
     },
     dependencies: {
@@ -266,9 +243,14 @@ const Definitions = {
               type: {
                 enum: ["round"]
               },
-              digits: {
-                title: "Number of digits",
-                type: "integer"
+              args: {
+                type: "object",
+                properties: {
+                  digits: {
+                    title: "Number of digits",
+                    type: "integer"
+                  }
+                }
               }
             }
           },
@@ -278,6 +260,22 @@ const Definitions = {
                 enum: ["ref"]
               },
               ref: { $ref: "#/definitions/storedFormatter" }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["ratio"]
+              },
+              args: {
+                type: "object",
+                properties: {
+                  base: {
+                    title: "Base value",
+                    type: "number"
+                  }
+                }
+              }
             }
           }
         ]

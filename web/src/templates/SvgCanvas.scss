@@ -1,26 +1,39 @@
 .visual-editor {
   svg {
-    image, text, line {
+    image, text, line, rect {
       stroke-width: 1px;
       cursor: pointer;
       user-select: none;
 
       &:hover {
-        stroke-width: 3px;
+        stroke-width: 5px;
       }
 
       &.active {
-        background-color: #ff9999;
+        background-color: rgba(255, 200, 200, 0.3);
+        fill-opacity: 0.8;
+        z-index: 9;
         font-weight: bold;
         fill: #cc6 !important;
         text-decoration: underline;
-        stroke-width: 3px;
+        stroke-width: 5px;
         cursor: move;
       }
     }
 
+    rect.active,
     line.active {
       stroke: #cc6 !important;
+    }
+
+    rect.outline {
+      fill: none;
+      stroke: #000;
+    }
+
+    rect.filled,
+    rect.active.filled {
+      stroke-width: 0;
     }
 
     .image-outline {

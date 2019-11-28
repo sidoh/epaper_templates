@@ -30,8 +30,7 @@ std::shared_ptr<const VariableFormatter> VariableFormatterFactory::create(
 }
 
 std::shared_ptr<const VariableFormatter> VariableFormatterFactory::getReference(
-    String refKey,
-    bool allowReference) {
+    String refKey, bool allowReference) {
   if (!allowReference) {
     Serial.println(
         F("WARNING: Tried to reference a formatter when references were "
@@ -43,14 +42,14 @@ std::shared_ptr<const VariableFormatter> VariableFormatterFactory::getReference(
     return refFormatters[refKey];
   } else {
     Serial.printf_P(PSTR("WARNING: undefined reference to formatter `%s'\n"),
-                    refKey.c_str());
+        refKey.c_str());
     return defaultFormatter;
   }
 }
 
 std::shared_ptr<const VariableFormatter>
-VariableFormatterFactory::_createInternal(JsonObject spec,
-                                          bool allowReference) {
+VariableFormatterFactory::_createInternal(
+    JsonObject spec, bool allowReference) {
   JsonVariant formatterSpec = spec;
 
   if (formatterSpec.containsKey("formatter")) {
@@ -94,6 +93,13 @@ VariableFormatterFactory::_createInternal(JsonObject spec,
     }
 
     return std::make_shared<RoundingVariableFormatter>(numDigits);
+  } else if (formatterDef.equalsIgnoreCase("ratio")) {
+    float base = 0.0;
+    if (formatterArgs.containsKey("base")) {
+      base = formatterArgs["base"];
+    }
+
+    return std::make_shared<RatioVariableFormatter>(base);
   } else {
     return defaultFormatter;
   }

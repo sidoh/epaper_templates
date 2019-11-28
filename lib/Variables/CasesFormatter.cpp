@@ -16,7 +16,8 @@ CasesVariableFormatter::CasesVariableFormatter(JsonObject args) {
       this->cases[mapFrom] = mapTo;
     }
   } else {
-    Serial.println(F("CasesVariableFormatter: ERROR - unexpected type for \"cases\" arg"));
+    Serial.println(
+        F("CasesVariableFormatter: ERROR - unexpected type for \"cases\" arg"));
   }
 
   this->defaultValue = args["default"].as<const char*>();

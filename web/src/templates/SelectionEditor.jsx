@@ -55,7 +55,7 @@ const SectionListItemTitleGenerators = {
   text: valueTitleGenerator,
   bitmaps: valueTitleGenerator,
   lines: fieldTitleGenerator(["x1", "x2", "y1", "y2"]),
-  rectangles: defaultTitleGenerator
+  rectangles: fieldTitleGenerator(["x", "y", "style"])
 };
 
 function SectionListItem({ id, type, value, onDelete, onDeselect }) {
@@ -206,7 +206,7 @@ export function SelectionEditor({
     type => {
       const updated = produce(value, draft => {
         if (!draft[type]) {
-          draft.type = [{}];
+          draft[type] = [{}];
         } else {
           draft[type].push({});
         }

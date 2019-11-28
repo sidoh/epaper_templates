@@ -1,16 +1,17 @@
 #include <DisplayTemplateDriver.h>
 #include <FS.h>
+#include <FillStyle.h>
 
 #define JSON_VAL_OR_DEFAULT(json, key, d) \
   (json.containsKey(key) ? json[key] : d)
 
-DisplayTemplateDriver::DisplayTemplateDriver(GxEPD2_GFX* display,
-                                             Settings& settings)
-    : display(display),
-      settings(settings),
-      dirty(true),
-      shouldFullUpdate(false),
-      lastFullUpdate(0) {
+DisplayTemplateDriver::DisplayTemplateDriver(
+    GxEPD2_GFX* display, Settings& settings)
+    : display(display)
+    , settings(settings)
+    , dirty(true)
+    , shouldFullUpdate(false)
+    , lastFullUpdate(0) {
 #if defined(ESP32)
   mutex = xSemaphoreCreateMutex();
 
@@ -72,9 +73,7 @@ void DisplayTemplateDriver::loop() {
 #endif
 }
 
-void DisplayTemplateDriver::scheduleFullUpdate() {
-  shouldFullUpdate = true;
-}
+void DisplayTemplateDriver::scheduleFullUpdate() { shouldFullUpdate = true; }
 
 void DisplayTemplateDriver::clearDirtyRegions() {
   DoublyLinkedListNode<std::shared_ptr<Region>>* curr = regions.getHead();
@@ -96,7 +95,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
 
     if (region->isDirty()) {
       Serial.printf_P(PSTR("Rendering %s\n"),
-                      region->getVariableName().c_str());
+          region->getVariableName().c_str());
       region->render(display);
     }
 
@@ -141,8 +140,7 @@ void DisplayTemplateDriver::flushDirtyRegions(bool updateScreen) {
 }
 
 bool DisplayTemplateDriver::regionContainedIn(
-    Rectangle& r,
-    DoublyLinkedList<Rectangle>& others) {
+    Rectangle& r, DoublyLinkedList<Rectangle>& others) {
   DoublyLinkedListNode<Rectangle>* curr = others.getHead();
 
   while (curr != NULL) {
@@ -166,8 +164,8 @@ void DisplayTemplateDriver::fullUpdate() {
   display->display(false);
 }
 
-void DisplayTemplateDriver::updateVariable(const String& key,
-                                           const String& value) {
+void DisplayTemplateDriver::updateVariable(
+    const String& key, const String& value) {
 #if defined(ESP32)
   xSemaphoreTake(mutex, portMAX_DELAY);
 #endif
@@ -262,29 +260,29 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 }
 
 std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
-    VariableFormatterFactory& formatterFactory,
-    JsonObject spec) {
-  String variable = RectangleRegion::Dimension::hasVariable(spec)
-                        ? RectangleRegion::Dimension::extractVariable(spec)
-                        : "";
+    VariableFormatterFactory& formatterFactory, JsonObject spec) {
+  String variable = RectangleRegion::Dimension::extractVariable(spec);
 
-  RectangleRegion::Dimension w = RectangleRegion::Dimension::fromSpec(
-                                 spec["width"]),
-                             h = RectangleRegion::Dimension::fromSpec(
-                                 spec["height"]);
+  RectangleRegion::Dimension w =
+      RectangleRegion::Dimension::fromSpec(spec["w"]);
+  RectangleRegion::Dimension h =
+      RectangleRegion::Dimension::fromSpec(spec["h"]);
 
-  auto region = std::make_shared<RectangleRegion>(
-      variable, spec["x"], spec["y"], w, h, extractColor(spec),
+  auto region = std::make_shared<RectangleRegion>(variable,
+      spec["x"],
+      spec["y"],
+      w,
+      h,
+      extractColor(spec),
       formatterFactory.create(spec),
-      RectangleRegion::styleFromString(spec["style"]));
+      fillStyleFromString(spec["style"]));
   regions.add(region);
   region->updateValue(vars.get(variable));
   return region;
 }
 
 void DisplayTemplateDriver::renderRectangles(
-    VariableFormatterFactory& formatterFactory,
-    JsonArray rectangles) {
+    VariableFormatterFactory& formatterFactory, JsonArray rectangles) {
   for (JsonArray::iterator it = rectangles.begin(); it != rectangles.end();
        ++it) {
     JsonObject rect = it->as<JsonObject>();
@@ -293,11 +291,11 @@ void DisplayTemplateDriver::renderRectangles(
 }
 
 void DisplayTemplateDriver::renderBitmap(const String& filename,
-                                         uint16_t x,
-                                         uint16_t y,
-                                         uint16_t w,
-                                         uint16_t h,
-                                         uint16_t color) {
+    uint16_t x,
+    uint16_t y,
+    uint16_t w,
+    uint16_t h,
+    uint16_t color) {
   if (!SPIFFS.exists(filename)) {
     Serial.print(F("WARN - tried to render bitmap file that doesn't exist: "));
     Serial.println(filename);
@@ -318,8 +316,7 @@ void DisplayTemplateDriver::renderBitmap(const String& filename,
 }
 
 void DisplayTemplateDriver::renderBitmaps(
-    VariableFormatterFactory& formatterFactory,
-    JsonArray bitmaps) {
+    VariableFormatterFactory& formatterFactory, JsonArray bitmaps) {
   for (size_t i = 0; i < bitmaps.size(); i++) {
     JsonObject bitmap = bitmaps[i];
 
@@ -393,8 +390,14 @@ void DisplayTemplateDriver::renderTexts(
       const String& variable = text["variable"].as<const char*>();
       auto formatter = formatterFactory.create(text);
 
-      std::shared_ptr<Region> region = addTextRegion(
-          x, y, color, font, textSize, formatter, updateRects, text);
+      std::shared_ptr<Region> region = addTextRegion(x,
+          y,
+          color,
+          font,
+          textSize,
+          formatter,
+          updateRects,
+          text);
       region->updateValue(vars.get(variable));
     }
   }
@@ -404,13 +407,15 @@ void DisplayTemplateDriver::renderLines(JsonArray lines) {
   for (JsonArray::iterator it = lines.begin(); it != lines.end(); ++it) {
     JsonObject line = it->as<JsonObject>();
 
-    display->writeLine(line["x1"], line["y1"], line["x2"], line["y2"],
-                       extractColor(line));
+    display->writeLine(line["x1"],
+        line["y1"],
+        line["x2"],
+        line["y2"],
+        extractColor(line));
   }
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(
-    uint16_t x,
+std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
     uint16_t y,
     uint16_t w,
     uint16_t h,
@@ -418,15 +423,19 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(
     VariableFormatterFactory& formatterFactory,
     JsonObject spec) {
   std::shared_ptr<Region> region(
-      new BitmapRegion(spec["variable"].as<const char*>(), x, y, w, h, color,
-                       formatterFactory.create(spec)));
+      new BitmapRegion(spec["variable"].as<const char*>(),
+          x,
+          y,
+          w,
+          h,
+          color,
+          formatterFactory.create(spec)));
   regions.add(region);
 
   return region;
 }
 
-std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(
-    uint16_t x,
+std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
     uint16_t y,
     uint16_t color,
     const GFXfont* font,
@@ -434,10 +443,14 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(
     std::shared_ptr<const VariableFormatter> formatter,
     JsonObject updateRects,
     JsonObject spec) {
-  auto region =
-      std::make_shared<TextRegion>(spec["variable"].as<const char*>(), x, y,
-                                   nullptr,  // fixed bound -- deprecated
-                                   color, font, formatter, textSize);
+  auto region = std::make_shared<TextRegion>(spec["variable"].as<const char*>(),
+      x,
+      y,
+      nullptr,  // fixed bound -- deprecated
+      color,
+      font,
+      formatter,
+      textSize);
   regions.add(region);
 
   return region;
@@ -499,8 +512,8 @@ const uint16_t DisplayTemplateDriver::extractColor(JsonObject spec) {
   }
 }
 
-void DisplayTemplateDriver::resolveVariables(JsonArray toResolve,
-                                             JsonArray response) {
+void DisplayTemplateDriver::resolveVariables(
+    JsonArray toResolve, JsonArray response) {
   File file = SPIFFS.open(templateFilename, "r");
   DynamicJsonDocument jsonBuffer(JSON_TEMPLATE_BUFFER_SIZE);
   auto error = deserializeJson(jsonBuffer, file);
