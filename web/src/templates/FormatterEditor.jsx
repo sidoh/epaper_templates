@@ -97,9 +97,9 @@ function FormatterList({ formatters, onEdit, onDelete }) {
   return (
     <ul className="block-list">
       {formatters.map((x, i) => (
-        <>
+        <React.Fragment key={i}>
           {x !== MarkedForDeletion && (
-            <li key={x.name}>
+            <li>
               <FormatterListItem
                 formatter={x}
                 index={i}
@@ -108,7 +108,7 @@ function FormatterList({ formatters, onEdit, onDelete }) {
               />
             </li>
           )}
-        </>
+        </React.Fragment>
       ))}
     </ul>
   );
