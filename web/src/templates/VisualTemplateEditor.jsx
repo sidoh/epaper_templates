@@ -119,6 +119,7 @@ function sliceVariableRequest(variables, maxSize = 512) {
 export function VisualTemplateEditor({
   value,
   onChange,
+  isHidden,
   setSubNav,
   subNavMode,
   setSubNavMode,
@@ -151,22 +152,20 @@ export function VisualTemplateEditor({
   );
 
   useEffect(() => {
-    let selectionTitle = "Selection";
-    selectionTitle +=
-      (activeEditElements.length > 0 && ` (${activeEditElements.length})`) ||
-      "";
+    if (!isHidden) {
+      let selectionTitle = "Selection";
+      selectionTitle +=
+        (activeEditElements.length > 0 && ` (${activeEditElements.length})`) ||
+        "";
 
-    setSubNav([
-      { key: "selection", title: selectionTitle },
-      { key: "editor", title: "Editor" },
-      { key: "location", title: "Location" },
-      { key: "formatters", title: "Formatters" }
-    ]);
-
-    return () => {
-      setSubNav([]);
-    };
-  }, [activeEditElements]);
+      setSubNav([
+        { key: "selection", title: selectionTitle },
+        { key: "editor", title: "Editor" },
+        { key: "location", title: "Location" },
+        { key: "formatters", title: "Formatters" }
+      ]);
+    }
+  }, [isHidden, activeEditElements]);
 
   const screenMetadata = useMemo(() => {
     const displayType = globalState.settings["display.display_type"];

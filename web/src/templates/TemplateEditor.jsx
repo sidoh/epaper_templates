@@ -19,9 +19,15 @@ import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 import { useUndoableMap } from "../util/use-undo-reducer";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
-const RawJsonEditor = ({ value, onChange }) => {
+const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (! isHidden) {
+      setSubNav([]);
+    }
+  }, [isHidden]);
 
   useEffect(() => {
     if (value) {

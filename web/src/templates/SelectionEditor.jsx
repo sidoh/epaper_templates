@@ -103,13 +103,28 @@ function SectionListItem({ id, type, value, onDelete, onToggleSelect }) {
 }
 
 const SectionList = React.memo(
-  ({ title, items, onDelete, onDeselect, toggleActiveElement }) => {
+  ({
+    title,
+    type,
+    items,
+    onDelete,
+    onDeselect,
+    toggleActiveElement,
+    onAdd
+  }) => {
     const [isCollapsed, toggleCollapse] = useBoolean(false);
 
     const _toggleClick = useCallback(e => {
       e.preventDefault();
       toggleCollapse();
     }, []);
+
+    const _onAdd = useCallback(
+      e => {
+        onAdd(type);
+      },
+      [onAdd, type]
+    );
 
     return (
       <div className="selection-section">
@@ -127,7 +142,12 @@ const SectionList = React.memo(
               {title} ({items.length})
             </span>
           </a>
-          <Button className="ml-auto" variant="outline-success" size="sm">
+          <Button
+            className="ml-auto"
+            variant="outline-success"
+            size="sm"
+            onClick={_onAdd}
+          >
             <MemoizedFontAwesomeIcon icon={faPlus} />
           </Button>
         </h5>
@@ -305,6 +325,8 @@ export function SelectionEditor({
           return (
             <SectionList
               key={type}
+              type={type}
+              onAdd={onAdd}
               title={typeTitle}
               items={elements}
               onDelete={onDelete}
