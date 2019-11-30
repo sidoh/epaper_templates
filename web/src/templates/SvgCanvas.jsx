@@ -164,10 +164,6 @@ const SvgBitmap = React.forwardRef((props, ref) => {
         onClick={onClick}
         xlinkHref={src}
       />
-      {/* <rect
-        {...{ x: x - 2, y: y - 2, width: width + 4, height: height + 4 }}
-        className="image-outline"
-      /> */}
     </>
   );
 });
