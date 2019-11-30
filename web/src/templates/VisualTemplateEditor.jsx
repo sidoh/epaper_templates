@@ -131,13 +131,13 @@ export function VisualTemplateEditor({
   currentActiveElements.current = activeEditElements;
 
   const onUpdateActive = useCallback(
-    updateFn => {
+    (updateFn, meta = {}) => {
       const updated = produce(value, draft => {
         currentActiveElements.current.forEach(path =>
           drillUpdate(draft, path, updateFn)
         );
       });
-      onChange(updated);
+      onChange(updated, meta);
     },
     [value, onChange]
   );

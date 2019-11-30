@@ -22,7 +22,7 @@ import ReactSlider from "react-slider";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { useUndoableList } from "../util/use-undo-list";
+import { useUndoableList } from "../util/use-undo-reducer";
 
 const FileType = Object.freeze({
   IMAGE: "image",

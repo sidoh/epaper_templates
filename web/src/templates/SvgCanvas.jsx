@@ -10,12 +10,14 @@ import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
 import { MarkedForDeletion, FieldTypeDefinitions } from "./schema";
 
-function SvgLine({
-  definition: { x1 = 0, y1 = 0, x2 = 0, y2 = 0, color = "black" },
-  isActive,
-  onClick,
-  className
-}) {
+const SvgLine = React.forwardRef((props, ref) => {
+  const {
+    definition: { x1 = 0, y1 = 0, x2 = 0, y2 = 0, color = "black" },
+    isActive,
+    onClick,
+    className
+  } = props;
+
   const style = useMemo(
     () => ({
       stroke: color
@@ -25,6 +27,7 @@ function SvgLine({
 
   return (
     <line
+      ref={ref}
       className={className}
       {...{ x1, y1, x2, y2 }}
       className={isActive ? "active" : ""}
@@ -32,15 +35,16 @@ function SvgLine({
       style={style}
     />
   );
-}
+});
 
-function SvgText({
-  definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
-  onClick,
-  isActive,
-  resolvedValue,
-  className
-}) {
+const SvgText = React.forwardRef((props, ref) => {
+  const {
+    definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
+    onClick,
+    isActive,
+    resolvedValue,
+    className
+  } = props;
   const style = useMemo(
     () => ({
       fill: color
@@ -58,6 +62,7 @@ function SvgText({
 
   return (
     <text
+      ref={ref}
       className={className}
       x={x}
       y={y}
@@ -68,22 +73,25 @@ function SvgText({
       {text}
     </text>
   );
-}
-function SvgRectangle({
-  definition,
-  definition: {
-    x = 0,
-    y = 0,
-    style,
-    color,
-    w: widthDef = {},
-    h: heightDef = {}
-  },
-  onClick,
-  isActive,
-  resolvedValue,
-  className
-}) {
+});
+
+const SvgRectangle = React.forwardRef((props, ref) => {
+  const {
+    definition,
+    definition: {
+      x = 0,
+      y = 0,
+      style,
+      color,
+      w: widthDef = {},
+      h: heightDef = {}
+    },
+    onClick,
+    isActive,
+    resolvedValue,
+    className
+  } = props;
+
   const [width, height] = useMemo(() => {
     const extract = key => {
       const def = definition[key];
@@ -109,18 +117,24 @@ function SvgRectangle({
   }, [style, className]);
 
   return (
-    <rect {...{ x, y, width, height }} className={classes.join(" ")} onClick={onClick} />
+    <rect
+      ref={ref}
+      {...{ x, y, width, height }}
+      className={classes.join(" ")}
+      onClick={onClick}
+    />
   );
-}
+});
 
-function SvgBitmap({
-  definition: { x = 0, y = 0, w: width = 0, h: height = 0 },
-  _static,
-  resolvedValue,
-  isActive,
-  onClick,
-  className
-}) {
+const SvgBitmap = React.forwardRef((props, ref) => {
+  const {
+    definition: { x = 0, y = 0, w: width = 0, h: height = 0, color = "black" },
+    _static,
+    resolvedValue,
+    isActive,
+    onClick,
+    className
+  } = props;
   const [globalState, globalActions] = useGlobalState();
   const [src, setSrc] = useState(null);
 
@@ -134,28 +148,29 @@ function SvgBitmap({
             binData: x,
             width,
             height,
-            color: isActive ? "rgb(200,200,100)" : "rgb(0,0,0)"
+            color
           })
         );
       });
     }
-  }, [_static, resolvedValue, isActive]);
+  }, [_static, resolvedValue, isActive, color]);
 
   return (
     <>
       <image
+        ref={ref}
         className={className}
         {...{ x, y, width, height }}
         onClick={onClick}
         xlinkHref={src}
       />
-      <rect
+      {/* <rect
         {...{ x: x - 2, y: y - 2, width: width + 4, height: height + 4 }}
         className="image-outline"
-      />
+      /> */}
     </>
   );
-}
+});
 
 const SvgElementsByType = {
   lines: SvgLine,
@@ -164,20 +179,26 @@ const SvgElementsByType = {
   rectangles: SvgRectangle
 };
 
-const WrappedSvgElement = ({
-  toggleActiveElement,
-  isActive,
-  type,
-  id,
-  onUpdateActive,
-  isDragging,
-  ...rest
-}) => {
+const WrappedSvgElement = props => {
+  const {
+    toggleActiveElement,
+    isActive,
+    type,
+    id,
+    onUpdateActive,
+    isDragging,
+    outlineOffset = 3,
+    ...rest
+  } = props;
+  const elementRef = useRef();
+  const [boundingBoxProps, setBoundingBoxProps] = useState(null);
+
   const onClick = useCallback(() => {
     if (!rest.definition.__drag || !rest.definition.__drag.moved) {
       toggleActiveElement(type, id);
     }
   }, [rest.definition, toggleActiveElement, type, id]);
+
   const Element = SvgElementsByType[type];
 
   if (!Element) {
@@ -185,13 +206,32 @@ const WrappedSvgElement = ({
     return <></>;
   }
 
+  useEffect(() => {
+    if (elementRef.current && isActive) {
+      const { x, y, width, height } = elementRef.current.getBBox();
+      setBoundingBoxProps({
+        x: x - outlineOffset,
+        y: y - outlineOffset,
+        width: width + outlineOffset * 2,
+        height: height + outlineOffset * 2
+      });
+    } else {
+      setBoundingBoxProps(null);
+    }
+  }, [isActive, elementRef.current, outlineOffset, props.definition]);
+
   return (
-    <Element
-      {...rest}
-      isActive={isActive}
-      onClick={onClick}
-      className={isActive ? "active" : ""}
-    />
+    <>
+      <Element
+        {...rest}
+        ref={elementRef}
+        isActive={isActive}
+        onClick={onClick}
+        className={isActive ? "active" : ""}
+      />
+
+      {boundingBoxProps && <rect {...boundingBoxProps} className="outline" />}
+    </>
   );
 };
 
@@ -245,17 +285,23 @@ export function SvgCanvas({
       },
       onClick: e => {
         if (isDragging.current) {
-          onUpdateActive(defn => {
-            delete defn.__drag;
-          });
+          onUpdateActive(
+            defn => {
+              delete defn.__drag;
+            },
+            { skipHistory: true }
+          );
         }
         collapse();
         isDragging.current = false;
       },
       onMouseLeave: e => {
-        onUpdateActive(defn => {
-          delete defn.__drag;
-        });
+        onUpdateActive(
+          defn => {
+            delete defn.__drag;
+          },
+          { skipHistory: true }
+        );
         collapse();
         isDragging.current = false;
       },

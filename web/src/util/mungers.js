@@ -86,7 +86,12 @@ export function deepClearNonMatching(os) {
 
 export function deepPatch(target, patch) {
   Object.entries(patch).forEach(([k, v]) => {
-    if (v && typeof v === "object" && typeof target[k] === "object") {
+    if (
+      v &&
+      !Array.isArray(v) &&
+      typeof v === "object" &&
+      typeof target[k] === "object"
+    ) {
       deepPatch(target[k], v);
     } else {
       target[k] = v;

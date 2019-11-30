@@ -21,6 +21,7 @@ class RectangleRegion : public Region {
 
     static bool hasVariable(JsonObject spec);
     static String extractVariable(JsonObject spec);
+    static JsonObject extractFormatterDefinition(JsonObject spec);
     static Dimension fromSpec(JsonObject spec);
   };
 
@@ -39,4 +40,5 @@ class RectangleRegion : public Region {
  private:
   const FillStyle fillStyle;
   const Dimension w, h;
+  Rectangle previousBoundingBox;
 };

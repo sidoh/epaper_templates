@@ -16,7 +16,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import produce from "immer";
 import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
-import { useUndoableMap } from "../util/use-undo-list";
+import { useUndoableMap } from "../util/use-undo-reducer";
 
 const RawJsonEditor = ({ value, onChange }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -93,7 +93,7 @@ const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
               variant="pills"
               activeKey={mode}
               onSelect={setMode}
-              className="mb-2"
+              className="template-topnav"
             >
               <Nav.Item>
                 <Nav.Link eventKey="visual">Visual</Nav.Link>
@@ -108,7 +108,7 @@ const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
               variant="pills"
               activeKey={subNavMode}
               onSelect={setSubNavMode}
-              className="mb-2"
+              className="template-topnav"
             >
               {subNav.map(({ key, title }) => (
                 <Nav.Item key={key}>
@@ -136,14 +136,17 @@ export default ({ path, template, triggerReload }) => {
   // const [json, setJson] = useState(null);
   const [
     json,
-    { set: setJson, undo, redo, markForCollapse, collapse }
+    { set: setJson, clearHistory, undo, redo, markForCollapse, collapse }
   ] = useUndoableMap();
   const [name, setName] = useState(null);
   const isNew = path === "new";
   const history = useHistory();
 
   useEffect(() => {
-    setJson(template);
+    if (template) {
+      setJson(template);
+      clearHistory();
+    }
   }, [template]);
 
   useEffect(() => {
@@ -228,39 +231,65 @@ export default ({ path, template, triggerReload }) => {
           )}
 
           <Form.Group>
-            <SwitchableJsonEditor
-              value={json}
-              onChange={setJson}
-              {...{ undo, redo, collapse, markForCollapse }}
-            />
+            <Container>
+              <Row>
+                <Col md={8} lg={1} className="px-lg-0 py-lg-0 pb-4">
+                  <div className="button-sidebar d-flex flex-lg-column flex-row">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      className="w-100"
+                    >
+                      <FontAwesomeIcon
+                        className="fa-fw mr-1"
+                        size="sm"
+                        icon={faSave}
+                      />
+                      <span>Save</span>
+                    </Button>
+
+                    <div className="gutter" />
+
+                    {!isNew && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={onActivate}
+                          size="sm"
+                        >
+                          <FontAwesomeIcon
+                            className="fa-fw mr-1"
+                            size="sm"
+                            icon={faTv}
+                          />
+                          <span>Activate</span>
+                        </Button>
+
+                        <div className="spacer"></div>
+
+                        <Button variant="danger" onClick={onDelete} size="sm">
+                          <FontAwesomeIcon
+                            className="fa-fw mr-1"
+                            size="sm"
+                            icon={faTrash}
+                          />
+                          <span>Delete</span>
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </Col>
+                <Col sm={12} md={11}>
+                  <SwitchableJsonEditor
+                    value={json}
+                    onChange={setJson}
+                    {...{ undo, redo, collapse, markForCollapse }}
+                  />
+                </Col>
+              </Row>
+            </Container>
           </Form.Group>
-
-          <div className="d-flex">
-            <Button type="submit" variant="primary">
-              <FontAwesomeIcon className="fa-fw mr-1" icon={faSave} />
-              Save
-            </Button>
-
-            {!isNew && (
-              <>
-                <Button
-                  variant="secondary"
-                  className="ml-2"
-                  onClick={onActivate}
-                >
-                  <FontAwesomeIcon className="fa-fw mr-1" icon={faTv} />
-                  Activate Template
-                </Button>
-
-                <div className="flex-grow-1"></div>
-
-                <Button variant="danger" onClick={onDelete}>
-                  <FontAwesomeIcon className="fa-fw mr-1" icon={faTrash} />
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
         </>
       )}
     </Form>

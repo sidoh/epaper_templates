@@ -6,6 +6,7 @@ export const UPDATE = "update";
 export const SET = "set";
 export const MARK_FOR_COLLAPSE = "mark_for_collapse";
 export const COLLAPSE = "collapse";
+export const CLEAR_HISTORY = "clear_history";
 
 function mapReducer(reducer = x => x) {
   return function(state, action) {
@@ -60,43 +61,30 @@ function listReducer(reducer = x => x) {
 }
 
 export function useUndoableList() {
-  const { state, dispatch, canUndo, canRedo } = useUndoableReducer(
-    listReducer(),
-    { list: [] }
-  );
+  const { state, dispatch, ...rest } = useUndoableReducer(listReducer(), {
+    list: []
+  });
 
   const list = state.list;
 
   const updateAt = useCallback((index, value) => {
     dispatch({ type: UPDATE, payload: { index, value } });
   }, []);
-  const undo = useCallback(() => dispatch({ type: UNDO }));
-  const redo = useCallback(() => dispatch({ type: REDO }));
-  const set = useCallback(value => dispatch({ type: SET, payload: value }));
-  const markForCollapse = useCallback(() => dispatch({ type: MARK_FOR_COLLAPSE }));
-  const collapse = useCallback(() => dispatch({ type: COLLAPSE }));
 
-  return [list, { markForCollapse, collapse, set, updateAt, undo, redo, canUndo, canRedo }];
+  return [list, { ...rest, updateAt }];
 }
 
 export function useUndoableMap() {
-  const { state, dispatch, canUndo, canRedo } = useUndoableReducer(
-    mapReducer(),
-    { map: {} }
-  );
+  const { state, dispatch, ...rest } = useUndoableReducer(mapReducer(), {
+    map: {}
+  });
 
   const map = state.map;
-
   const updateAt = useCallback((key, value) => {
     dispatch({ type: UPDATE, payload: { key, value } });
   }, []);
-  const undo = useCallback(() => dispatch({ type: UNDO }));
-  const redo = useCallback(() => dispatch({ type: REDO }));
-  const set = useCallback(value => dispatch({ type: SET, payload: value }));
-  const markForCollapse = useCallback(() => dispatch({ type: MARK_FOR_COLLAPSE }));
-  const collapse = useCallback(() => dispatch({ type: COLLAPSE }));
 
-  return [map, { markForCollapse, collapse, set, updateAt, undo, redo, canUndo, canRedo }];
+  return [map, { ...rest, updateAt }];
 }
 
 export function useUndoableReducer(reducer, initialPresent) {
@@ -113,7 +101,32 @@ export function useUndoableReducer(reducer, initialPresent) {
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;
 
-  return { state: history[currentIndex], dispatch, history, canUndo, canRedo };
+  const undo = useCallback(() => dispatch({ type: UNDO }), []);
+  const redo = useCallback(() => dispatch({ type: REDO }), []);
+  const set = useCallback(
+    (value, meta = {}) => dispatch({ type: SET, payload: value, meta }),
+    []
+  );
+  const markForCollapse = useCallback(
+    () => dispatch({ type: MARK_FOR_COLLAPSE }),
+    []
+  );
+  const collapse = useCallback(() => dispatch({ type: COLLAPSE }), []);
+  const clearHistory = useCallback(() => dispatch({ type: CLEAR_HISTORY }), []);
+
+  return {
+    state: history[currentIndex],
+    dispatch,
+    history,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    set,
+    markForCollapse,
+    collapse,
+    clearHistory
+  };
 }
 
 function undoable(reducer) {
@@ -127,7 +140,10 @@ function undoable(reducer) {
           ...state,
           isCollapsing: true,
           currentIndex: currentIndex + 1,
-          history: [...history.slice(0, currentIndex+1), history[currentIndex]]
+          history: [
+            ...history.slice(0, currentIndex + 1),
+            history[currentIndex]
+          ]
         };
       case COLLAPSE:
         return {
@@ -135,17 +151,32 @@ function undoable(reducer) {
           isCollapsing: false
         };
       case UNDO:
+        if (currentIndex == 0) {
+          return state;
+        }
+
         return {
           ...state,
           currentIndex: currentIndex - 1
         };
       case REDO:
+        if (currentIndex+1 >= history.length) {
+          return state;
+        }
+
         return {
           ...state,
           currentIndex: currentIndex + 1
         };
+      case CLEAR_HISTORY:
+        return {
+          ...state,
+          history: [history[currentIndex]],
+          currentIndex: 0
+        };
       default:
         // Delegate handling the action to the passed reducer
+        const { meta: { skipHistory = false } = {} } = action;
         const present = history[currentIndex];
         const newPresent = reducer(present, action);
 
@@ -154,7 +185,7 @@ function undoable(reducer) {
           return state;
         }
 
-        if (isCollapsing) {
+        if (skipHistory || isCollapsing) {
           const newHistory = history.slice();
           newHistory[currentIndex] = newPresent;
           return {

@@ -268,13 +268,16 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
   RectangleRegion::Dimension h =
       RectangleRegion::Dimension::fromSpec(spec["h"]);
 
+  JsonObject formatterDefinition =
+      RectangleRegion::Dimension::extractFormatterDefinition(spec);
+
   auto region = std::make_shared<RectangleRegion>(variable,
       spec["x"],
       spec["y"],
       w,
       h,
       extractColor(spec),
-      formatterFactory.create(spec),
+      formatterFactory.create(formatterDefinition),
       fillStyleFromString(spec["style"]));
   regions.add(region);
   region->updateValue(vars.get(variable));

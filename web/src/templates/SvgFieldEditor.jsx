@@ -7,6 +7,7 @@ import {
   deepPatch
 } from "../util/mungers";
 import createSchema from "./schema";
+import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 
 export function SvgFieldEditor({
   value,
@@ -60,6 +61,7 @@ export function SvgFieldEditor({
       {activeElements.length > 0 && hasFields && (
         <Form
           schema={schema}
+          ArrayFieldTemplate={ArrayFieldTemplate}
           formData={formValues}
           onChange={onFormChange}
           idPrefix="root"

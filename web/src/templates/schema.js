@@ -34,7 +34,7 @@ const TextFields = {
     y: { $ref: "#/definitions/verticalPosition" },
     font: { $ref: "#/definitions/font" },
     font_size: { type: "integer", default: 1, title: "Font Size" },
-    value: { $ref: "#/definitions/valueChoice" }
+    value: { title: "Value", $ref: "#/definitions/valueChoice" }
   }
 };
 
@@ -48,9 +48,11 @@ const BitmapFields = {
     h: { $ref: "#/definitions/verticalPosition" },
     color: { $ref: "#/definitions/color" },
     value: {
+      title: "Value",
       type: "object",
       properties: {
         type: {
+          title: "Type",
           type: "string",
           enum: ["static", "variable"]
         }
@@ -83,22 +85,25 @@ const BitmapFields = {
 const Definitions = {
   referenceFormatter: {
     type: "object",
+    title: "Formatter Definition",
     properties: {
       name: {
         title: "Reference Name",
         type: "string",
         pattern: "^[a-zA-Z0-9_0]+$"
       },
-      formatter: { $ref: "#/definitions/formatter" }
+      formatter: { title: "", $ref: "#/definitions/formatter" }
     },
     required: ["name"]
   },
   fillStyle: {
+    title: "Style",
     type: "string",
     enum: ["outline", "filled"],
     default: "outline"
   },
   color: {
+    title: "Color",
     type: "string",
     enum: ["black", "white"],
     default: "black"
@@ -121,11 +126,8 @@ const Definitions = {
     title: "Variable Name",
     type: "string"
   },
-  variableMode: {
-    type: "string",
-    enum: ["percent", "absolute"]
-  },
   font: {
+    title: "Font",
     type: "string",
     enum: [
       "FreeMonoBold24pt7b",
@@ -140,6 +142,7 @@ const Definitions = {
     type: "object",
     properties: {
       type: {
+        title: "Type",
         type: "string",
         enum: ["static", "variable"]
       }
@@ -167,12 +170,17 @@ const Definitions = {
     }
   },
   formatter: {
+    title: "Formatter",
     type: "object",
     required: ["type"],
     properties: {
       type: {
         type: "string",
         enum: ["ref", "identity", "time", "round", "cases", "ratio"]
+      },
+      args: {
+        type: "object",
+        title: "Arguments"
       }
     },
     dependencies: {

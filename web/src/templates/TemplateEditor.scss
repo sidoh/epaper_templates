@@ -1,3 +1,37 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.template-topnav.nav.nav-pills {
+  margin-bottom: 1em;
+  background-color: darken($secondary, 10%);
+
+  .nav-item {
+    margin: 0 0.5em;
+    padding: 0.5em 0;
+    font-weight: bold;
+
+    &:first-child {
+      margin-left: 1em;
+    }
+
+    .nav-link {
+      border-radius: 0;
+      padding: 0;
+
+      &, &.active {
+        background: transparent;
+      }
+
+      &.active {
+        border-bottom: 3px solid lighten($primary, 20%);
+        padding-bottom: 0.5em;
+        margin-bottom: calc(-0.5em - 3px);
+      }
+    }
+  }
+}
+
 .react-json-view {
   max-height: 400px;
   overflow: auto;
@@ -6,4 +40,36 @@
 textarea.json-textarea {
   height: 400px;
   font-family: "Courier New", Courier, monospace;
+}
+
+.button-sidebar {
+  width: 100%;
+  min-width: 80px;
+  background-color: darken($secondary, 10%);
+
+  .spacer {
+    flex-basis: 200px;
+    flex-shrink: 1;
+  }
+
+  .gutter {
+    flex-basis: 15px;
+    flex-shrink: 1
+  }
+
+  button {
+    height: 2.3em;
+    width: 100%;
+    min-width: 80px;
+    text-align: left;
+    display: inline-flex;
+
+    svg {
+      margin: auto 0;
+    }
+
+    span {
+      margin: 0 auto;
+    }
+  }
 }

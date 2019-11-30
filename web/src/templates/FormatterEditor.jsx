@@ -4,23 +4,26 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
   faPencilAlt,
-  faTrash
+  faTrash,
+  faSave
 } from "@fortawesome/free-solid-svg-icons";
 import { useBoolean } from "react-use";
 import Form from "react-jsonschema-form";
 import { FormatterSchema, MarkedForDeletion } from "./schema";
 import { BadgedText } from "./BadgedText";
 import produce from "immer";
+import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 
 const uiSchema = {
   formatter: {
     type: {
       "ui:enumDisabled": ["ref"]
     }
-  }
+  },
+  "ui:ArrayFieldTemplate": ArrayFieldTemplate
 };
 
-function FormatterForm({ initialState = {}, onSave }) {
+function FormatterForm({ initialState = {}, onSave, onCancel }) {
   const [formState, setFormState] = useState(initialState);
 
   const onChange = useCallback(e => {
@@ -38,14 +41,20 @@ function FormatterForm({ initialState = {}, onSave }) {
     <Form
       tagName="div"
       uiSchema={uiSchema}
+      ArrayFieldTemplate={ArrayFieldTemplate}
       schema={FormatterSchema}
       formData={formState}
       onChange={onChange}
       onSubmit={onSubmit}
     >
-      <div className="button-list">
-        <Button variant="success" onClick={onSubmit}>
-          submit
+      <div className="button-list d-flex">
+        <Button variant="success" onClick={onSubmit} size="sm">
+          <FontAwesomeIcon icon={faSave} className="fa-fw mr-2" />
+          Save
+        </Button>
+
+        <Button variant="outline-secondary" onClick={onCancel} size="sm" className="ml-auto">
+          Cancel
         </Button>
       </div>
     </Form>
@@ -156,6 +165,7 @@ export function FormatterEditor({ value, onUpdate }) {
         <FormatterForm
           initialState={value.formatters[editing]}
           onSave={onSave}
+          onCancel={() => setEditing(null)}
         />
       )}
       {editing === null && (
