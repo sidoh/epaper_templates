@@ -14,6 +14,7 @@ import api from "../util/api";
 import SiteLoader from "../util/SiteLoader";
 import TemplateEditor from "./TemplateEditor";
 import useGlobalState from "../state/global_state";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const TemplatesList = ({
   templates,
@@ -39,7 +40,7 @@ const TemplatesList = ({
               >
                 <span className="flex-grow-1">{displayName}</span>
                 {activeTemplate == x.name && (
-                  <FontAwesomeIcon className="fa-sm mt-1" icon={faTv} />
+                  <MemoizedFontAwesomeIcon className="fa-sm mt-1" icon={faTv} />
                 )}
               </NavLink>
             </Nav.Item>
@@ -50,7 +51,7 @@ const TemplatesList = ({
 
       <Nav.Item key="new">
         <NavLink to="/templates/new" className="nav-link bg-success">
-          <FontAwesomeIcon className="fa-fw mr-1" icon={faPlus} />
+          <MemoizedFontAwesomeIcon className="fa-fw mr-1" icon={faPlus} />
           New
         </NavLink>
       </Nav.Item>
@@ -111,7 +112,7 @@ export default props => {
                   className="btn btn-primary mr-2"
                   style={{ width: "3em" }}
                 >
-                  <FontAwesomeIcon
+                  <MemoizedFontAwesomeIcon
                     icon={faLongArrowAltLeft}
                     className="fa-fw mr-1"
                   />

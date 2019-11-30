@@ -101,18 +101,38 @@ export function deepPatch(target, patch) {
   return target;
 }
 
-export function groupBy(o, fn, { unique = false } = {}) {
+export const arrayGroupReducer = (a, x) => {
+  if (a) {
+    a.push(x);
+    return a;
+  } else {
+    return [x];
+  }
+};
+
+export const lastValueGroupReducer = (a, x) => {
+  return x;
+};
+
+export const setGroupReducer = (a, x) => {
+  if (a) {
+    a.add(x);
+    return a;
+  } else {
+    return new Set([x]);
+  }
+};
+
+export function groupBy(
+  o,
+  fn,
+  { valueFn = x => x, groupReducer = arrayGroupReducer } = {}
+) {
   return o.reduce((a, x) => {
     const key = fn(x);
-    if (unique) {
-      a[key] = x;
-    } else {
-      if (a[key]) {
-        a[key].push(x);
-      } else {
-        a[key] = [x];
-      }
-    }
+    const value = valueFn(x);
+    a[key] = groupReducer(a[key], value);
+
     return a;
   }, {});
 }

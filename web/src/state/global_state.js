@@ -3,7 +3,7 @@ import globalHook from "use-global-hook";
 import api from "../util/api";
 import produce from "immer";
 import simpleHash from "../util/hash";
-import { groupBy } from "../util/mungers";
+import { groupBy, lastValueGroupReducer } from "../util/mungers";
 
 const initialState = {
   variables: {},
@@ -36,7 +36,7 @@ const actions = {
   loadScreenMetadata: createLoadFunction("/screens", "screenMetadata"),
   loadSettings: createLoadFunction("/settings", "settings"),
   loadBitmaps: createLoadFunction("/bitmaps", "bitmaps", x =>
-    groupBy(x, v => v.name, { unique: true })
+    groupBy(x, v => v.name, { groupReducer: lastValueGroupReducer })
   ),
 
   loadBitmap: (store, filename) => {

@@ -22,11 +22,15 @@ import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
 import "./VisualTemplateEditor.scss";
 
+const isHiddenEqual = (n, p) => {
+  return n === p || (n.isHidden && p.isHidden);
+};
+
 const EditorSections = {
-  selection: SelectionEditor,
-  editor: SvgFieldEditor,
-  location: LocationEditor,
-  formatters: FormatterEditor
+  selection: React.memo(SelectionEditor, isHiddenEqual),
+  editor: React.memo(SvgFieldEditor, isHiddenEqual),
+  location: React.memo(LocationEditor, isHiddenEqual),
+  formatters: React.memo(FormatterEditor, isHiddenEqual)
 };
 
 function SvgEditor({
@@ -38,7 +42,7 @@ function SvgEditor({
   setActiveElements,
   subNavMode,
   setSubNavMode,
-  allBitmaps
+  toggleActiveElement
 }) {
   const [globalState, globalActions] = useGlobalState();
 
@@ -72,21 +76,25 @@ function SvgEditor({
     [value, onChange, activeElements]
   );
 
-  const Editor = EditorSections[subNavMode] || SvgFieldEditor;
-
   return (
     <>
-      <Editor
-        onUpdateActive={onUpdateActive}
-        onUpdate={onChange}
-        onDelete={onDelete}
-        value={value}
-        activeElements={activeElements}
-        setActiveElements={setActiveElements}
-        screenMetadata={screenMetadata}
-        allBitmaps={globalState.bitmaps}
-        setSubNavMode={setSubNavMode}
-      />
+      {Object.entries(EditorSections).map(([k, Editor]) => (
+        <div key={k} className={k === subNavMode ? "d-block" : "d-none"}>
+          <Editor
+            isHidden={k !== subNavMode}
+            onUpdateActive={onUpdateActive}
+            onUpdate={onChange}
+            onDelete={onDelete}
+            value={value}
+            activeElements={activeElements}
+            setActiveElements={setActiveElements}
+            screenMetadata={screenMetadata}
+            allBitmaps={globalState.bitmaps}
+            setSubNavMode={setSubNavMode}
+            toggleActiveElement={toggleActiveElement}
+          />
+        </div>
+      ))}
     </>
   );
 }
@@ -169,17 +177,19 @@ export function VisualTemplateEditor({
 
   const toggleActive = useCallback(
     (elementType, index) => {
-      const isActive = activeEditElements.some(
+      const currIndex = activeEditElements.findIndex(
         x => x[0] == elementType && x[1] == index
       );
 
-      if (isActive) {
-        setActiveEditElements(
-          activeEditElements.filter(x => x[0] !== elementType || x[1] !== index)
-        );
-      } else {
-        setActiveEditElements([...activeEditElements, [elementType, index]]);
-      }
+      const updated = produce(activeEditElements, draft => {
+        if (currIndex === -1) {
+          draft.push([elementType, index]);
+        } else {
+          draft.splice(currIndex, 1);
+        }
+      });
+
+      setActiveEditElements(updated);
     },
     [activeEditElements]
   );
@@ -291,6 +301,7 @@ export function VisualTemplateEditor({
                 setActiveElements={setActiveEditElements}
                 subNavMode={subNavMode}
                 setSubNavMode={setSubNavMode}
+                toggleActiveElement={toggleActive}
               />
             </Col>
           </Row>

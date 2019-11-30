@@ -23,6 +23,7 @@ import "./BitmapIndex.scss";
 import NewBitmapConfigurator from "./NewBitmapConfigurator";
 import simpleHash from "../util/hash";
 import { fromByteArray, toByteArray } from "base64-js";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const BitmapPreview = ({ definition, data }) => {
   const { metadata: { width = 64, height = 64 } = {} } = definition;
@@ -63,7 +64,7 @@ const BitmapList = ({ bitmapData, bitmapList }) => {
         <>
           <Link className="new-bitmap" to={`/bitmaps/_new`}>
             <div className="d-flex justify-content-center">
-              <FontAwesomeIcon icon={faPlus} className="fa-fw mr-1" />
+              <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-1" />
             </div>
             New Bitmap
           </Link>

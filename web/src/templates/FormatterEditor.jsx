@@ -13,6 +13,7 @@ import { FormatterSchema, MarkedForDeletion } from "./schema";
 import { BadgedText } from "./BadgedText";
 import produce from "immer";
 import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const uiSchema = {
   formatter: {
@@ -49,7 +50,7 @@ function FormatterForm({ initialState = {}, onSave, onCancel }) {
     >
       <div className="button-list d-flex">
         <Button variant="success" onClick={onSubmit} size="sm">
-          <FontAwesomeIcon icon={faSave} className="fa-fw mr-2" />
+          <MemoizedFontAwesomeIcon icon={faSave} className="fa-fw mr-2" />
           Save
         </Button>
 
@@ -91,11 +92,11 @@ function FormatterListItem({ formatter, index, onEdit, onDelete }) {
 
       <div className="button-list">
         <a href="#" className="text-primary" onClick={_onEdit}>
-          <FontAwesomeIcon icon={faPencilAlt} />
+          <MemoizedFontAwesomeIcon icon={faPencilAlt} />
         </a>
 
         <a href="#" className="text-danger" onClick={_onDelete}>
-          <FontAwesomeIcon icon={faTrash} />
+          <MemoizedFontAwesomeIcon icon={faTrash} />
         </a>
       </div>
     </div>
@@ -172,7 +173,7 @@ export function FormatterEditor({ value, onUpdate }) {
         <>
           <div className="d-flex button-list mb-2">
             <Button size="sm" onClick={onNew}>
-              <FontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
+              <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
               New
             </Button>
           </div>

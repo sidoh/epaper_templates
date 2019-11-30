@@ -9,6 +9,7 @@ import React, { useCallback, useState } from "react";
 import ReactSlider from "react-slider";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 export function LocationEditor({ onUpdateActive }) {
   const [nudgeDistance, setNudgeDistance] = useState(1);
@@ -64,7 +65,7 @@ export function LocationEditor({ onUpdateActive }) {
             <td></td>
             <td>
               <Button onClick={onUp}>
-                <FontAwesomeIcon icon={faChevronUp} />
+                <MemoizedFontAwesomeIcon icon={faChevronUp} />
               </Button>
             </td>
             <td></td>
@@ -72,13 +73,13 @@ export function LocationEditor({ onUpdateActive }) {
           <tr>
             <td>
               <Button onClick={onLeft}>
-                <FontAwesomeIcon icon={faChevronLeft} />
+                <MemoizedFontAwesomeIcon icon={faChevronLeft} />
               </Button>
             </td>
             <td></td>
             <td>
               <Button onClick={onRight}>
-                <FontAwesomeIcon icon={faChevronRight} />
+                <MemoizedFontAwesomeIcon icon={faChevronRight} />
               </Button>
             </td>
           </tr>
@@ -86,7 +87,7 @@ export function LocationEditor({ onUpdateActive }) {
             <td></td>
             <td>
               <Button onClick={onDown}>
-                <FontAwesomeIcon icon={faChevronDown} />
+                <MemoizedFontAwesomeIcon icon={faChevronDown} />
               </Button>
             </td>
             <td></td>

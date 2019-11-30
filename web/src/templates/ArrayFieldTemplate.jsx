@@ -5,6 +5,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 export function ArrayFieldTemplate(props) {
   const { title, items, onAddClick } = props;
@@ -27,7 +28,7 @@ export function ArrayFieldTemplate(props) {
               onClick={x.onDropIndexClick(x.index)}
               size="sm"
             >
-              <FontAwesomeIcon icon={faTrash} className="fa-fw mr-2" />
+              <MemoizedFontAwesomeIcon icon={faTrash} className="fa-fw mr-2" />
               Delete
             </Button>
           </Col>
@@ -42,7 +43,7 @@ export function ArrayFieldTemplate(props) {
             size="sm"
             className="ml-2 mt-2 w-100"
           >
-            <FontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
+            <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
             Add
           </Button>
         </Col>

@@ -19,5 +19,14 @@ ul.block-list {
     padding: 0.5em;
     margin: 0.3em 0;
     background-color: theme-color("secondary");
+
+    &.active {
+      border-left: 3px solid lighten($primary, 20%);
+      margin-left: -3px;
+    }
+
+    &:hover {
+      background-color: lighten($secondary, 10%);
+    }
   }
 }

@@ -10,7 +10,7 @@ import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
 import { MarkedForDeletion, FieldTypeDefinitions } from "./schema";
 
-const SvgLine = React.forwardRef((props, ref) => {
+const SvgLine = React.memo(React.forwardRef((props, ref) => {
   const {
     definition: { x1 = 0, y1 = 0, x2 = 0, y2 = 0, color = "black" },
     isActive,
@@ -35,9 +35,9 @@ const SvgLine = React.forwardRef((props, ref) => {
       style={style}
     />
   );
-});
+}));
 
-const SvgText = React.forwardRef((props, ref) => {
+const SvgText = React.memo(React.forwardRef((props, ref) => {
   const {
     definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
     onClick,
@@ -73,9 +73,9 @@ const SvgText = React.forwardRef((props, ref) => {
       {text}
     </text>
   );
-});
+}));
 
-const SvgRectangle = React.forwardRef((props, ref) => {
+const SvgRectangle = React.memo(React.forwardRef((props, ref) => {
   const {
     definition,
     definition: {
@@ -124,9 +124,9 @@ const SvgRectangle = React.forwardRef((props, ref) => {
       onClick={onClick}
     />
   );
-});
+}));
 
-const SvgBitmap = React.forwardRef((props, ref) => {
+const SvgBitmap = React.memo(React.forwardRef((props, ref) => {
   const {
     definition: { x = 0, y = 0, w: width = 0, h: height = 0, color = "black" },
     _static,
@@ -153,7 +153,7 @@ const SvgBitmap = React.forwardRef((props, ref) => {
         );
       });
     }
-  }, [_static, resolvedValue, isActive, color]);
+  }, [_static, resolvedValue, color]);
 
   return (
     <>
@@ -166,7 +166,7 @@ const SvgBitmap = React.forwardRef((props, ref) => {
       />
     </>
   );
-});
+}));
 
 const SvgElementsByType = {
   lines: SvgLine,

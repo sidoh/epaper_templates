@@ -16,13 +16,13 @@ import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
 
 import "./BitmapEditor.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDropzone } from "react-dropzone";
 import ReactSlider from "react-slider";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { useUndoableList } from "../util/use-undo-reducer";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const FileType = Object.freeze({
   IMAGE: "image",
@@ -174,7 +174,7 @@ const ImageImporter = ({ onImportImage, onImportBitmap }) => {
             )}
 
             <Button onClick={onImportClick}>
-              <FontAwesomeIcon
+              <MemoizedFontAwesomeIcon
                 icon={faArrowCircleRight}
                 className="fa-fw mr-1"
               />

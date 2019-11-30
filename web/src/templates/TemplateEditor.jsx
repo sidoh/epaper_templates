@@ -17,6 +17,7 @@ import Col from "react-bootstrap/Col";
 import produce from "immer";
 import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 import { useUndoableMap } from "../util/use-undo-reducer";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const RawJsonEditor = ({ value, onChange }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -241,7 +242,7 @@ export default ({ path, template, triggerReload }) => {
                       size="sm"
                       className="w-100"
                     >
-                      <FontAwesomeIcon
+                      <MemoizedFontAwesomeIcon
                         className="fa-fw mr-1"
                         size="sm"
                         icon={faSave}
@@ -258,7 +259,7 @@ export default ({ path, template, triggerReload }) => {
                           onClick={onActivate}
                           size="sm"
                         >
-                          <FontAwesomeIcon
+                          <MemoizedFontAwesomeIcon
                             className="fa-fw mr-1"
                             size="sm"
                             icon={faTv}
@@ -269,7 +270,7 @@ export default ({ path, template, triggerReload }) => {
                         <div className="spacer"></div>
 
                         <Button variant="danger" onClick={onDelete} size="sm">
-                          <FontAwesomeIcon
+                          <MemoizedFontAwesomeIcon
                             className="fa-fw mr-1"
                             size="sm"
                             icon={faTrash}

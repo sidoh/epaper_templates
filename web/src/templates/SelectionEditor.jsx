@@ -1,16 +1,22 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { groupBy, drillExtract } from "../util/mungers";
-import { FieldTypeDefinitions, Schema } from "./schema";
+import { groupBy, drillExtract, setGroupReducer } from "../util/mungers";
+import { FieldTypeDefinitions, Schema, MarkedForDeletion } from "./schema";
 
 import "./SelectionEditor.scss";
 import Button from "react-bootstrap/Button";
-import { faWindowClose } from "@fortawesome/free-regular-svg-icons";
+import {
+  faWindowClose,
+  faPlusSquare,
+  faMinusSquare
+} from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import produce from "immer";
 import { faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useBoolean } from "react-use";
 import Form from "react-bootstrap/Form";
+import Collapse from "react-bootstrap/Collapse";
 import { BadgedText } from "./BadgedText";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const valueTitleGenerator = (el = {}) => {
   const { value } = el;
@@ -58,7 +64,7 @@ const SectionListItemTitleGenerators = {
   rectangles: fieldTitleGenerator(["x", "y", "style"])
 };
 
-function SectionListItem({ id, type, value, onDelete, onDeselect }) {
+function SectionListItem({ id, type, value, onDelete, onToggleSelect }) {
   const titleGenerator = SectionListItemTitleGenerators[type];
   const _onDelete = useCallback(
     e => {
@@ -71,54 +77,79 @@ function SectionListItem({ id, type, value, onDelete, onDeselect }) {
     [onDelete, id]
   );
 
-  const _onDeselect = useCallback(
+  const _onToggleSelect = useCallback(
     e => {
       e.preventDefault();
-      onDeselect(id);
+      onToggleSelect(...id);
     },
-    [onDeselect, id]
+    [onToggleSelect, id]
   );
 
   return (
     <div className="d-flex button-list">
-      <span className="mr-auto">{titleGenerator(value)}</span>
-
       <a
         href="#"
-        className="text-primary"
-        onClick={_onDeselect}
-        title="Deselect"
+        onClick={_onToggleSelect}
+        className="text-dark mr-auto d-block w-100"
       >
-        <FontAwesomeIcon icon={faWindowClose} />
+        {titleGenerator(value)}
       </a>
 
       <a className="text-danger" href="#" onClick={_onDelete} title="Delete">
-        <FontAwesomeIcon icon={faTrash} />
+        <MemoizedFontAwesomeIcon icon={faTrash} />
       </a>
     </div>
   );
 }
 
-function SectionList({ title, items, onDelete, onDeselect }) {
-  return (
-    <div className="selection-section">
-      <h5>
-        {title} ({items.length})
-      </h5>
-      <ul className="block-list">
-        {items.map(x => (
-          <li key={x.id}>
-            <SectionListItem
-              {...x}
-              onDelete={onDelete}
-              onDeselect={onDeselect}
+const SectionList = React.memo(
+  ({ title, items, onDelete, onDeselect, toggleActiveElement }) => {
+    const [isCollapsed, toggleCollapse] = useBoolean(false);
+
+    const _toggleClick = useCallback(e => {
+      e.preventDefault();
+      toggleCollapse();
+    }, []);
+
+    return (
+      <div className="selection-section">
+        <h5 className="d-flex">
+          <a
+            href="#"
+            className="text-white"
+            style={{ textDecoration: "none" }}
+            onClick={_toggleClick}
+          >
+            <MemoizedFontAwesomeIcon
+              icon={isCollapsed ? faPlusSquare : faMinusSquare}
             />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+            <span className="ml-2">
+              {title} ({items.length})
+            </span>
+          </a>
+          <Button className="ml-auto" variant="outline-success" size="sm">
+            <MemoizedFontAwesomeIcon icon={faPlus} />
+          </Button>
+        </h5>
+        <Collapse in={!isCollapsed} unmountOnExit={true}>
+          <ul className="block-list">
+            {items.map(x => (
+              <li key={x.id} className={x.isActive ? "active" : ""}>
+                <SectionListItem
+                  {...x}
+                  hidden={isCollapsed}
+                  onDelete={onDelete}
+                  onDeselect={onDeselect}
+                  onToggleSelect={toggleActiveElement}
+                />
+              </li>
+            ))}
+          </ul>
+        </Collapse>
+      </div>
+    );
+  }
+);
 
 function AddElementForm({ onAdd }) {
   const [selection, setSelection] = useState("");
@@ -171,21 +202,32 @@ export function SelectionEditor({
   screenMetadata,
   activeElements,
   setActiveElements,
-  setSubNavMode
+  setSubNavMode,
+  toggleActiveElement
 }) {
   const [showAddForm, toggleShowAddForm] = useBoolean(false);
 
-  const groupedSelection = useMemo(() => {
+  const elementsByType = useMemo(() => {
+    const active = groupBy(activeElements, x => x[0], {
+      valueFn: x => x[1],
+      groupReducer: setGroupReducer
+    });
+
     return Object.entries(
       groupBy(
-        activeElements.map(x => ({
-          id: x,
-          type: x[0],
-          value: drillExtract(value, x)
-        })),
+        Object.keys(FieldTypeDefinitions).flatMap(type =>
+          (value[type] || [])
+            .map((x, i) => ({
+              id: [type, i],
+              type,
+              value: x,
+              isActive: !!(active[type] && active[type].has(i))
+            }))
+            .filter(x => x.value !== MarkedForDeletion)
+        ),
         x => x.type
       )
-    ).sort(([a], [b]) => a.localeCompare(b));
+    );
   }, [value, activeElements]);
 
   const onDeselectAll = useCallback(() => {
@@ -234,51 +276,44 @@ export function SelectionEditor({
 
   return (
     <>
-      <div className="mt-2 mb-3">
+      <div style={{ height: "50px" }}>
         <h5>Actions</h5>
+        {activeElements.length == 0 && <i>Nothing selected.</i>}
+        {activeElements.length > 0 && (
+          <div className="d-flex button-list">
+            <Button size="sm" variant="secondary" onClick={onDeselectAll}>
+              <MemoizedFontAwesomeIcon
+                icon={faWindowClose}
+                className="fa-fw mr-2"
+              />
+              Deselect All
+            </Button>
 
-        <div className="d-flex button-list">
-          <Button size="sm" variant="primary" onClick={toggleShowAddForm}>
-            <FontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
-            New
-          </Button>
-          {activeElements.length > 0 && (
-            <>
-              <Button size="sm" variant="secondary" onClick={onDeselectAll}>
-                <FontAwesomeIcon icon={faWindowClose} className="fa-fw mr-2" />
-                Deselect All
-              </Button>
+            <div className="mr-auto" />
 
-              <div className="mr-auto" />
-
-              <Button size="sm" variant="danger" onClick={onDeleteAll}>
-                <FontAwesomeIcon icon={faTrash} className="fa-fw mr-2" />
-                Delete All
-              </Button>
-            </>
-          )}
-        </div>
-
-        {showAddForm && <AddElementForm onAdd={onAdd} />}
+            <Button size="sm" variant="danger" onClick={onDeleteAll}>
+              <MemoizedFontAwesomeIcon icon={faTrash} className="fa-fw mr-2" />
+              Delete All
+            </Button>
+          </div>
+        )}
       </div>
 
-      {activeElements.length == 0 && <i>Nothing selected.</i>}
-      {activeElements.length > 0 && (
-        <>
-          {groupedSelection.map(([type, elements]) => {
-            const typeTitle = Schema.properties[type].items.title;
-            return (
-              <SectionList
-                key={type}
-                title={typeTitle}
-                items={elements}
-                onDelete={onDelete}
-                onDeselect={onDeselect}
-              />
-            );
-          })}
-        </>
-      )}
+      <>
+        {elementsByType.map(([type, elements]) => {
+          const typeTitle = Schema.properties[type].items.title;
+          return (
+            <SectionList
+              key={type}
+              title={typeTitle}
+              items={elements}
+              onDelete={onDelete}
+              onDeselect={onDeselect}
+              toggleActiveElement={toggleActiveElement}
+            />
+          );
+        })}
+      </>
     </>
   );
 }

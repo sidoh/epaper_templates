@@ -17,6 +17,7 @@ import {
   faCheck
 } from "@fortawesome/free-solid-svg-icons";
 import { useInterval, useBoolean } from "react-use";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const DisplayStatusCard = ({ settings }) => {
   return (
@@ -124,7 +125,7 @@ const SystemStatusCard = ({ systemStatus }) => {
             {!isRebooting && successMessage && (
               <Alert variant="secondary">
                 <span className="text-success">
-                  <FontAwesomeIcon icon={faCheck} className="fa-fw mr-1" />
+                  <MemoizedFontAwesomeIcon icon={faCheck} className="fa-fw mr-1" />
                 </span>
                 {successMessage}
               </Alert>
@@ -152,12 +153,12 @@ const SystemStatusCard = ({ systemStatus }) => {
                 variant="primary"
                 onClick={toggleFormShowing}
               >
-                <FontAwesomeIcon icon={faRedoAlt} className="fa-fw mr-1" />
+                <MemoizedFontAwesomeIcon icon={faRedoAlt} className="fa-fw mr-1" />
                 Update Firmware
               </Button>
 
               <Button disabled={isRebooting} variant="warning" onClick={reboot}>
-                <FontAwesomeIcon icon={faPowerOff} className="fa-fw mr-1" />
+                <MemoizedFontAwesomeIcon icon={faPowerOff} className="fa-fw mr-1" />
                 Reboot
               </Button>
             </div>
