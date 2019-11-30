@@ -63,9 +63,15 @@ const RawJsonEditor = ({ value, onChange }) => {
   );
 };
 
+const isHiddenEqual = (n, p) => {
+  return n === p || (n.isHidden && p.isHidden);
+};
+
+const editorMemoize = c => React.memo(c, isHiddenEqual);
+
 const EditorModeHandlers = {
-  json: RawJsonEditor,
-  visual: VisualTemplateEditor
+  json: editorMemoize(RawJsonEditor),
+  visual: editorMemoize(VisualTemplateEditor)
 };
 
 const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
@@ -120,14 +126,22 @@ const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
           </Col>
         </Row>
 
-        <ViewComponent
-          value={value}
-          onChange={onChange}
-          setSubNav={updateSubNav}
-          subNavMode={subNavMode}
-          setSubNavMode={setSubNavMode}
-          {...rest}
-        />
+        {Object.entries(EditorModeHandlers).map(([k, ViewComponent]) => {
+          const isHidden = k !== mode;
+          return (
+            <div key={k} className={isHidden ? "d-none" : "d-block"}>
+              <ViewComponent
+                isHidden={isHidden}
+                value={value}
+                onChange={onChange}
+                setSubNav={updateSubNav}
+                subNavMode={subNavMode}
+                setSubNavMode={setSubNavMode}
+                {...rest}
+              />
+            </div>
+          );
+        })}
       </Container>
     </>
   );
