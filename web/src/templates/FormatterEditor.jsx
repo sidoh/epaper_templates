@@ -54,7 +54,12 @@ function FormatterForm({ initialState = {}, onSave, onCancel }) {
           Save
         </Button>
 
-        <Button variant="outline-secondary" onClick={onCancel} size="sm" className="ml-auto">
+        <Button
+          variant="outline-secondary"
+          onClick={onCancel}
+          size="sm"
+          className="ml-auto"
+        >
           Cancel
         </Button>
       </div>
@@ -86,15 +91,15 @@ function FormatterListItem({ formatter, index, onEdit, onDelete }) {
 
   return (
     <div className="d-flex">
-      <BadgedText badge={def && def.type}>{formatter.name}</BadgedText>
-
-      <div className="mr-auto" />
+      <a
+        href="#"
+        className="d-block mr-auto w-100 text-white"
+        onClick={_onEdit}
+      >
+        <BadgedText badge={def && def.type}>{formatter.name}</BadgedText>
+      </a>
 
       <div className="button-list">
-        <a href="#" className="text-primary" onClick={_onEdit}>
-          <MemoizedFontAwesomeIcon icon={faPencilAlt} />
-        </a>
-
         <a href="#" className="text-danger" onClick={_onDelete}>
           <MemoizedFontAwesomeIcon icon={faTrash} />
         </a>
@@ -171,18 +176,20 @@ export function FormatterEditor({ value, onUpdate }) {
       )}
       {editing === null && (
         <>
-          <div className="d-flex button-list mb-2">
-            <Button size="sm" onClick={onNew}>
-              <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
-              New
-            </Button>
-          </div>
-
           <FormatterList
             formatters={value.formatters || []}
             onEdit={onEdit}
             onDelete={onDelete}
           />
+          <div className="d-flex button-list mt-2">
+            <div className="ml-auto" />
+
+            <Button size="sm" variant="outline-success" onClick={onNew}>
+              <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
+              New Formatter
+            </Button>
+          </div>
+
         </>
       )}
     </>
