@@ -36,6 +36,7 @@ const EditorSections = {
 function SvgEditor({
   value,
   onChange,
+  onDelete,
   onUpdateActive,
   screenMetadata,
   activeElements,
@@ -49,32 +50,6 @@ function SvgEditor({
   useEffect(() => {
     globalActions.loadBitmaps();
   }, []);
-
-  const onDelete = useCallback(
-    paths => {
-      const updated = produce(value, draft => {
-        paths.forEach(path => {
-          let _path = path.slice();
-          let curr = draft;
-
-          while (_path.length > 0) {
-            const [next, ...rest] = _path;
-
-            if (rest.length > 0) {
-              curr = curr[next];
-            } else {
-              curr.splice(next, 1, MarkedForDeletion);
-            }
-
-            _path = rest;
-          }
-        });
-      });
-      onChange(updated);
-      setActiveElements(activeElements.filter(x => !paths.some(p => x === p)));
-    },
-    [value, onChange, activeElements]
-  );
 
   return (
     <>
@@ -242,8 +217,39 @@ export function VisualTemplateEditor({
     [value, globalState.variables]
   );
 
+  const onDelete = useCallback(
+    paths => {
+      const updated = produce(value, draft => {
+        paths.forEach(path => {
+          let _path = path.slice();
+          let curr = draft;
+
+          while (_path.length > 0) {
+            const [next, ...rest] = _path;
+
+            if (rest.length > 0) {
+              curr = curr[next];
+            } else {
+              curr.splice(next, 1, MarkedForDeletion);
+            }
+
+            _path = rest;
+          }
+        });
+      });
+      onChange(updated);
+      setActiveEditElements(
+        activeEditElements.filter(x => !paths.some(p => x === p))
+      );
+    },
+    [value, onChange, activeEditElements]
+  );
+  // avoid the need to re-mount event listeners
+  const _currentOnDelete = useRef(null);
+  _currentOnDelete.current = onDelete;
+
   useEffect(() => {
-    const undoRedo = e => {
+    const shortcutsHandler = e => {
       var keyCode = e.keyCode;
 
       if (e.metaKey === true || e.ctrlKey === true) {
@@ -261,12 +267,22 @@ export function VisualTemplateEditor({
           e.preventDefault();
           return false;
         }
+      } else if (keyCode === 8) {
+        if (
+          confirm(
+            "Are you sure you want to delete " +
+              currentActiveElements.current.length +
+              " elements?"
+          )
+        ) {
+          _currentOnDelete.current(currentActiveElements.current);
+        }
       }
     };
-    document.addEventListener("keydown", undoRedo);
+    document.addEventListener("keydown", shortcutsHandler);
 
     return () => {
-      document.removeEventListener("keydown", undoRedo);
+      document.removeEventListener("keydown", shortcutsHandler);
     };
   }, []);
 
@@ -290,10 +306,11 @@ export function VisualTemplateEditor({
               />
             </Col>
 
-            <Col sm={12} lg={5}>
+            <Col sm={12} lg={5} className="mt-lg-0 mt-sm-3">
               <SvgEditor
                 value={value}
                 onChange={onChange}
+                onDelete={onDelete}
                 onUpdateActive={onUpdateActive}
                 screenMetadata={screenMetadata}
                 activeElements={activeEditElements}

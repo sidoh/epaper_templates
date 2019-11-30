@@ -9,6 +9,7 @@ import { binToDataUrl } from "../bitmaps/BitmapCanvas";
 import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
 import { MarkedForDeletion, FieldTypeDefinitions } from "./schema";
+import { original } from "immer";
 
 const SvgLine = React.memo(React.forwardRef((props, ref) => {
   const {
@@ -307,6 +308,8 @@ export function SvgCanvas({
             const ctx = dfn.__drag;
 
             ctx.moved = true;
+
+            // console.log(original(ctx.start.x));
 
             ctx.start.x.forEach(([field, start]) => {
               dfn[field] = start + (e.pageX - ctx.cursor.x);
