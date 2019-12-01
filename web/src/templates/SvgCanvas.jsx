@@ -485,10 +485,10 @@ export function SvgCanvas({
               dfn.__drag.moved = true;
 
               ctx.start.x.forEach(([field, start]) => {
-                dfn[field] = start + (x - ctx.cursor.x);
+                dfn[field] = Math.round(start + (x - ctx.cursor.x));
               });
               ctx.start.y.forEach(([field, start]) => {
-                dfn[field] = start + (y - ctx.cursor.y);
+                dfn[field] = Math.round(start + (y - ctx.cursor.y));
               });
             }
           });
