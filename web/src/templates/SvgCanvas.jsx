@@ -281,7 +281,9 @@ const WrappedSvgElement = props => {
         className={isActive ? "active" : ""}
       />
 
-      {boundingBoxProps && <rect {...boundingBoxProps} className="selection-outline" />}
+      {boundingBoxProps && (
+        <rect {...boundingBoxProps} className="selection-outline" />
+      )}
     </>
   );
 };
@@ -321,16 +323,6 @@ function useForceUpdate() {
   return () => setValue(value => ++value); // update the state to force render
 }
 
-const extractEventCoordinates = e => {
-  const pt = e.target.createSVGPoint();
-  pt.x = e.clientX;
-  pt.y = e.clientY;
-
-  const {x, y} =  pt.matrixTransform(e.target.getScreenCTM().inverse());
-
-  return {x, y}
-};
-
 export function SvgCanvas({
   width,
   height,
@@ -349,6 +341,7 @@ export function SvgCanvas({
   const isDragging = useRef(null);
   const selectionParams = useRef(null);
   const elementRefs = useRef({});
+  const svgRef = useRef(null);
   const forceUpdate = useForceUpdate();
   const [selectionBox, setSelectionBox] = useState(null);
 
@@ -392,6 +385,17 @@ export function SvgCanvas({
   //   * Setting cursor position
   //
   const eventListeners = useMemo(() => {
+    const extractEventCoordinates = e => {
+      const svg = svgRef.current;
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+
+      const { x, y } = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+      return { x, y };
+    };
+
     const endMouseMove = e => {
       let acted = false;
 
@@ -441,7 +445,7 @@ export function SvgCanvas({
                 x: exFields("x"),
                 y: exFields("y")
               },
-              cursor: { x: e.pageX, y: e.pageY }
+              cursor: extractEventCoordinates(e)
             };
 
             markForCollapse();
@@ -466,6 +470,8 @@ export function SvgCanvas({
             return;
           }
 
+          const { x, y } = extractEventCoordinates(e);
+
           onUpdateActive(dfn => {
             const ctx = original(dfn.__drag);
 
@@ -473,10 +479,10 @@ export function SvgCanvas({
               dfn.__drag.moved = true;
 
               ctx.start.x.forEach(([field, start]) => {
-                dfn[field] = start + (e.pageX - ctx.cursor.x);
+                dfn[field] = start + (x - ctx.cursor.x);
               });
               ctx.start.y.forEach(([field, start]) => {
-                dfn[field] = start + (e.pageY - ctx.cursor.y);
+                dfn[field] = start + (y - ctx.cursor.y);
               });
             }
           });
@@ -520,6 +526,7 @@ export function SvgCanvas({
   return (
     <svg
       {...eventListeners}
+      ref={svgRef}
       viewBox={`0 0 ${_width} ${_height}`}
       style={svgStyle}
       className={selectionParams.current ? "selecting" : ""}
