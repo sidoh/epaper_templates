@@ -232,7 +232,6 @@ const WrappedSvgElement = props => {
   const onClick = useCallback(
     e => {
       e.stopPropagation();
-      console.log(e)
 
       if (!rest.definition.__drag || !rest.definition.__drag.moved) {
         if (e.metaKey || e.ctrlKey) {
@@ -493,7 +492,7 @@ export function SvgCanvas({
               });
             }
           });
-        } else if (e.target.tagName === "svg" && selectionParams.current) {
+        } else if (selectionParams.current) {
           selectionParams.current.end = extractEventCoordinates(e);
           forceUpdate();
         }
