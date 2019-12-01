@@ -1,7 +1,7 @@
 .visual-editor {
   svg {
     &.selecting > * {
-      cursor: default;
+      cursor: default !important;
     }
 
     image, text, line, rect {

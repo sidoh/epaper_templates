@@ -114,16 +114,19 @@ export function VisualTemplateEditor({
   const currentActiveElements = useRef(null);
   currentActiveElements.current = activeEditElements;
 
+  const currentValue = useRef(null);
+  currentValue.current = value;
+
   const onUpdateActive = useCallback(
     (updateFn, meta = {}) => {
-      const updated = produce(value, draft => {
+      const updated = produce(currentValue.current, draft => {
         currentActiveElements.current.forEach(path =>
           drillUpdate(draft, path, updateFn)
         );
       });
       onChange(updated, meta);
     },
-    [value, onChange]
+    [onChange]
   );
 
   useEffect(() => {
