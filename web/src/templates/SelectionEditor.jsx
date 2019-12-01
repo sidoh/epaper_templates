@@ -1,22 +1,26 @@
-import React, { useMemo, useCallback, useState } from "react";
-import { groupBy, drillExtract, setGroupReducer } from "../util/mungers";
-import { FieldTypeDefinitions, Schema, MarkedForDeletion } from "./schema";
-
-import "./SelectionEditor.scss";
-import Button from "react-bootstrap/Button";
 import {
-  faWindowClose,
+  faMinusSquare,
   faPlusSquare,
-  faMinusSquare
+  faWindowClose
 } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import produce from "immer";
-import { faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { useBoolean } from "react-use";
-import Form from "react-bootstrap/Form";
+import React, { useCallback, useMemo } from "react";
+import Button from "react-bootstrap/Button";
 import Collapse from "react-bootstrap/Collapse";
-import { BadgedText } from "./BadgedText";
+import { useBoolean } from "react-use";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import { groupBy, setGroupReducer } from "../util/mungers";
+import { BadgedText } from "./BadgedText";
+import {
+  createDefaultElement,
+  FieldTypeDefinitions,
+  MarkedForDeletion,
+  Schema,
+  ScreenSettingsSchema
+} from "./schema";
+import "./SelectionEditor.scss";
+import Form from "react-jsonschema-form";
 
 const valueTitleGenerator = (el = {}) => {
   const { value } = el;
@@ -112,13 +116,6 @@ const SectionList = React.memo(
     toggleActiveElement,
     onAdd
   }) => {
-    const [isCollapsed, toggleCollapse] = useBoolean(false);
-
-    const _toggleClick = useCallback(e => {
-      e.preventDefault();
-      toggleCollapse();
-    }, []);
-
     const _onAdd = useCallback(
       e => {
         onAdd(type);
@@ -127,49 +124,94 @@ const SectionList = React.memo(
     );
 
     return (
-      <div className="selection-section">
-        <h5 className="d-flex">
-          <a
-            href="#"
-            className="text-white"
-            style={{ textDecoration: "none" }}
-            onClick={_toggleClick}
-          >
-            <MemoizedFontAwesomeIcon
-              icon={isCollapsed ? faPlusSquare : faMinusSquare}
-            />
-            <span className="ml-2">
-              {title} ({items.length})
-            </span>
-          </a>
-          <Button
-            className="ml-auto"
-            variant="outline-success"
-            size="sm"
-            onClick={_onAdd}
-          >
-            <MemoizedFontAwesomeIcon icon={faPlus} />
-          </Button>
-        </h5>
-        <Collapse in={!isCollapsed} unmountOnExit={true}>
-          <ul className="block-list">
-            {items.map(x => (
-              <li key={x.id} className={x.isActive ? "active" : ""}>
-                <SectionListItem
-                  {...x}
-                  hidden={isCollapsed}
-                  onDelete={onDelete}
-                  onDeselect={onDeselect}
-                  onToggleSelect={toggleActiveElement}
-                />
-              </li>
-            ))}
-          </ul>
-        </Collapse>
-      </div>
+      <CollapsibleSection
+        title={`${title} (${items.length})`}
+        onActionButtonClick={_onAdd}
+      >
+        <ul className="block-list">
+          {items.map(x => (
+            <li key={x.id} className={x.isActive ? "active" : ""}>
+              <SectionListItem
+                {...x}
+                onDelete={onDelete}
+                onDeselect={onDeselect}
+                onToggleSelect={toggleActiveElement}
+              />
+            </li>
+          ))}
+        </ul>
+      </CollapsibleSection>
     );
   }
 );
+
+const CollapsibleSection = ({
+  title,
+  children,
+  onActionButtonClick,
+  actionButtonVariant = "outline-success",
+  actionButtonIcon = faPlus
+}) => {
+  const [isCollapsed, toggleCollapse] = useBoolean(false);
+
+  const _toggleClick = useCallback(e => {
+    e.preventDefault();
+    toggleCollapse();
+  }, []);
+
+  return (
+    <div className="selection-section">
+      <h5 className="d-flex">
+        <a
+          href="#"
+          className="text-white"
+          style={{ textDecoration: "none" }}
+          onClick={_toggleClick}
+        >
+          <MemoizedFontAwesomeIcon
+            icon={isCollapsed ? faPlusSquare : faMinusSquare}
+          />
+          <span className="ml-2">{title}</span>
+        </a>
+        {onActionButtonClick && (
+          <Button
+            className="ml-auto"
+            variant={actionButtonVariant}
+            size="sm"
+            onClick={onActionButtonClick}
+          >
+            <MemoizedFontAwesomeIcon icon={actionButtonIcon} />
+          </Button>
+        )}
+      </h5>
+      <Collapse in={!isCollapsed} unmountOnExit={true}>
+        {children}
+      </Collapse>
+    </div>
+  );
+};
+
+const PropertiesForm = ({ value, onChange }) => {
+  const _onChange = useCallback((e) => {
+    onChange({...value, ...e.formData});
+  }, [onChange, value])
+
+  return (
+      <CollapsibleSection title="Properties">
+        <Form
+          schema={ScreenSettingsSchema}
+          formData={value}
+          onChange={_onChange}
+          omitExtraData={true}
+          liveOmit={true}
+          idPrefix="screen_settings"
+          tagName="div"
+         >
+           <span></span>
+        </Form>
+      </CollapsibleSection>
+  )
+}
 
 export function SelectionEditor({
   value,
@@ -182,29 +224,25 @@ export function SelectionEditor({
   toggleActiveElement,
   cursorPosition
 }) {
-  const [showAddForm, toggleShowAddForm] = useBoolean(false);
-
   const elementsByType = useMemo(() => {
     const active = groupBy(activeElements, x => x[0], {
       valueFn: x => x[1],
       groupReducer: setGroupReducer
     });
 
-    return Object.entries(
-      groupBy(
-        Object.keys(FieldTypeDefinitions).flatMap(type =>
-          (value[type] || [])
-            .map((x, i) => ({
-              id: [type, i],
-              type,
-              value: x,
-              isActive: !!(active[type] && active[type].has(i))
-            }))
-            .filter(x => x.value !== MarkedForDeletion)
-        ),
-        x => x.type
-      )
-    );
+    return Object.keys(FieldTypeDefinitions)
+      .sort()
+      .map(type => [
+        type,
+        (value[type] || [])
+          .map((x, i) => ({
+            id: [type, i],
+            type,
+            value: x,
+            isActive: !!(active[type] && active[type].has(i))
+          }))
+          .filter(x => x.value !== MarkedForDeletion)
+      ]);
   }, [value, activeElements]);
 
   const onDeselectAll = useCallback(() => {
@@ -224,10 +262,13 @@ export function SelectionEditor({
   const onAdd = useCallback(
     type => {
       const updated = produce(value, draft => {
+        const value = createDefaultElement(type, {
+          position: cursorPosition || { x: 0, y: 0 }
+        });
         if (!draft[type]) {
-          draft[type] = [{}];
+          draft[type] = [value];
         } else {
-          draft[type].push({});
+          draft[type].push(value);
         }
       });
 
@@ -235,7 +276,7 @@ export function SelectionEditor({
       onUpdate(updated);
       setSubNavMode("editor");
     },
-    [value, activeElements, onUpdate]
+    [value, activeElements, onUpdate, cursorPosition]
   );
 
   const onDeselect = useCallback(
@@ -275,6 +316,8 @@ export function SelectionEditor({
           </div>
         )}
       </div>
+
+      <PropertiesForm value={value} onChange={onUpdate} />
 
       <>
         {elementsByType.map(([type, elements]) => {

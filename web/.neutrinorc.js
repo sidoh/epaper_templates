@@ -23,7 +23,7 @@ module.exports = {
           ]
         },
         proxy: {
-          '/api': "http://10.133.8.108"
+          '/api': "http://10.133.8.128"
         }
       }
     }),

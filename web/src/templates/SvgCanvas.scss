@@ -22,11 +22,16 @@
       }
     }
 
-    rect.outline {
+    rect.selection-outline {
       fill: none;
       stroke: #66f;
       stroke-width: 1px;
       stroke-dasharray: 3 2;
+    }
+
+    rect.outline {
+      fill: none;
+      stroke-width: 1px;
     }
 
     rect.filled,

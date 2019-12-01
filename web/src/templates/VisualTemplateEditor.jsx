@@ -23,7 +23,8 @@ import { SvgFieldEditor } from "./SvgFieldEditor";
 import "./VisualTemplateEditor.scss";
 
 const isHiddenEqual = (n, p) => {
-  return n === p;
+  // console.log(n === p,n.isDragging , p.isDragging);
+  return n === p || (n.isDragging && p.isDragging);
 };
 
 const EditorSections = {
@@ -43,7 +44,9 @@ function SvgEditor({
   setActiveElements,
   subNavMode,
   setSubNavMode,
-  toggleActiveElement
+  toggleActiveElement,
+  cursorPosition,
+  isDragging
 }) {
   const [globalState, globalActions] = useGlobalState();
 
@@ -67,6 +70,8 @@ function SvgEditor({
             allBitmaps={globalState.bitmaps}
             setSubNavMode={setSubNavMode}
             toggleActiveElement={toggleActiveElement}
+            cursorPosition={cursorPosition}
+            isDragging={isDragging}
           />
         </div>
       ))}
@@ -110,6 +115,7 @@ export function VisualTemplateEditor({
   });
   const [activeEditElements, setActiveEditElements] = useState([]);
   const [cursorPosition, setCursorPosition] = useState(null);
+  const [isDragging, setDragging] = useState(false);
 
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
@@ -273,6 +279,8 @@ export function VisualTemplateEditor({
         }
       } else if (keyCode === 8) {
         if (
+          e.target.tagName.toLowerCase() === "body" &&
+          currentActiveElements.current.length > 0 &&
           confirm(
             "Are you sure you want to delete " +
               currentActiveElements.current.length +
@@ -310,6 +318,7 @@ export function VisualTemplateEditor({
                 collapse={collapse}
                 cursorPosition={cursorPosition}
                 setCursorPosition={setCursorPosition}
+                setDragging={setDragging}
               />
             </Col>
 
@@ -326,6 +335,7 @@ export function VisualTemplateEditor({
                 setSubNavMode={setSubNavMode}
                 toggleActiveElement={toggleActive}
                 cursorPosition={cursorPosition}
+                isDragging={isDragging}
               />
             </Col>
           </Row>

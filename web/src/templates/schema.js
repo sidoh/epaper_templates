@@ -2,6 +2,48 @@ import { useMemo } from "react";
 
 export const MarkedForDeletion = "__deleted";
 
+const FontDefinitions = {
+  FreeMonoBold24pt7b: {
+    title: "Free Mono Bold",
+    style: {
+      fontSize: 24,
+      fontWeight: "bold",
+      fontFamily: "monospace"
+    }
+  },
+  FreeSans18pt7b: {
+    title: "Free Sans",
+    style: {
+      fontSize: 18,
+      fontFamily: "sans-serif"
+    }
+  },
+  FreeSans9pt7b: {
+    title: "Free Sans",
+    style: {
+      fontSize: 9
+    }
+  },
+  FreeSansBold9pt7b: {
+    title: "Free Sans Bold",
+    style: {
+      fontWeight: "bold",
+      fontSize: 9
+    }
+  },
+  FreeMono9pt7b: {
+    title: "Free Mono",
+    style: {
+      fontSize: 9,
+      fontFamily: "monospace"
+    }
+  }
+};
+
+export const getFontDefinition = (font) => {
+  return FontDefinitions[font] || FontDefinitions.FreeMono9pt7b;
+}
+
 const LineFields = {
   type: "object",
   title: "Line",
@@ -129,13 +171,7 @@ const Definitions = {
   font: {
     title: "Font",
     type: "string",
-    enum: [
-      "FreeMonoBold24pt7b",
-      "FreeSans18pt7b",
-      "FreeSans9pt7b",
-      "FreeSansBold9pt7b",
-      "FreeMono9pt7b"
-    ]
+    enum: Object.keys(FontDefinitions)
   },
   caseFormatterItem: {},
   valueChoice: {
@@ -299,6 +335,47 @@ export const FieldTypeDefinitions = {
   lines: LineFields
 };
 
+const DefaultElementFactories = {
+  bitmaps: (x, y) => {
+    return { x, y, w: 32, h: 32 };
+  },
+  text: (x, y) => {
+    return { x, y, value: { type: "static", value: "text" } };
+  },
+  lines: (x, y) => {
+    return { x1: x, y1: y, x2: x + 20, y2: y };
+  },
+  rectangles: (x, y) => {
+    const dim = { type: "static", value: 30 };
+    return { x, y, w: dim, h: dim };
+  }
+};
+
+export const createDefaultElement = (
+  type,
+  { position: { x = 0, y = 0 } = {} } = {}
+) => {
+  const fn = DefaultElementFactories[type] || (() => ({}));
+  return fn(...[x, y].map(x => Math.round(x)));
+};
+
+const ScreenSettings = {
+  type: "object",
+  properties: {
+    background_color: {
+      title: "Background Color",
+      default: "white",
+      $ref: "#/definitions/color"
+    },
+    rotation: {
+      title: "Screen Rotation",
+      type: "integer",
+      enum: [0, 1, 2, 3],
+      enumNames: ["0°", "90°", "180°", "270°"]
+    }
+  }
+}
+
 export const Schema = {
   $id: "https://sidoh.org/epaper-templates/template.schema.json",
   $schema: "https://json-schema.org/draft-08/schema#",
@@ -306,6 +383,7 @@ export const Schema = {
   definitions: { ...Definitions },
   properties: {
     background_color: { $ref: "#/definitions/color" },
+    ...ScreenSettings.properties,
     formatters: {
       type: "array",
       items: { $ref: "#/definitions/referenceFormatter" }
@@ -322,6 +400,11 @@ export const Schema = {
       })
     )
   }
+};
+
+export const ScreenSettingsSchema = {
+  definitions: { ...Definitions },
+  ...ScreenSettings
 };
 
 export const FormatterSchema = {

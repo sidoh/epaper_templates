@@ -8,7 +8,11 @@ import React, {
 import { binToDataUrl } from "../bitmaps/BitmapCanvas";
 import useGlobalState from "../state/global_state";
 import "./SvgCanvas.scss";
-import { MarkedForDeletion, FieldTypeDefinitions } from "./schema";
+import {
+  FieldTypeDefinitions,
+  FontDefinitions,
+  getFontDefinition
+} from "./schema";
 import { original } from "immer";
 
 const SvgLine = React.memo(
@@ -43,18 +47,21 @@ const SvgLine = React.memo(
 const SvgText = React.memo(
   React.forwardRef((props, ref) => {
     const {
+      definition,
       definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
       onClick,
       isActive,
       resolvedValue,
       className
     } = props;
-    const style = useMemo(
-      () => ({
-        fill: color
-      }),
-      [color, isActive]
-    );
+    const style = useMemo(() => {
+      const fontStyle = getFontDefinition(definition.font).style;
+      return {
+        fill: color,
+        ...fontStyle,
+        fontSize: `${fontStyle.fontSize * (definition.font_size || 1)}pt`
+      };
+    }, [definition, isActive]);
 
     const text = useMemo(() => {
       if (valueDef.type == "static") {
@@ -88,7 +95,7 @@ const SvgRectangle = React.memo(
         x = 0,
         y = 0,
         style,
-        color,
+        color = "black",
         w: widthDef = {},
         h: heightDef = {}
       },
@@ -126,6 +133,7 @@ const SvgRectangle = React.memo(
       <rect
         ref={ref}
         {...{ x, y, width, height }}
+        stroke={color}
         className={classes.join(" ")}
         onClick={onClick}
       />
@@ -219,12 +227,15 @@ const WrappedSvgElement = props => {
   const _elementRef = useRef();
   const [boundingBoxProps, setBoundingBoxProps] = useState(null);
 
-  const onClick = useCallback((e) => {
-    e.stopPropagation();
-    if (!rest.definition.__drag || !rest.definition.__drag.moved) {
-      toggleActiveElement(type, id);
-    }
-  }, [rest.definition, toggleActiveElement, type, id]);
+  const onClick = useCallback(
+    e => {
+      e.stopPropagation();
+      if (!rest.definition.__drag || !rest.definition.__drag.moved) {
+        toggleActiveElement(type, id);
+      }
+    },
+    [rest.definition, toggleActiveElement, type, id]
+  );
 
   const refCallback = useCallback(
     e => {
@@ -265,13 +276,13 @@ const WrappedSvgElement = props => {
         className={isActive ? "active" : ""}
       />
 
-      {boundingBoxProps && <rect {...boundingBoxProps} className="outline" />}
+      {boundingBoxProps && <rect {...boundingBoxProps} className="selection-outline" />}
     </>
   );
 };
 
 const SvgCursorIndicator = ({ x, y, size = 10 }) => {
-  const onClick = useCallback((e) => {
+  const onClick = useCallback(e => {
     e.stopPropagation();
   }, []);
 
@@ -325,13 +336,22 @@ export function SvgCanvas({
   markForCollapse,
   collapse,
   cursorPosition,
-  setCursorPosition
+  setCursorPosition,
+  setDragging
 }) {
   const isDragging = useRef(null);
   const selectionParams = useRef(null);
   const elementRefs = useRef({});
   const forceUpdate = useForceUpdate();
   const [selectionBox, setSelectionBox] = useState(null);
+
+  const [_width, _height] = useMemo(() => {
+    if (definition.rotation === 1 || definition.rotation === 3) {
+      return [height, width];
+    } else {
+      return [width, height];
+    }
+  }, [width, height, definition]);
 
   const updateRef = useCallback((type, id, ref) => {
     const refs = elementRefs.current;
@@ -347,7 +367,7 @@ export function SvgCanvas({
 
   const svgStyle = useMemo(
     () => ({
-      backgroundColor: definition.background_color
+      backgroundColor: definition.background_color || "white"
     }),
     [definition.background_color]
   );
@@ -391,6 +411,9 @@ export function SvgCanvas({
       isDragging.current = false;
       selectionParams.current = null;
 
+      // tell parent component we're done dragging
+      setDragging(false);
+
       return acted;
     };
 
@@ -398,6 +421,9 @@ export function SvgCanvas({
       onMouseDown: e => {
         if (e.target.classList.contains("active")) {
           isDragging.current = true;
+          // tell parent component we're dragging
+          setDragging(true);
+
           onUpdateActive(defn => {
             const keys = Object.keys(defn);
             const exFields = prefix =>
@@ -428,6 +454,11 @@ export function SvgCanvas({
       onMouseLeave: endMouseMove,
       onMouseMove: e => {
         if (isDragging.current) {
+          if (!e.buttons) {
+            endMouseMove(e);
+            return;
+          }
+
           onUpdateActive(dfn => {
             const ctx = original(dfn.__drag);
 
@@ -482,8 +513,7 @@ export function SvgCanvas({
   return (
     <svg
       {...eventListeners}
-      width={width}
-      height={height}
+      viewBox={`0 0 ${_width} ${_height}`}
       style={svgStyle}
       className={selectionParams.current ? "selecting" : ""}
     >
@@ -515,7 +545,12 @@ export function SvgCanvas({
           className="selection"
           {...computeRectFromEndpoints(selectionParams.current)}
         >
-          <animate attributeName="stroke-dashoffset" values="0;8" dur="1s" repeatCount="indefinite" />
+          <animate
+            attributeName="stroke-dashoffset"
+            values="0;8"
+            dur="1s"
+            repeatCount="indefinite"
+          />
         </rect>
       )}
       {cursorPosition && <SvgCursorIndicator {...cursorPosition} />}
