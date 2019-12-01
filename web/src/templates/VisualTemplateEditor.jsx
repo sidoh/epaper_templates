@@ -109,6 +109,7 @@ export function VisualTemplateEditor({
     text: {}
   });
   const [activeEditElements, setActiveEditElements] = useState([]);
+  const [cursorPosition, setCursorPosition] = useState(null);
 
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
@@ -307,6 +308,8 @@ export function VisualTemplateEditor({
                 resolvedVariables={resolvedVariables}
                 markForCollapse={markForCollapse}
                 collapse={collapse}
+                cursorPosition={cursorPosition}
+                setCursorPosition={setCursorPosition}
               />
             </Col>
 
@@ -322,6 +325,7 @@ export function VisualTemplateEditor({
                 subNavMode={subNavMode}
                 setSubNavMode={setSubNavMode}
                 toggleActiveElement={toggleActive}
+                cursorPosition={cursorPosition}
               />
             </Col>
           </Row>

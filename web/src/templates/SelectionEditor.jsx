@@ -179,7 +179,8 @@ export function SelectionEditor({
   activeElements,
   setActiveElements,
   setSubNavMode,
-  toggleActiveElement
+  toggleActiveElement,
+  cursorPosition
 }) {
   const [showAddForm, toggleShowAddForm] = useBoolean(false);
 

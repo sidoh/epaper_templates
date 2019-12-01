@@ -4,6 +4,12 @@
       cursor: default !important;
     }
 
+    .cursor-position {
+      fill: none;
+      stroke: #393;
+      stroke-width: 1px;
+    }
+
     image, text, line, rect {
       stroke-width: 1px;
       cursor: pointer;

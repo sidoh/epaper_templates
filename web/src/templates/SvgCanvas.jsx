@@ -191,7 +191,9 @@ const SvgElementsByType = {
 };
 
 const intervalOverlaps = (s1, s2, t1, t2) => {
-  return (s1 >= t1 && s1 <= t2) || (s2 >= t1 && s2 <= t2) || (s1 <= t1 && s2 >= t2);
+  return (
+    (s1 >= t1 && s1 <= t2) || (s2 >= t1 && s2 <= t2) || (s1 <= t1 && s2 >= t2)
+  );
 };
 
 const rectOverlaps = (r1, r2) => {
@@ -217,7 +219,8 @@ const WrappedSvgElement = props => {
   const _elementRef = useRef();
   const [boundingBoxProps, setBoundingBoxProps] = useState(null);
 
-  const onClick = useCallback(() => {
+  const onClick = useCallback((e) => {
+    e.stopPropagation();
     if (!rest.definition.__drag || !rest.definition.__drag.moved) {
       toggleActiveElement(type, id);
     }
@@ -267,6 +270,16 @@ const WrappedSvgElement = props => {
   );
 };
 
+const SvgCursorIndicator = ({ x, y, size = 10 }) => {
+  return (
+    <g className="cursor-position">
+      <line x1={x - size} x2={x + size} y1={y} y2={y} />
+      <line x1={x} x2={x} y1={y - size} y2={y + size} />
+      <circle cx={x} cy={y} r={size} />
+    </g>
+  );
+};
+
 const computeRectFromEndpoints = ({ start, end }) => {
   let _end = end || start;
 
@@ -306,7 +319,9 @@ export function SvgCanvas({
   toggleActiveElement,
   onUpdateActive,
   markForCollapse,
-  collapse
+  collapse,
+  cursorPosition,
+  setCursorPosition
 }) {
   const isDragging = useRef(null);
   const selectionParams = useRef(null);
@@ -339,8 +354,16 @@ export function SvgCanvas({
     [activeElements]
   );
 
+  //
+  // Canvas event listeners.  Handles the following:
+  //   * Selection box dragging
+  //   * Drag-moving selected elements
+  //   * Setting cursor position
+  //
   const eventListeners = useMemo(() => {
     const endMouseMove = e => {
+      let acted = false;
+
       if (isDragging.current) {
         onUpdateActive(
           defn => {
@@ -348,13 +371,23 @@ export function SvgCanvas({
           },
           { skipHistory: true }
         );
+        acted = true;
       } else if (selectionParams.current && selectionParams.current.end) {
-        setSelectionBox(computeRectFromEndpoints(selectionParams.current));
+        const selectionBox = computeRectFromEndpoints(selectionParams.current);
+
+        // Ignore if selection is tiny (probably means it was intended as click)
+
+        if (selectionBox.width > 1 || selectionBox.height > 1) {
+          setSelectionBox(selectionBox);
+          acted = true;
+        }
       }
 
       collapse();
       isDragging.current = false;
       selectionParams.current = null;
+
+      return acted;
     };
 
     return {
@@ -383,7 +416,11 @@ export function SvgCanvas({
           forceUpdate();
         }
       },
-      onClick: endMouseMove,
+      onClick: e => {
+        if (!endMouseMove(e)) {
+          setCursorPosition(extractEventCoordinates(e));
+        }
+      },
       onMouseLeave: endMouseMove,
       onMouseMove: e => {
         if (isDragging.current) {
@@ -409,6 +446,12 @@ export function SvgCanvas({
     };
   }, [onUpdateActive]);
 
+  //
+  // Handle selection box.
+  //
+  // Set the list of active elements equal to those that intersect with
+  // the selection box.
+  //
   useEffect(() => {
     if (selectionBox) {
       const active = Object.keys(FieldTypeDefinitions).flatMap(type => {
@@ -467,8 +510,11 @@ export function SvgCanvas({
         <rect
           className="selection"
           {...computeRectFromEndpoints(selectionParams.current)}
-        />
+        >
+          <animate attributeName="stroke-dashoffset" values="0;8" dur="1s" repeatCount="indefinite" />
+        </rect>
       )}
+      {cursorPosition && <SvgCursorIndicator {...cursorPosition} />}
     </svg>
   );
 }
