@@ -1,5 +1,6 @@
 @import "~bootswatch/dist/darkly/variables";
 @import "~bootstrap/scss/bootstrap";
+@import "~bootstrap/scss/mixins/_breakpoints";
 @import "~bootswatch/dist/darkly/bootswatch";
 
 .nav.nav-pills {
@@ -31,7 +32,9 @@ ul.block-list {
   }
 }
 
-.scroll-pane {
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
+@include media-breakpoint-up(lg) {
+  .scroll-pane {
+    max-height: calc(100vh - 240px);
+    overflow-y: auto;
+  }
 }
