@@ -14,6 +14,7 @@ import { BadgedText } from "./BadgedText";
 import produce from "immer";
 import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import Alert from "react-bootstrap/Alert";
 
 const uiSchema = {
   formatter: {
@@ -109,6 +110,20 @@ function FormatterListItem({ formatter, index, onEdit, onDelete }) {
 }
 
 function FormatterList({ formatters, onEdit, onDelete }) {
+  if (!Array.isArray(formatters)) {
+    return (
+      <Alert variant="danger">
+        <p>
+          <b>The formatter section has unexpected type.</b>
+        </p>
+        <p>
+          Should be an Array, but is:{" "}
+          <code className="bg-white p-1 rounded">{typeof formatters}</code>
+        </p>
+      </Alert>
+    );
+  }
+
   return (
     <ul className="block-list">
       {formatters.map((x, i) => (
@@ -189,7 +204,6 @@ export function FormatterEditor({ value, onUpdate }) {
               New Formatter
             </Button>
           </div>
-
         </>
       )}
     </>
