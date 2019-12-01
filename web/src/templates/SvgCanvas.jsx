@@ -348,7 +348,7 @@ export function SvgCanvas({
           },
           { skipHistory: true }
         );
-      } else if (selectionParams.current) {
+      } else if (selectionParams.current && selectionParams.current.end) {
         setSelectionBox(computeRectFromEndpoints(selectionParams.current));
       }
 
