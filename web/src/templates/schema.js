@@ -75,7 +75,7 @@ const TextFields = {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
     font: { $ref: "#/definitions/font" },
-    font_size: { type: "integer", default: 1, title: "Font Size" },
+    font_size: { type: "integer", title: "Font Size" },
     value: { title: "Value", $ref: "#/definitions/valueChoice" }
   }
 };

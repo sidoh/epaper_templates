@@ -54,12 +54,14 @@ function _deepClearNonMatching(o1, o2) {
     return null;
   }
 
-  const commonFields = Object.entries(o1)
-    .map(([k, v]) => {
-      if (v === o2[k]) {
-        return [k, v];
-      } else if (typeof o1 === typeof o2) {
-        return [k, _deepClearNonMatching(v, o2[k])];
+  const keyUnion = [...new Set([...Object.keys(o1), ...Object.keys(o2)])];
+
+  const commonFields = keyUnion
+    .map(k => {
+      if (o1[k] === o2[k]) {
+        return [k, o1[k]];
+      } else if (typeof o1[k] === "object" && typeof o2[k] === "object") {
+        return [k, _deepClearNonMatching(o1[k], o2[k])];
       } else {
         return null;
       }
