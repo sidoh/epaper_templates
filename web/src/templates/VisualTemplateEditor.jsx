@@ -23,7 +23,7 @@ import { SvgFieldEditor } from "./SvgFieldEditor";
 import "./VisualTemplateEditor.scss";
 
 const isHiddenEqual = (n, p) => {
-  return n === p || (n.isHidden && p.isHidden);
+  return n === p;
 };
 
 const EditorSections = {
@@ -299,6 +299,7 @@ export function VisualTemplateEditor({
                 height={screenMetadata.height}
                 definition={value}
                 toggleActiveElement={toggleActive}
+                setActiveElements={setActiveEditElements}
                 activeElements={activeEditElements}
                 resolvedVariables={resolvedVariables}
                 markForCollapse={markForCollapse}

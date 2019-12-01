@@ -171,50 +171,6 @@ const SectionList = React.memo(
   }
 );
 
-function AddElementForm({ onAdd }) {
-  const [selection, setSelection] = useState("");
-
-  const handleChange = useCallback(e => {
-    setSelection(e.target.value);
-  }, []);
-
-  const _onAdd = useCallback(() => {
-    onAdd(selection);
-  }, [onAdd, selection]);
-
-  return (
-    <div className="mt-2 d-flex align-items-end">
-      <Form.Group className="flex-grow-1 mb-0">
-        <Form.Label>Type</Form.Label>
-        <Form.Control
-          as="select"
-          value={selection}
-          onChange={handleChange}
-          placeholder="type"
-        >
-          <>
-            <option value=""></option>
-            {Object.entries(FieldTypeDefinitions).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v.title}
-              </option>
-            ))}
-          </>
-        </Form.Control>
-      </Form.Group>
-
-      <Button
-        variant="success"
-        className="ml-2"
-        disabled={selection === ""}
-        onClick={_onAdd}
-      >
-        Add
-      </Button>
-    </div>
-  );
-}
-
 export function SelectionEditor({
   value,
   onUpdate,
@@ -274,8 +230,8 @@ export function SelectionEditor({
         }
       });
 
-      onUpdate(updated);
       setActiveElements([[type, updated[type].length - 1]]);
+      onUpdate(updated);
       setSubNavMode("editor");
     },
     [value, activeElements, onUpdate]

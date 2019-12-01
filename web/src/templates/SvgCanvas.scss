@@ -1,5 +1,9 @@
 .visual-editor {
   svg {
+    &.selecting > * {
+      cursor: default;
+    }
+
     image, text, line, rect {
       stroke-width: 1px;
       cursor: pointer;
@@ -17,12 +21,18 @@
       stroke: #66f;
       stroke-width: 1px;
       stroke-dasharray: 3 2;
-      fill: none;
     }
 
     rect.filled,
     rect.active.filled {
       stroke-width: 0;
+    }
+
+    rect.selection {
+      fill: none;
+      stroke: #99f;
+      stroke-width: 1px;
+      stroke-dasharray: 6 2;
     }
   }
 }
