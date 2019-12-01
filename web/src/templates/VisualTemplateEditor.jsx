@@ -126,9 +126,15 @@ export function VisualTemplateEditor({
 
   const onUpdateActive = useCallback(
     (updateFn, meta = {}) => {
+      const wrappedFn = (x) => {
+        if (typeof x === "object") {
+          updateFn(x);
+        }
+      }
+
       const updated = produce(currentValue.current, draft => {
         currentActiveElements.current.forEach(path =>
-          drillUpdate(draft, path, updateFn)
+          drillUpdate(draft, path, wrappedFn)
         );
       });
       onChange(updated, meta);

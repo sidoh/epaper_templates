@@ -55,7 +55,7 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
         onChange(JSON.parse(editValue));
         setError(null);
       } catch (e) {
-        setError("Error parsing JSON: " + e.message)
+        setError("Error parsing JSON: " + e.message);
       }
     },
     [onChange, editValue]
@@ -65,12 +65,12 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
     try {
       setEditValue(JSON.stringify(JSON.parse(editValue), null, 2));
     } catch (e) {
-      setError("Error parsing JSON: " + e.message)
+      setError("Error parsing JSON: " + e.message);
     }
   }, [editValue]);
 
   const onCancel = useCallback(() => {
-    setEditValue(JSON.stringify(value, null, 2))
+    setEditValue(JSON.stringify(value, null, 2));
     setEditMode("visual");
   }, [value]);
 
@@ -81,7 +81,7 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
         value={editValue}
         as="textarea"
         className="json-textarea"
-        onChange={(e) => setEditValue(e.target.value)}
+        onChange={e => setEditValue(e.target.value)}
         rows={15}
       ></BootstrapForm.Control>
 
@@ -90,7 +90,7 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
           <MemoizedFontAwesomeIcon icon={faSave} className="fa-fw mr-1" />
           Save
         </Button>
-        <Button variant="primary"  size="sm" onClick={formatValue}>
+        <Button variant="primary" size="sm" onClick={formatValue}>
           <MemoizedFontAwesomeIcon icon={faCode} className="fa-fw mr-1" />
           Format
         </Button>
@@ -149,9 +149,13 @@ export function SvgFieldEditor({
 
   const formValues = useMemo(() => {
     const selectedValues = activeElements.map(x => drillExtract(value, x));
-    const fieldData = deepClearNonMatching(selectedValues);
+    const fieldData = Object.fromEntries(
+      Object.entries(deepClearNonMatching(selectedValues) || {}).filter(
+        ([k]) => !k.startsWith("__")
+      )
+    );
 
-    return fieldData || {};
+    return fieldData;
   }, [schema, value]);
 
   return (

@@ -11,7 +11,8 @@ import "./SvgCanvas.scss";
 import {
   FieldTypeDefinitions,
   FontDefinitions,
-  getFontDefinition
+  getFontDefinition,
+  MarkedForDeletion
 } from "./schema";
 import { original } from "immer";
 
@@ -265,6 +266,10 @@ const WrappedSvgElement = props => {
       setBoundingBoxProps(null);
     }
   }, [isActive, _elementRef.current, outlineOffset, props.definition]);
+
+  if (props.definition === MarkedForDeletion) {
+    return <></>;
+  }
 
   return (
     <>
