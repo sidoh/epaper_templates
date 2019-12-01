@@ -271,8 +271,12 @@ const WrappedSvgElement = props => {
 };
 
 const SvgCursorIndicator = ({ x, y, size = 10 }) => {
+  const onClick = useCallback((e) => {
+    e.stopPropagation();
+  }, []);
+
   return (
-    <g className="cursor-position">
+    <g onClick={onClick} className="cursor-position">
       <line x1={x - size} x2={x + size} y1={y} y2={y} />
       <line x1={x} x2={x} y1={y - size} y2={y + size} />
       <circle cx={x} cy={y} r={size} />
