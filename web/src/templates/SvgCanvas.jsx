@@ -215,6 +215,7 @@ const rectOverlaps = (r1, r2) => {
 const WrappedSvgElement = props => {
   const {
     toggleActiveElement,
+    setActiveElements,
     selectionBox,
     elementRef,
     isActive,
@@ -231,11 +232,17 @@ const WrappedSvgElement = props => {
   const onClick = useCallback(
     e => {
       e.stopPropagation();
+      console.log(e)
+
       if (!rest.definition.__drag || !rest.definition.__drag.moved) {
-        toggleActiveElement(type, id);
+        if (e.metaKey || e.ctrlKey) {
+          toggleActiveElement(type, id);
+        } else {
+          setActiveElements([[type, id]]);
+        }
       }
     },
-    [rest.definition, toggleActiveElement, type, id]
+    [rest.definition, setActiveElements, toggleActiveElement, type, id]
   );
 
   const refCallback = useCallback(
@@ -543,6 +550,7 @@ export function SvgCanvas({
                 isDragging={isDragging.current}
                 onUpdateActive={onUpdateActive}
                 toggleActiveElement={toggleActiveElement}
+                setActiveElements={setActiveElements}
                 resolvedValue={resolvedValue}
                 key={`${type}-${i}`}
                 isActive={isRegionActive(type, i)}
