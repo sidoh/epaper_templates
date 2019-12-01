@@ -9,6 +9,8 @@ import {
 import createSchema from "./schema";
 import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 
+import "./SvgFieldEditor.scss";
+
 export function SvgFieldEditor({
   value,
   onUpdateActive,

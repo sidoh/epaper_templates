@@ -317,11 +317,13 @@ function useForceUpdate() {
 }
 
 const extractEventCoordinates = e => {
-  const dim = e.target.getBoundingClientRect();
-  return {
-    x: e.clientX - dim.left,
-    y: e.clientY - dim.top
-  };
+  const pt = e.target.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+
+  const {x, y} =  pt.matrixTransform(e.target.getScreenCTM().inverse());
+
+  return {x, y}
 };
 
 export function SvgCanvas({

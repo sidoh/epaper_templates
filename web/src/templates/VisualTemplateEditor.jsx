@@ -322,7 +322,7 @@ export function VisualTemplateEditor({
               />
             </Col>
 
-            <Col sm={12} lg={5} className="mt-lg-0 mt-sm-3">
+            <Col sm={12} lg={5} className="mt-lg-0 mt-sm-3 scroll-pane">
               <SvgEditor
                 value={value}
                 onChange={onChange}
