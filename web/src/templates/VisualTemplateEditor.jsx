@@ -96,7 +96,6 @@ export function VisualTemplateEditor({
     text: {}
   });
   const [activeEditElements, setActiveEditElements] = useState([]);
-  const [cursorPosition, setCursorPosition] = useState(null);
   const [isDragging, setDragging] = useState(false);
   const [creatingElement, setCreatingElement] = useState(null);
 
@@ -305,8 +304,6 @@ export function VisualTemplateEditor({
                 resolvedVariables={resolvedVariables}
                 markForCollapse={markForCollapse}
                 collapse={collapse}
-                cursorPosition={cursorPosition}
-                setCursorPosition={setCursorPosition}
                 setDragging={setDragging}
                 creatingElement={creatingElement}
                 setCreatingElement={setCreatingElement}
@@ -325,7 +322,6 @@ export function VisualTemplateEditor({
                 subNavMode={subNavMode}
                 setSubNavMode={setSubNavMode}
                 toggleActiveElement={toggleActive}
-                cursorPosition={cursorPosition}
                 isDragging={isDragging}
                 creatingElement={creatingElement}
                 setCreatingElement={setCreatingElement}

@@ -4,8 +4,13 @@
       cursor: default !important;
     }
 
+    &.cursor, &.cursor > *, &.cursor g > * {
+      cursor: none !important;
+    }
+
     .cursor-position {
       fill: none;
+      cursor: none;
       stroke: #393;
       stroke-width: 1px;
     }

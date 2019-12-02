@@ -12,7 +12,8 @@ import {
   FieldTypeDefinitions,
   FontDefinitions,
   getFontDefinition,
-  MarkedForDeletion
+  MarkedForDeletion,
+  createDefaultElement
 } from "./schema";
 import { original } from "immer";
 
@@ -212,7 +213,7 @@ const rectOverlaps = (r1, r2) => {
   );
 };
 
-const WrappedSvgElement = props => {
+const WrappedSvgElement = React.memo(props => {
   const {
     toggleActiveElement,
     setActiveElements,
@@ -294,18 +295,15 @@ const WrappedSvgElement = props => {
       )}
     </>
   );
-};
+});
 
-const SvgCursorIndicator = ({ x, y, size = 10 }) => {
-  const onClick = useCallback(e => {
-    e.stopPropagation();
-  }, []);
-
+const SvgCursorIndicator = ({ x, y, size = 5 }) => {
   return (
-    <g onClick={onClick} className="cursor-position">
+    <g className="cursor-position">
       <line x1={x - size} x2={x + size} y1={y} y2={y} />
       <line x1={x} x2={x} y1={y - size} y2={y + size} />
-      <circle cx={x} cy={y} r={size} />
+      <rect x={x-size} y={y-size} width={size*2} height={size*2} />
+      {/* <circle cx={x} cy={y} r={size} /> */}
     </g>
   );
 };
@@ -352,6 +350,7 @@ export function SvgCanvas({
   const svgRef = useRef(null);
   const forceUpdate = useForceUpdate();
   const [selectionBox, setSelectionBox] = useState(null);
+  const [cursorPosition, setCursorPosition] = useState(null);
 
   const [_width, _height] = useMemo(() => {
     if (definition.rotation === 1 || definition.rotation === 3) {
@@ -420,8 +419,14 @@ export function SvgCanvas({
 
       if (creatingElement) {
         if (e.type.toLowerCase() === "click") {
+          const coords = extractEventCoordinates(e);
+
           onUpdateActive(
             defn => {
+              Object.assign(
+                defn,
+                createDefaultElement(defn.__creating, { position: coords })
+              );
               delete defn.__creating;
             },
             { skipHistory: true }
@@ -453,6 +458,7 @@ export function SvgCanvas({
       isDragging.current = false;
       selectionParams.current = null;
       setCreatingElement(null);
+      setCursorPosition(null);
 
       // tell parent component we're done dragging
       setDragging(false);
@@ -497,26 +503,7 @@ export function SvgCanvas({
       onMouseLeave: endMouseMove,
       onMouseMove: e => {
         if (creatingElement) {
-          const { x, y } = extractEventCoordinates(e);
-          const [type, id] = creatingElement;
-
-          if (type === "lines") {
-          } else {
-            const elementBBox = elementRefs.current[type][id].getBBox();
-            const [w, h] = scaleDimensions(
-              elementBBox.width,
-              elementBBox.height
-            );
-
-            onUpdateActive(dfn => {
-              dfn.x = Math.round(x - w / 4);
-              dfn.y = Math.round(y - h / 4);
-            });
-          }
-
-          setDragging(true);
-          isDragging.current = true;
-          markForCollapse();
+          setCursorPosition(extractEventCoordinates(e));
         } else if (isDragging.current) {
           if (!e.buttons) {
             endMouseMove(e);
@@ -582,7 +569,7 @@ export function SvgCanvas({
       ref={svgRef}
       viewBox={`0 0 ${_width} ${_height}`}
       style={svgStyle}
-      className={selectionParams.current ? "selecting" : ""}
+      className={[selectionParams.current ? "selecting" : "", cursorPosition ? "cursor" : ""].join(" ")}
     >
       {Object.keys(FieldTypeDefinitions)
         .flatMap(type =>
@@ -621,7 +608,7 @@ export function SvgCanvas({
           />
         </rect>
       )}
-      {/* {cursorPosition && <SvgCursorIndicator {...cursorPosition} />} */}
+      {cursorPosition && <SvgCursorIndicator {...cursorPosition} />}
     </svg>
   );
 }

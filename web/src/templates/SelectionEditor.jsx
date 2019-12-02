@@ -223,7 +223,6 @@ export function SelectionEditor({
   setActiveElements,
   setSubNavMode,
   toggleActiveElement,
-  cursorPosition,
   setCreatingElement
 }) {
   const elementsByType = useMemo(() => {
@@ -265,8 +264,7 @@ export function SelectionEditor({
     type => {
       const updated = produce(value, draft => {
         const value = {
-          ...createDefaultElement(type),
-          __creating: true,
+          __creating: type,
         };
 
         if (!draft[type]) {
@@ -283,7 +281,7 @@ export function SelectionEditor({
       onUpdate(updated);
       setSubNavMode("editor");
     },
-    [value, activeElements, onUpdate, cursorPosition]
+    [value, activeElements, onUpdate]
   );
 
   const onDeselect = useCallback(
