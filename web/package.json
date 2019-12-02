@@ -28,6 +28,7 @@
     "prop-types": "^15.7.2",
     "react": "^16.11.0",
     "react-bootstrap": "^1.0.0-beta.14",
+    "react-bootstrap-typeahead": "^3.4.7",
     "react-dom": "^16.11.0",
     "react-dropzone": "^10.1.10",
     "react-hot-loader": "^4.12.15",

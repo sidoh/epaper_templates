@@ -16,8 +16,12 @@ import Alert from "react-bootstrap/Alert";
 import { faSave, faCode, faCheck } from "@fortawesome/free-solid-svg-icons";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import Button from "react-bootstrap/Button";
+import useGlobalState from "../state/global_state";
+import { VariableAutocompleteField } from "./VariableAutocompleteField";
 
 const VisualEditor = ({ schema, value, onChange }) => {
+  const [globalState, globalActions] = useGlobalState();
+
   const _onChange = useCallback(
     e => {
       onChange(e.formData);
@@ -25,12 +29,31 @@ const VisualEditor = ({ schema, value, onChange }) => {
     [onChange]
   );
 
+  const uiSchema = useMemo(() => {
+    console.log(globalState.variables)
+    return {
+      value: {
+        variable: {
+          "ui:field": "typeahead",
+          typeahead: {
+            allowNew: true,
+            newSelectionPrefix: "New variable: ",
+            minLength: 0,
+            options: Object.keys(globalState.variables || {})
+          }
+        }
+      }
+    };
+  }, [globalState.variables]);
+
   return (
     <Form
       schema={schema}
+      uiSchema={uiSchema}
       ArrayFieldTemplate={ArrayFieldTemplate}
       formData={value}
       onChange={_onChange}
+      fields={{ typeahead: VariableAutocompleteField }}
       idPrefix="root"
       tagName="div"
     >

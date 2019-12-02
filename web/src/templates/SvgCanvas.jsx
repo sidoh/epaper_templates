@@ -608,7 +608,7 @@ export function SvgCanvas({
           />
         </rect>
       )}
-      {cursorPosition && <SvgCursorIndicator {...cursorPosition} />}
+      {/* {cursorPosition && <SvgCursorIndicator {...cursorPosition} />} */}
     </svg>
   );
 }

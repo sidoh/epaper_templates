@@ -1,11 +1,11 @@
 .visual-editor {
   svg {
     &.selecting > * {
-      cursor: default !important;
+      cursor: crosshair !important;
     }
 
     &.cursor, &.cursor > *, &.cursor g > * {
-      cursor: none !important;
+      cursor: crosshair !important;
     }
 
     .cursor-position {
