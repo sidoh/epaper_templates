@@ -142,13 +142,11 @@ const Definitions = {
     title: "Style",
     type: "string",
     enum: ["outline", "filled"],
-    default: "outline"
   },
   color: {
     title: "Color",
     type: "string",
     enum: ["black", "white"],
-    default: "black"
   },
   storedBitmap: {
     type: "string"
@@ -364,7 +362,6 @@ const ScreenSettings = {
   properties: {
     background_color: {
       title: "Background Color",
-      default: "white",
       $ref: "#/definitions/color"
     },
     rotation: {

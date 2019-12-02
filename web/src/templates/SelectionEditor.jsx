@@ -68,7 +68,7 @@ const SectionListItemTitleGenerators = {
   rectangles: fieldTitleGenerator(["x", "y", "style"])
 };
 
-function SectionListItem({ id, type, value, onDelete, onToggleSelect }) {
+function SectionListItem({ id, type, value, onClick, onDelete, onToggleSelect }) {
   const titleGenerator = SectionListItemTitleGenerators[type] || defaultTitleGenerator;
 
   const _onDelete = useCallback(
@@ -82,19 +82,15 @@ function SectionListItem({ id, type, value, onDelete, onToggleSelect }) {
     [onDelete, id]
   );
 
-  const _onToggleSelect = useCallback(
-    e => {
-      e.preventDefault();
-      onToggleSelect(...id);
-    },
-    [onToggleSelect, id]
-  );
+  const _onClick = useCallback((e) => {
+    onClick(e, id);
+  }, [id, onClick])
 
   return (
     <div className="d-flex button-list">
       <a
         href="#"
-        onClick={_onToggleSelect}
+        onClick={_onClick}
         className="text-dark mr-auto d-block w-100"
       >
         {titleGenerator(value)}
@@ -114,7 +110,9 @@ const SectionList = React.memo(
     items,
     onDelete,
     onDeselect,
+    activeElements,
     toggleActiveElement,
+    setActiveElements,
     onAdd
   }) => {
     const _onAdd = useCallback(
@@ -123,6 +121,30 @@ const SectionList = React.memo(
       },
       [onAdd, type]
     );
+
+    const _onClick = useCallback((e, id) => {
+      e.preventDefault();
+
+      if (e.metaKey || e.ctrlKey) {
+        toggleActiveElement(...id)
+      } else if (e.shiftKey) {
+        const [type, index] = id;
+        const first = activeElements.find(x => x[0] === type)
+
+        if (!first || first[1] == index) {
+          setActiveElements([id])
+        } else {
+          const [, anchorId] = first
+          const start = Math.min(index, anchorId);
+          const end = Math.max(index, anchorId);
+          const range = [...Array(end-start+1).keys()].map(x => [type, start+x])
+
+          setActiveElements(range)
+        }
+      } else {
+        setActiveElements([id])
+      }
+    }, [toggleActiveElement, setActiveElements])
 
     return (
       <CollapsibleSection
@@ -134,6 +156,7 @@ const SectionList = React.memo(
             <li key={x.id} className={x.isActive ? "active" : ""}>
               <SectionListItem
                 {...x}
+                onClick={_onClick}
                 onDelete={onDelete}
                 onDeselect={onDeselect}
                 onToggleSelect={toggleActiveElement}
@@ -336,7 +359,9 @@ export function SelectionEditor({
               items={elements}
               onDelete={onDelete}
               onDeselect={onDeselect}
+              activeElements={activeElements}
               toggleActiveElement={toggleActiveElement}
+              setActiveElements={setActiveElements}
             />
           );
         })}
