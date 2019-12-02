@@ -69,7 +69,8 @@ const SectionListItemTitleGenerators = {
 };
 
 function SectionListItem({ id, type, value, onDelete, onToggleSelect }) {
-  const titleGenerator = SectionListItemTitleGenerators[type];
+  const titleGenerator = SectionListItemTitleGenerators[type] || defaultTitleGenerator;
+
   const _onDelete = useCallback(
     e => {
       e.preventDefault();
@@ -222,7 +223,8 @@ export function SelectionEditor({
   setActiveElements,
   setSubNavMode,
   toggleActiveElement,
-  cursorPosition
+  cursorPosition,
+  setCreatingElement
 }) {
   const elementsByType = useMemo(() => {
     const active = groupBy(activeElements, x => x[0], {
@@ -262,9 +264,11 @@ export function SelectionEditor({
   const onAdd = useCallback(
     type => {
       const updated = produce(value, draft => {
-        const value = createDefaultElement(type, {
-          position: cursorPosition || { x: 0, y: 0 }
-        });
+        const value = {
+          ...createDefaultElement(type),
+          __creating: true,
+        };
+
         if (!draft[type]) {
           draft[type] = [value];
         } else {
@@ -272,7 +276,10 @@ export function SelectionEditor({
         }
       });
 
-      setActiveElements([[type, updated[type].length - 1]]);
+      const newElementId = [type, updated[type].length - 1];
+
+      setCreatingElement(newElementId);
+      setActiveElements([newElementId]);
       onUpdate(updated);
       setSubNavMode("editor");
     },

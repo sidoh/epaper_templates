@@ -231,13 +231,15 @@ const WrappedSvgElement = props => {
 
   const onClick = useCallback(
     e => {
-      e.stopPropagation();
+      if (!rest.definition.__creating) {
+        e.stopPropagation();
 
-      if (!rest.definition.__drag || !rest.definition.__drag.moved) {
-        if (e.metaKey || e.ctrlKey) {
-          toggleActiveElement(type, id);
-        } else {
-          setActiveElements([[type, id]]);
+        if (!rest.definition.__drag || !rest.definition.__drag.moved) {
+          if (e.metaKey || e.ctrlKey) {
+            toggleActiveElement(type, id);
+          } else {
+            setActiveElements([[type, id]]);
+          }
         }
       }
     },
@@ -340,9 +342,9 @@ export function SvgCanvas({
   onUpdateActive,
   markForCollapse,
   collapse,
-  cursorPosition,
-  setCursorPosition,
-  setDragging
+  setDragging,
+  creatingElement,
+  setCreatingElement
 }) {
   const isDragging = useRef(null);
   const selectionParams = useRef(null);
@@ -402,10 +404,33 @@ export function SvgCanvas({
       return { x, y };
     };
 
+    const scaleDimensions = (width, height) => {
+      const svg = svgRef.current;
+      const pt = svg.createSVGPoint();
+      pt.x = width;
+      pt.y = height;
+
+      const { x, y } = pt.matrixTransform(svg.getCTM());
+
+      return [x, y];
+    };
+
     const endMouseMove = e => {
       let acted = false;
 
-      if (isDragging.current) {
+      if (creatingElement) {
+        if (e.type.toLowerCase() === "click") {
+          onUpdateActive(
+            defn => {
+              delete defn.__creating;
+            },
+            { skipHistory: true }
+          );
+          acted = true;
+        } else {
+          return false;
+        }
+      } else if (isDragging.current) {
         onUpdateActive(
           defn => {
             delete defn.__drag;
@@ -427,6 +452,7 @@ export function SvgCanvas({
       collapse();
       isDragging.current = false;
       selectionParams.current = null;
+      setCreatingElement(null);
 
       // tell parent component we're done dragging
       setDragging(false);
@@ -465,12 +491,33 @@ export function SvgCanvas({
       },
       onClick: e => {
         if (!endMouseMove(e)) {
-          setCursorPosition(extractEventCoordinates(e));
+          // setCursorPosition(extractEventCoordinates(e));
         }
       },
       onMouseLeave: endMouseMove,
       onMouseMove: e => {
-        if (isDragging.current) {
+        if (creatingElement) {
+          const { x, y } = extractEventCoordinates(e);
+          const [type, id] = creatingElement;
+
+          if (type === "lines") {
+          } else {
+            const elementBBox = elementRefs.current[type][id].getBBox();
+            const [w, h] = scaleDimensions(
+              elementBBox.width,
+              elementBBox.height
+            );
+
+            onUpdateActive(dfn => {
+              dfn.x = Math.round(x - w / 4);
+              dfn.y = Math.round(y - h / 4);
+            });
+          }
+
+          setDragging(true);
+          isDragging.current = true;
+          markForCollapse();
+        } else if (isDragging.current) {
           if (!e.buttons) {
             endMouseMove(e);
             return;
@@ -498,7 +545,7 @@ export function SvgCanvas({
         }
       }
     };
-  }, [onUpdateActive]);
+  }, [onUpdateActive, creatingElement]);
 
   //
   // Handle selection box.
@@ -574,7 +621,7 @@ export function SvgCanvas({
           />
         </rect>
       )}
-      {cursorPosition && <SvgCursorIndicator {...cursorPosition} />}
+      {/* {cursorPosition && <SvgCursorIndicator {...cursorPosition} />} */}
     </svg>
   );
 }

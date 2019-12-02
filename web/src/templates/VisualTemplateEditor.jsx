@@ -35,18 +35,9 @@ const EditorSections = {
 };
 
 function SvgEditor({
-  value,
-  onChange,
-  onDelete,
-  onUpdateActive,
-  screenMetadata,
-  activeElements,
-  setActiveElements,
   subNavMode,
-  setSubNavMode,
-  toggleActiveElement,
-  cursorPosition,
-  isDragging
+  onChange,
+  ...rest
 }) {
   const [globalState, globalActions] = useGlobalState();
 
@@ -60,18 +51,9 @@ function SvgEditor({
         <div key={k} className={k === subNavMode ? "d-block" : "d-none"}>
           <Editor
             isHidden={k !== subNavMode}
-            onUpdateActive={onUpdateActive}
-            onUpdate={onChange}
-            onDelete={onDelete}
-            value={value}
-            activeElements={activeElements}
-            setActiveElements={setActiveElements}
-            screenMetadata={screenMetadata}
             allBitmaps={globalState.bitmaps}
-            setSubNavMode={setSubNavMode}
-            toggleActiveElement={toggleActiveElement}
-            cursorPosition={cursorPosition}
-            isDragging={isDragging}
+            onUpdate={onChange}
+            {...rest}
           />
         </div>
       ))}
@@ -116,6 +98,7 @@ export function VisualTemplateEditor({
   const [activeEditElements, setActiveEditElements] = useState([]);
   const [cursorPosition, setCursorPosition] = useState(null);
   const [isDragging, setDragging] = useState(false);
+  const [creatingElement, setCreatingElement] = useState(null);
 
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
@@ -325,6 +308,8 @@ export function VisualTemplateEditor({
                 cursorPosition={cursorPosition}
                 setCursorPosition={setCursorPosition}
                 setDragging={setDragging}
+                creatingElement={creatingElement}
+                setCreatingElement={setCreatingElement}
               />
             </Col>
 
@@ -342,6 +327,8 @@ export function VisualTemplateEditor({
                 toggleActiveElement={toggleActive}
                 cursorPosition={cursorPosition}
                 isDragging={isDragging}
+                creatingElement={creatingElement}
+                setCreatingElement={setCreatingElement}
               />
             </Col>
           </Row>

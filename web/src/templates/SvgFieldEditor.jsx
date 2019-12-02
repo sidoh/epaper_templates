@@ -13,7 +13,7 @@ import "./SvgFieldEditor.scss";
 import Nav from "react-bootstrap/Nav";
 import BootstrapForm from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
-import { faSave, faCode } from "@fortawesome/free-solid-svg-icons";
+import { faSave, faCode, faCheck } from "@fortawesome/free-solid-svg-icons";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import Button from "react-bootstrap/Button";
 
@@ -46,7 +46,10 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setEditValue(JSON.stringify(value, null, 2));
+    const fieldData = Object.fromEntries(
+      Object.entries(value).filter(([k]) => !k.startsWith("__"))
+    );
+    setEditValue(JSON.stringify(fieldData, null, 2));
   }, [value]);
 
   const _onSave = useCallback(
@@ -54,6 +57,7 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
       try {
         onChange(JSON.parse(editValue));
         setError(null);
+        setEditMode("visual");
       } catch (e) {
         setError("Error parsing JSON: " + e.message);
       }
@@ -87,8 +91,8 @@ const RawEditor = ({ value, onChange, setEditMode }) => {
 
       <div className="button-list d-flex mt-2">
         <Button variant="success" size="sm" onClick={_onSave}>
-          <MemoizedFontAwesomeIcon icon={faSave} className="fa-fw mr-1" />
-          Save
+          <MemoizedFontAwesomeIcon icon={faCheck} className="fa-fw mr-1" />
+          Apply
         </Button>
         <Button variant="primary" size="sm" onClick={formatValue}>
           <MemoizedFontAwesomeIcon icon={faCode} className="fa-fw mr-1" />
@@ -148,53 +152,63 @@ export function SvgFieldEditor({
   const hasFields = Object.keys(schema.properties || {}).length > 0;
 
   const formValues = useMemo(() => {
-    const selectedValues = activeElements.map(x => drillExtract(value, x));
-    const fieldData = Object.fromEntries(
-      Object.entries(deepClearNonMatching(selectedValues) || {}).filter(
-        ([k]) => !k.startsWith("__")
-      )
+    const selectedValues = deepClearNonMatching(
+      activeElements.map(x => drillExtract(value, x)) || {}
     );
 
-    return fieldData;
+    return selectedValues || {};
   }, [schema, value]);
+
+  const isCreating = !!formValues["__creating"];
 
   return (
     <>
-      {activeElements.length == 0 && <i>Nothing selected.</i>}
-      {activeElements.length > 0 && !hasFields && (
-        <i>Selected elements have no fields in common.</i>
-      )}
-      {activeElements.length > 0 && hasFields && (
+      {isCreating ? (
+        <Alert variant="secondary" className="new-element">
+          <h5>Creating new element</h5>
+          <p>
+            <i>Select position on canvas to continue.</i>
+          </p>
+        </Alert>
+      ) : (
         <>
-          <Nav
-            activeKey={editMode}
-            onSelect={setEditMode}
-            variant="pills"
-            className="template-topnav"
-          >
-            <Nav.Item>
-              <Nav.Link eventKey="visual">Visual</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="json">JSON</Nav.Link>
-            </Nav.Item>
-          </Nav>
+          {activeElements.length == 0 && <i>Nothing selected.</i>}
+          {activeElements.length > 0 && !hasFields && (
+            <i>Selected elements have no fields in common.</i>
+          )}
+          {activeElements.length > 0 && hasFields && (
+            <>
+              <Nav
+                activeKey={editMode}
+                onSelect={setEditMode}
+                variant="pills"
+                className="template-topnav"
+              >
+                <Nav.Item>
+                  <Nav.Link eventKey="visual">Visual</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="json">JSON</Nav.Link>
+                </Nav.Item>
+              </Nav>
 
-          {Object.entries(EditorModes).map(([key, Editor]) => {
-            const isHidden = key !== editMode;
+              {Object.entries(EditorModes).map(([key, Editor]) => {
+                const isHidden = key !== editMode;
 
-            return (
-              <div key={key} className={isHidden ? "d-none" : "d-block"}>
-                <Editor
-                  isHidden={isHidden}
-                  value={formValues}
-                  onChange={onChange}
-                  schema={schema}
-                  setEditMode={setEditMode}
-                />
-              </div>
-            );
-          })}
+                return (
+                  <div key={key} className={isHidden ? "d-none" : "d-block"}>
+                    <Editor
+                      isHidden={isHidden}
+                      value={formValues}
+                      onChange={onChange}
+                      schema={schema}
+                      setEditMode={setEditMode}
+                    />
+                  </div>
+                );
+              })}
+            </>
+          )}
         </>
       )}
     </>
