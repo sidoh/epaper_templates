@@ -12,7 +12,7 @@ import Row from "react-bootstrap/Row";
 import { useDebounce } from "react-use";
 import useGlobalState from "../state/global_state";
 import api from "../util/api";
-import { drillUpdate } from "../util/mungers";
+import { drillUpdate, drillFilter } from "../util/mungers";
 import SiteLoader from "../util/SiteLoader";
 import { FormatterEditor } from "./FormatterEditor";
 import { LocationEditor } from "./LocationEditor";
@@ -21,6 +21,7 @@ import { SelectionEditor } from "./SelectionEditor";
 import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
 import "./VisualTemplateEditor.scss";
+import deepmerge from "deepmerge";
 
 const isHiddenEqual = (n, p) => {
   // console.log(n === p,n.isDragging , p.isDragging);
@@ -34,11 +35,7 @@ const EditorSections = {
   formatters: React.memo(FormatterEditor, isHiddenEqual)
 };
 
-function SvgEditor({
-  subNavMode,
-  onChange,
-  ...rest
-}) {
+function SvgEditor({ subNavMode, onChange, ...rest }) {
   const [globalState, globalActions] = useGlobalState();
 
   useEffect(() => {
@@ -108,11 +105,11 @@ export function VisualTemplateEditor({
 
   const onUpdateActive = useCallback(
     (updateFn, meta = {}) => {
-      const wrappedFn = (x) => {
+      const wrappedFn = x => {
         if (typeof x === "object") {
           updateFn(x);
         }
-      }
+      };
 
       const updated = produce(currentValue.current, draft => {
         currentActiveElements.current.forEach(path =>
@@ -279,10 +276,74 @@ export function VisualTemplateEditor({
         }
       }
     };
+
+    const copyHandler = e => {
+      e.preventDefault();
+      const data = drillFilter(
+        currentValue.current,
+        currentActiveElements.current
+      );
+      e.clipboardData.setData("text/json", JSON.stringify(data, null, 2));
+    };
+
+    const pasteHandler = e => {
+      e.preventDefault();
+      const extractBound = (
+        data,
+        keys,
+        fn,
+      ) => {
+        const paths = keys.map(x => [x]);
+        const b = Object.values(data)
+          .flat()
+          .map(x => drillFilter(x, paths))
+          .flatMap(x => Object.values(x))
+          .filter(x => x !== undefined);
+        return b.reduce((a, x) => fn(a, x));
+      };
+
+      try {
+        const data = JSON.parse(e.clipboardData.getData("text/json"));
+        const paths = Object.keys(data).flatMap(type => {
+          return [...Array(data[type].length).keys()].map(i => [type, i])
+        });
+
+        const xBound = extractBound(data, ["x1", "x2", "x"], Math.min);
+        const yBound = extractBound(data, ["y1", "y2", "y"], Math.min);
+
+        const updated = produce(data, draft => {
+          paths.forEach(path => {
+            drillUpdate(draft, path, x => {
+              ["x1", "x2", "x", "y1", "y2", "y"].forEach(d => {
+                if (x[d] !== undefined) {
+                  x[d] += 20;
+                }
+              })
+            })
+          })
+        })
+
+        const newValue = deepmerge(currentValue.current, updated);
+        const newPaths = Object.keys(data).flatMap(type => {
+          return [...Array(data[type].length).keys()].map(i => [type, currentValue.current[type].length+i])
+        });
+
+        console.log(updated)
+        onChange(newValue);
+        setActiveEditElements(newPaths)
+      } catch (e) {
+        console.warn("Couldn't parse clipboard text", e);
+      }
+    };
+
     document.addEventListener("keydown", shortcutsHandler);
+    document.addEventListener("copy", copyHandler);
+    document.addEventListener("paste", pasteHandler);
 
     return () => {
       document.removeEventListener("keydown", shortcutsHandler);
+      document.removeEventListener("copy", copyHandler);
+      document.removeEventListener("paste", pasteHandler);
     };
   }, []);
 

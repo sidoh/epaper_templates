@@ -18,6 +18,8 @@ export const VariableAutocompleteField = ({ onChange, schema, idSchema, formData
     }
   }, [onChange])
 
+  const selected = formData ? [formData] : [];
+
   return (
     <Form.Group>
       <Form.Label>{schema.title}</Form.Label>
@@ -25,7 +27,7 @@ export const VariableAutocompleteField = ({ onChange, schema, idSchema, formData
       id={idSchema.$id}
         onChange={_onChange}
         options={Object.keys(globalState.variables)}
-        selected={[formData]}
+        selected={selected}
         allowNew={true}
         />
     </Form.Group>

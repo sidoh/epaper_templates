@@ -8,6 +8,8 @@
       cursor: crosshair !important;
     }
 
+    cursor: crosshair;
+
     .cursor-position {
       fill: none;
       cursor: none;
@@ -17,7 +19,7 @@
 
     image, text, line, rect {
       stroke-width: 1px;
-      cursor: pointer;
+      cursor: cell;
       user-select: none;
 
       &.active {

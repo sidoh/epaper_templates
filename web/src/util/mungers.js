@@ -1,3 +1,5 @@
+const deepmerge = require('deepmerge');
+
 export function drillMerge(object, path, newValue) {
   return drillModify(object, path, obj => ({ ...obj, ...newValue }));
 }
@@ -35,6 +37,26 @@ export function drillUpdate(object, path, fn) {
 
 export function drillExtract(object, path) {
   return path.reduce((a, x) => a[x], object);
+}
+
+function _drillFilter(object, path) {
+  if (path.length === 0) {
+    return object;
+  } else {
+    const [key, ...rest] = path;
+    const result = _drillFilter(object[key], rest);
+
+    if (Array.isArray(object)) {
+      return [result]
+    } else {
+      return {[key]: result};
+    }
+  }
+}
+
+export function drillFilter(object, paths) {
+  const filtered = paths.map(x => _drillFilter(object, x))
+  return deepmerge.all(filtered);
 }
 
 export function deepClearFields(object, options = {}) {
