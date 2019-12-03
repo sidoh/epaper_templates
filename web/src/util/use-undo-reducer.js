@@ -8,6 +8,12 @@ export const MARK_FOR_COLLAPSE = "mark_for_collapse";
 export const COLLAPSE = "collapse";
 export const CLEAR_HISTORY = "clear_history";
 
+const CollapseState = Object.freeze({
+  not_collapsing: 0 ,
+  start_collapse: 1,
+  collapsing: 2
+});
+
 function mapReducer(reducer = x => x) {
   return function(state, action) {
     const { map } = state;
@@ -132,23 +138,18 @@ export function useUndoableReducer(reducer, initialPresent) {
 function undoable(reducer) {
   // Return a reducer that handles undo and redo
   return function(state, action) {
-    const { history, currentIndex, isCollapsing } = state;
+    const { history, currentIndex, collapseState } = state;
 
     switch (action.type) {
       case MARK_FOR_COLLAPSE:
         return {
           ...state,
-          isCollapsing: true,
-          currentIndex: currentIndex + 1,
-          history: [
-            ...history.slice(0, currentIndex + 1),
-            history[currentIndex]
-          ]
+          collapseState: CollapseState.start_collapse,
         };
       case COLLAPSE:
         return {
           ...state,
-          isCollapsing: false
+          collapseState: CollapseState.not_collapsing
         };
       case UNDO:
         if (currentIndex == 0) {
@@ -185,12 +186,20 @@ function undoable(reducer) {
           return state;
         }
 
-        if (skipHistory || isCollapsing) {
-          const newHistory = history.slice();
-          newHistory[currentIndex] = newPresent;
+        if (skipHistory || collapseState !== CollapseState.not_collapsing) {
+          const newHistory = history.slice(0, currentIndex+1);
+
+          if (skipHistory || collapseState === CollapseState.collapsing) {
+            newHistory[currentIndex] = newPresent;
+          } else {
+            newHistory.push(newPresent);
+          }
+
           return {
             ...state,
-            history: newHistory
+            history: newHistory,
+            currentIndex: newHistory.length-1,
+            collapseState: CollapseState.collapsing
           };
         } else {
           const newIndex = currentIndex + 1;

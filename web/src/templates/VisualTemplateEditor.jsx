@@ -58,7 +58,7 @@ function SvgEditor({ subNavMode, onChange, ...rest }) {
   );
 }
 
-function sliceVariableRequest(variables, maxSize = 512) {
+function sliceVariableRequest(variables, maxSize = 256) {
   const requests = [];
   let currentRequest = [];
 

@@ -91,7 +91,7 @@ function SectionListItem({ id, type, value, onClick, onDelete, onToggleSelect })
       <a
         href="#"
         onClick={_onClick}
-        className="text-dark mr-auto d-block w-100"
+        className="text-dark mr-auto d-block w-100 h-100"
       >
         {titleGenerator(value)}
       </a>

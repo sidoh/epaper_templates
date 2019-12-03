@@ -18,13 +18,14 @@ import produce from "immer";
 import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 import { useUndoableMap } from "../util/use-undo-reducer";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import useGlobalState from "../state/global_state";
 
 const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (! isHidden) {
+    if (!isHidden) {
       setSubNav([]);
     }
   }, [isHidden]);
@@ -160,6 +161,7 @@ export default ({ path, template, triggerReload }) => {
     { set: setJson, clearHistory, undo, redo, markForCollapse, collapse }
   ] = useUndoableMap();
   const [name, setName] = useState(null);
+  const [globalState, globalActions] = useGlobalState();
   const isNew = path === "new";
   const history = useHistory();
 
@@ -209,11 +211,16 @@ export default ({ path, template, triggerReload }) => {
       const file = new Blob([JSON.stringify(updated)], { type: "text/json" });
 
       data.append("file", file, filename);
-      api.post("/templates", data).then(() => {
-        triggerReload();
-        history.push(`/templates/${filename}`);
-        setJson(updated);
-      });
+      api.post("/templates", data).then(
+        () => {
+          triggerReload();
+          history.push(`/templates/${filename}`);
+          setJson(updated);
+        },
+        e => {
+          globalActions.addError("Error saving: " + e);
+        }
+      );
     },
     [triggerReload, path, name, json]
   );
@@ -240,79 +247,88 @@ export default ({ path, template, triggerReload }) => {
   );
 
   return (
-    <Form onSubmit={onSubmit}>
-      {(json == null || name == null) && <SiteLoader />}
-      {json != null && name != null && (
-        <>
-          {isNew && (
+    <>
+      {globalState.errors.map((msg, i) => {
+        return <Alert variant="danger" onClose={() => globalActions.dismissError(i)} dismissible>{msg}</Alert>;
+      })}
+      <Form onSubmit={onSubmit}>
+        {(json == null || name == null) && <SiteLoader />}
+        {json != null && name != null && (
+          <>
+            {isNew && (
+              <Form.Group>
+                <Form.Label>Name</Form.Label>
+                <Form.Control
+                  name="name"
+                  value={name}
+                  onChange={onChangeName}
+                />
+              </Form.Group>
+            )}
+
             <Form.Group>
-              <Form.Label>Name</Form.Label>
-              <Form.Control name="name" value={name} onChange={onChangeName} />
-            </Form.Group>
-          )}
-
-          <Form.Group>
-            <Container>
-              <Row>
-                <Col md={8} lg={1} className="px-lg-0 py-lg-0 pb-4">
-                  <div className="button-sidebar d-flex flex-lg-column flex-row">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="sm"
-                      className="w-100"
-                    >
-                      <MemoizedFontAwesomeIcon
-                        className="fa-fw mr-1"
+              <Container>
+                <Row>
+                  <Col md={8} lg={1} className="px-lg-0 py-lg-0 pb-4">
+                    <div className="button-sidebar d-flex flex-lg-column flex-row">
+                      <Button
+                        type="submit"
+                        variant="primary"
                         size="sm"
-                        icon={faSave}
-                      />
-                      <span>Save</span>
-                    </Button>
-
-                    <div className="gutter" />
-
-                    {!isNew && (
-                      <>
-                        <Button
-                          variant="secondary"
-                          onClick={onActivate}
+                        className="w-100"
+                      >
+                        <MemoizedFontAwesomeIcon
+                          className="fa-fw mr-1"
                           size="sm"
-                        >
-                          <MemoizedFontAwesomeIcon
-                            className="fa-fw mr-1"
-                            size="sm"
-                            icon={faTv}
-                          />
-                          <span>Activate</span>
-                        </Button>
+                          icon={faSave}
+                        />
+                        <span>Save</span>
+                      </Button>
 
-                        <div className="spacer"></div>
+                      <div className="gutter" />
 
-                        <Button variant="danger" onClick={onDelete} size="sm">
-                          <MemoizedFontAwesomeIcon
-                            className="fa-fw mr-1"
+                      {!isNew && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            onClick={onActivate}
                             size="sm"
-                            icon={faTrash}
-                          />
-                          <span>Delete</span>
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </Col>
-                <Col sm={12} md={11}>
-                  <SwitchableJsonEditor
-                    value={json}
-                    onChange={setJson}
-                    {...{ undo, redo, collapse, markForCollapse }}
-                  />
-                </Col>
-              </Row>
-            </Container>
-          </Form.Group>
-        </>
-      )}
-    </Form>
+                          >
+                            <MemoizedFontAwesomeIcon
+                              className="fa-fw mr-1"
+                              size="sm"
+                              icon={faTv}
+                            />
+                            <span>Activate</span>
+                          </Button>
+
+                          <div className="spacer"></div>
+
+                          <Button variant="danger" onClick={onDelete} size="sm">
+                            <MemoizedFontAwesomeIcon
+                              className="fa-fw mr-1"
+                              size="sm"
+                              icon={faTrash}
+                            />
+                            <span>Delete</span>
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </Col>
+                  <Col sm={12} md={11}>
+                    <SwitchableJsonEditor
+                      value={json}
+                      onChange={setJson}
+                      {...{ undo, redo, collapse, markForCollapse }}
+                    />
+                  </Col>
+                </Row>
+              </Container>
+            </Form.Group>
+          </>
+        )}
+      </Form>
+    </>
   );
 };

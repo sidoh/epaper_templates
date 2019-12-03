@@ -10,7 +10,8 @@ const initialState = {
   settings: {},
   screenMetadata: {},
   bitmaps: {},
-  cachedBitmaps: {}
+  cachedBitmaps: {},
+  errors: []
 };
 
 function createLoadFunction(apiPath, stateVariable, fn = x => x) {
@@ -38,6 +39,18 @@ const actions = {
   loadBitmaps: createLoadFunction("/bitmaps", "bitmaps", x =>
     groupBy(x, v => v.name, { groupReducer: lastValueGroupReducer })
   ),
+  addError: (store, error) => {
+    const updated = produce(store.state, draft => {
+      draft.errors.push(error);
+    });
+    store.setState(updated);
+  },
+  dismissError: (store, index) => {
+    const updated = produce(store.state, draft => {
+      draft.errors.splice(index, 1);
+    });
+    store.setState(updated);
+  },
 
   loadBitmap: (store, filename) => {
     const file = filename.split("/").slice(-1)[0];
