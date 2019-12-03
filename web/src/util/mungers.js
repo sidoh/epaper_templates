@@ -36,7 +36,7 @@ export function drillUpdate(object, path, fn) {
 }
 
 export function drillExtract(object, path) {
-  return path.reduce((a, x) => a[x], object);
+  return path.reduce((a, x) => a[x] || {}, object);
 }
 
 function _drillFilter(object, path) {
