@@ -30,7 +30,6 @@ const VisualEditor = ({ schema, value, onChange }) => {
   );
 
   const uiSchema = useMemo(() => {
-    console.log(globalState.variables)
     return {
       value: {
         variable: {

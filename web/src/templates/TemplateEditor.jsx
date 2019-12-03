@@ -5,7 +5,7 @@ import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import SiteLoader from "../util/SiteLoader";
 import { faSave, faTv, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useHistory } from "react-router-dom";
+import { Prompt, useHistory } from "react-router-dom";
 
 import "./TemplateEditor.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,6 +19,7 @@ import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 import { useUndoableMap } from "../util/use-undo-reducer";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import useGlobalState from "../state/global_state";
+import { useLocation } from "react-use";
 
 const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -158,17 +159,19 @@ export default ({ path, template, triggerReload }) => {
   // const [json, setJson] = useState(null);
   const [
     json,
-    { set: setJson, clearHistory, undo, redo, markForCollapse, collapse }
+    { set: setJson, clearHistory, undo, redo, markForCollapse, markSaved, isSaved, collapse }
   ] = useUndoableMap();
   const [name, setName] = useState(null);
   const [globalState, globalActions] = useGlobalState();
   const isNew = path === "new";
   const history = useHistory();
+  const location = useLocation();
 
   useEffect(() => {
     if (template) {
       setJson(template);
       clearHistory();
+      markSaved();
     }
   }, [template]);
 
@@ -214,8 +217,13 @@ export default ({ path, template, triggerReload }) => {
       api.post("/templates", data).then(
         () => {
           triggerReload();
-          history.push(`/templates/${filename}`);
+
+          if (! location.pathname.endsWith(filename)) {
+            history.push(`/templates/${filename}`);
+          }
+
           setJson(updated);
+          markSaved();
         },
         e => {
           globalActions.addError("Error saving: " + e);
@@ -251,6 +259,7 @@ export default ({ path, template, triggerReload }) => {
       {globalState.errors.map((msg, i) => {
         return <Alert variant="danger" onClose={() => globalActions.dismissError(i)} dismissible>{msg}</Alert>;
       })}
+      <Prompt when={!isSaved} message={"You have unsaved changes.  Are you sure you want to leave this page?"} />
       <Form onSubmit={onSubmit}>
         {(json == null || name == null) && <SiteLoader />}
         {json != null && name != null && (

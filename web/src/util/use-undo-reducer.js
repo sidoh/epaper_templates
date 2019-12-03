@@ -7,6 +7,7 @@ export const SET = "set";
 export const MARK_FOR_COLLAPSE = "mark_for_collapse";
 export const COLLAPSE = "collapse";
 export const CLEAR_HISTORY = "clear_history";
+export const MARK_SAVED = "mark_saved";
 
 const CollapseState = Object.freeze({
   not_collapsing: 0 ,
@@ -97,12 +98,13 @@ export function useUndoableReducer(reducer, initialPresent) {
   const initialState = {
     history: [initialPresent],
     currentIndex: 0,
-    isCollapsing: false
+    collapseState: CollapseState.not_collapsing,
+    saved: true
   };
 
   const [state, dispatch] = useReducer(undoable(reducer), initialState);
 
-  const { history, currentIndex } = state;
+  const { saved, history, currentIndex } = state;
 
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;
@@ -119,6 +121,7 @@ export function useUndoableReducer(reducer, initialPresent) {
   );
   const collapse = useCallback(() => dispatch({ type: COLLAPSE }), []);
   const clearHistory = useCallback(() => dispatch({ type: CLEAR_HISTORY }), []);
+  const markSaved = useCallback(() => dispatch({ type: MARK_SAVED }), []);
 
   return {
     state: history[currentIndex],
@@ -129,9 +132,11 @@ export function useUndoableReducer(reducer, initialPresent) {
     undo,
     redo,
     set,
+    isSaved: saved,
     markForCollapse,
     collapse,
-    clearHistory
+    clearHistory,
+    markSaved
   };
 }
 
@@ -144,6 +149,7 @@ function undoable(reducer) {
       case MARK_FOR_COLLAPSE:
         return {
           ...state,
+          saved: false,
           collapseState: CollapseState.start_collapse,
         };
       case COLLAPSE:
@@ -158,6 +164,7 @@ function undoable(reducer) {
 
         return {
           ...state,
+          saved: false,
           currentIndex: currentIndex - 1
         };
       case REDO:
@@ -167,6 +174,7 @@ function undoable(reducer) {
 
         return {
           ...state,
+          saved: false,
           currentIndex: currentIndex + 1
         };
       case CLEAR_HISTORY:
@@ -174,6 +182,11 @@ function undoable(reducer) {
           ...state,
           history: [history[currentIndex]],
           currentIndex: 0
+        };
+      case MARK_SAVED:
+        return {
+          ...state,
+          saved: true
         };
       default:
         // Delegate handling the action to the passed reducer
@@ -207,6 +220,7 @@ function undoable(reducer) {
 
           return {
             ...state,
+            saved: false,
             history: [...newHistory, newPresent],
             currentIndex: newIndex
           };

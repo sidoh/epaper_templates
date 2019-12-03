@@ -24,7 +24,6 @@ import "./VisualTemplateEditor.scss";
 import deepmerge from "deepmerge";
 
 const isHiddenEqual = (n, p) => {
-  // console.log(n === p,n.isDragging , p.isDragging);
   return n === p || (n.isDragging && p.isDragging);
 };
 
