@@ -209,8 +209,17 @@ const Definitions = {
     required: ["type"],
     properties: {
       type: {
+        title: "Type",
         type: "string",
-        enum: ["ref", "identity", "time", "round", "cases", "ratio"]
+        enum: ["ref", "identity", "time", "round", "cases", "ratio"],
+        enumNames: [
+          "Pre-Defined Formatter",
+          "Identity (No-Op)",
+          "Time (strftime)",
+          "Round",
+          "Cases",
+          "Ratio"
+        ]
       },
       args: {
         type: "object",
@@ -273,7 +282,7 @@ const Definitions = {
                 type: "object",
                 properties: {
                   format: {
-                    title: "strtimef format",
+                    title: "Format String (strftime)",
                     type: "string"
                   }
                 }
