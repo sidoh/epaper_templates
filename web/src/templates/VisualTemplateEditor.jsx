@@ -278,6 +278,12 @@ export function VisualTemplateEditor({
     };
 
     const copyHandler = e => {
+      // Skip if the target is an input field
+      const tagName = e.target.tagName.toLowerCase();
+      if (tagName === "input" || tagName === "textarea") {
+        return;
+      }
+
       e.preventDefault();
       const data = drillFilter(
         currentValue.current,
@@ -287,12 +293,15 @@ export function VisualTemplateEditor({
     };
 
     const pasteHandler = e => {
+      // Skip if the target is an input field
+      const tagName = e.target.tagName.toLowerCase();
+      if (tagName === "input" || tagName === "textarea") {
+        return;
+      }
+
       e.preventDefault();
-      const extractBound = (
-        data,
-        keys,
-        fn,
-      ) => {
+
+      const extractBound = (data, keys, fn) => {
         const paths = keys.map(x => [x]);
         const b = Object.values(data)
           .flat()
@@ -305,7 +314,7 @@ export function VisualTemplateEditor({
       try {
         const data = JSON.parse(e.clipboardData.getData("text/json"));
         const paths = Object.keys(data).flatMap(type => {
-          return [...Array(data[type].length).keys()].map(i => [type, i])
+          return [...Array(data[type].length).keys()].map(i => [type, i]);
         });
 
         const xBound = extractBound(data, ["x1", "x2", "x"], Math.min);
@@ -318,22 +327,25 @@ export function VisualTemplateEditor({
                 if (x[d] !== undefined) {
                   x[d] += 20;
                 }
-              })
-            })
-          })
-        })
+              });
+            });
+          });
+        });
 
         const newValue = deepmerge(currentValue.current, updated);
 
         // Compute paths after merging into existing template
         const newPaths = Object.keys(data).flatMap(type => {
-          return [...Array(data[type].length).keys()].map(i => [type, (currentValue.current[type]||[]).length+i])
+          return [...Array(data[type].length).keys()].map(i => [
+            type,
+            (currentValue.current[type] || []).length + i
+          ]);
         });
 
         onChange(newValue);
-        setActiveEditElements(newPaths)
-      } catch (e) {
-        console.warn("Couldn't parse clipboard text", e);
+        setActiveEditElements(newPaths);
+      } catch (error) {
+        console.warn("Couldn't parse clipboard text", error);
       }
     };
 
