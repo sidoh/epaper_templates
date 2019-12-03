@@ -244,7 +244,15 @@ export function VisualTemplateEditor({
   _currentOnDelete.current = onDelete;
 
   useEffect(() => {
+    const shouldSkip = (e) => {
+      // Skip if the target is an input field
+      const tagName = e.target.tagName.toLowerCase();
+      return (tagName === "input" || tagName === "textarea")
+    }
+
     const shortcutsHandler = e => {
+      if (shouldSkip(e)) { return }
+
       var keyCode = e.keyCode;
 
       if (e.metaKey === true || e.ctrlKey === true) {
@@ -278,11 +286,7 @@ export function VisualTemplateEditor({
     };
 
     const copyHandler = e => {
-      // Skip if the target is an input field
-      const tagName = e.target.tagName.toLowerCase();
-      if (tagName === "input" || tagName === "textarea") {
-        return;
-      }
+      if (shouldSkip(e)) { return }
 
       e.preventDefault();
       const data = drillFilter(
@@ -293,11 +297,7 @@ export function VisualTemplateEditor({
     };
 
     const pasteHandler = e => {
-      // Skip if the target is an input field
-      const tagName = e.target.tagName.toLowerCase();
-      if (tagName === "input" || tagName === "textarea") {
-        return;
-      }
+      if (shouldSkip(e)) { return }
 
       e.preventDefault();
 
