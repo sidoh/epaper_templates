@@ -1,5 +1,6 @@
 import React from "react";
 import globalHook from "use-global-hook";
+import { fromByteArray, toByteArray } from "base64-js";
 import api from "../util/api";
 import produce from "immer";
 import simpleHash from "../util/hash";
@@ -64,7 +65,7 @@ const actions = {
         bitmaps[filename].metadata &&
         bitmaps[filename].metadata.hash === cachedFile.hash
       ) {
-        return Promise.resolve(cachedFile.data);
+        return Promise.resolve(toByteArray(cachedFile.data));
       } else {
         return api
           .get(`/bitmaps/${file}`, { responseType: "arraybuffer" })
@@ -74,7 +75,7 @@ const actions = {
             const newState = produce(store.state, draft => {
               if (!store.state.cachedBitmaps[filename]) {
                 draft.cachedBitmaps[filename] = {
-                  data: x.data,
+                  data: fromByteArray(x.data),
                   hash
                 };
               } else {
@@ -84,6 +85,10 @@ const actions = {
                 });
               }
             });
+            localStorage.setItem(
+              "bitmap_cache",
+              JSON.stringify(newState.cachedBitmaps)
+            );
             store.setState(newState);
 
             return x.data;
@@ -103,7 +108,19 @@ const actions = {
   }
 };
 
-const useGlobalState = globalHook(React, initialState, actions);
+const loadInitialState = () => {
+  try {
+    return {
+      ...initialState,
+      cachedBitmaps: JSON.parse(localStorage.getItem("bitmap_cache")) || {}
+    };
+  } catch (error) {
+    console.warn("Error loading cached state from localStorage", error);
+    return initialState;
+  }
+};
+
+const useGlobalState = globalHook(React, loadInitialState(), actions);
 
 export { useGlobalState };
 export default useGlobalState;
