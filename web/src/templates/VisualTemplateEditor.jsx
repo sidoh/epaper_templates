@@ -324,11 +324,12 @@ export function VisualTemplateEditor({
         })
 
         const newValue = deepmerge(currentValue.current, updated);
+
+        // Compute paths after merging into existing template
         const newPaths = Object.keys(data).flatMap(type => {
-          return [...Array(data[type].length).keys()].map(i => [type, currentValue.current[type].length+i])
+          return [...Array(data[type].length).keys()].map(i => [type, (currentValue.current[type]||[]).length+i])
         });
 
-        console.log(updated)
         onChange(newValue);
         setActiveEditElements(newPaths)
       } catch (e) {
