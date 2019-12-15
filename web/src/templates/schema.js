@@ -4,45 +4,48 @@ export const MarkedForDeletion = "__deleted";
 
 const FontDefinitions = {
   FreeMonoBold24pt7b: {
-    title: "Free Mono Bold",
+    title: "FreeMono Bold",
     style: {
       fontSize: 24,
-      fontWeight: "bold",
-      fontFamily: "monospace"
+      fontFamily: "'FreeMono Bold', monospace"
     }
   },
   FreeSans18pt7b: {
     title: "Free Sans",
     style: {
       fontSize: 18,
-      fontFamily: "sans-serif"
+      fontWeight: 100,
+      fontFamily: "FreeSans, sans-serif"
     }
   },
   FreeSans9pt7b: {
     title: "Free Sans",
     style: {
-      fontSize: 9
+      fontSize: 9,
+      fontWeight: 100,
+      fontFamily: "FreeSans, sans-serif"
     }
   },
   FreeSansBold9pt7b: {
     title: "Free Sans Bold",
     style: {
       fontWeight: "bold",
-      fontSize: 9
+      fontSize: 9,
+      fontFamily: '"FreeSans Bold", sans-serif'
     }
   },
   FreeMono9pt7b: {
     title: "Free Mono",
     style: {
       fontSize: 9,
-      fontFamily: "monospace"
+      fontFamily: "FreeMono, monospace"
     }
   }
 };
 
-export const getFontDefinition = (font) => {
+export const getFontDefinition = font => {
   return FontDefinitions[font] || FontDefinitions.FreeMono9pt7b;
-}
+};
 
 const LineFields = {
   type: "object",
@@ -141,12 +144,12 @@ const Definitions = {
   fillStyle: {
     title: "Style",
     type: "string",
-    enum: ["outline", "filled"],
+    enum: ["outline", "filled"]
   },
   color: {
     title: "Color",
     type: "string",
-    enum: ["black", "white"],
+    enum: ["black", "white"]
   },
   storedBitmap: {
     type: "string"
@@ -380,7 +383,7 @@ const ScreenSettings = {
       enumNames: ["0°", "90°", "180°", "270°"]
     }
   }
-}
+};
 
 export const Schema = {
   $id: "https://sidoh.org/epaper-templates/template.schema.json",
@@ -464,6 +467,7 @@ export default function createSchema({
         enum: allBitmaps
       },
       storedFormatter: {
+        title: "Formatter",
         type: "string",
         enum: allFormatters
       }

@@ -71,7 +71,7 @@ const SvgText = React.memo(
       return {
         fill: color,
         ...fontStyle,
-        fontSize: `${fontStyle.fontSize * (definition.font_size || 1)}pt`
+        fontSize: `calc(${fontStyle.fontSize}pt * ${definition.font_size || 1} * 1.4)`
       };
     }, [definition, isActive]);
 
@@ -587,6 +587,11 @@ export function SvgCanvas({
         cursorPosition ? "cursor" : ""
       ].join(" ")}
     >
+      <defs>
+        <style type="text/css" dangerouslySetInnerHTML={{__html: `
+          @import url("https://sidoh.github.io/freefont_web/fonts/stylesheet.css");
+        `}} />
+      </defs>
       {Object.keys(FieldTypeDefinitions)
         .flatMap(type =>
           (definition[type] || []).map((x, i) => {

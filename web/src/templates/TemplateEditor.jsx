@@ -159,7 +159,16 @@ export default ({ path, template, triggerReload }) => {
   // const [json, setJson] = useState(null);
   const [
     json,
-    { set: setJson, clearHistory, undo, redo, markForCollapse, markSaved, isSaved, collapse }
+    {
+      set: setJson,
+      clearHistory,
+      undo,
+      redo,
+      markForCollapse,
+      markSaved,
+      isSaved,
+      collapse
+    }
   ] = useUndoableMap();
   const [name, setName] = useState(null);
   const [globalState, globalActions] = useGlobalState();
@@ -205,6 +214,11 @@ export default ({ path, template, triggerReload }) => {
               draft[fieldType] = draft[fieldType].filter(
                 x => x !== MarkedForDeletion
               );
+              draft[fieldType].forEach(x => {
+                Object.keys(x)
+                  .filter(k => k.startsWith("__"))
+                  .forEach(k => delete x[k]);
+              });
             }
           }
         );
@@ -218,7 +232,7 @@ export default ({ path, template, triggerReload }) => {
         () => {
           triggerReload();
 
-          if (! location.pathname.endsWith(filename)) {
+          if (!location.pathname.endsWith(filename)) {
             history.push(`/templates/${filename}`);
           }
 
@@ -257,9 +271,22 @@ export default ({ path, template, triggerReload }) => {
   return (
     <>
       {globalState.errors.map((msg, i) => {
-        return <Alert variant="danger" onClose={() => globalActions.dismissError(i)} dismissible>{msg}</Alert>;
+        return (
+          <Alert
+            variant="danger"
+            onClose={() => globalActions.dismissError(i)}
+            dismissible
+          >
+            {msg}
+          </Alert>
+        );
       })}
-      <Prompt when={!isSaved} message={"You have unsaved changes.  Are you sure you want to leave this page?"} />
+      <Prompt
+        when={!isSaved}
+        message={
+          "You have unsaved changes.  Are you sure you want to leave this page?"
+        }
+      />
       <Form onSubmit={onSubmit}>
         {(json == null || name == null) && <SiteLoader />}
         {json != null && name != null && (
