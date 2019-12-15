@@ -1,6 +1,6 @@
+#include <DisplayTypeHelpers.h>
 #include <EpaperWebServer.h>
 #include <web_assets.h>
-#include <DisplayTypeHelpers.h>
 
 #if defined(ESP8266)
 #include <Updater.h>
@@ -18,105 +18,152 @@ static const char TMP_DIRECTORY[] = "/x";
 
 using namespace std::placeholders;
 
-EpaperWebServer::EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings)
-  : driver(driver),
-    settings(settings),
-    authProvider(settings.web),
-    server(RichHttpServer<RichHttpConfig>(settings.web.port == 0 ? 80 : settings.web.port, authProvider)),
-    port(settings.web.port),
-    changeFn(nullptr)
-{ }
+EpaperWebServer::EpaperWebServer(
+    DisplayTemplateDriver*& driver, Settings& settings)
+    : driver(driver)
+    , settings(settings)
+    , authProvider(settings.web)
+    , server(RichHttpServer<RichHttpConfig>(
+          settings.web.port == 0 ? 80 : settings.web.port, authProvider))
+    , port(settings.web.port)
+    , changeFn(nullptr)
+    , wsServer("/socket") {}
 
-EpaperWebServer::~EpaperWebServer() {
-  server.reset();
-}
+EpaperWebServer::~EpaperWebServer() { server.reset(); }
 
-uint16_t EpaperWebServer::getPort() const {
-  return port;
-}
+uint16_t EpaperWebServer::getPort() const { return port; }
+
+void EpaperWebServer::handleClient() { wsServer.cleanupClients(); }
 
 void EpaperWebServer::begin() {
-  for (auto it = WEB_ASSET_CONTENTS.begin(); it != WEB_ASSET_CONTENTS.end(); ++it) {
+  for (auto it = WEB_ASSET_CONTENTS.begin(); it != WEB_ASSET_CONTENTS.end();
+       ++it) {
     const char* filename = it->first;
     const uint8_t* contents = it->second;
     const size_t length = WEB_ASSET_LENGTHS.at(filename);
     const char* contentType = WEB_ASSET_CONTENT_TYPES.at(filename);
 
-    server
-      .buildHandler(filename)
-      .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeGzip_P, this, contentType, contents, length, _1));
+    server.buildHandler(filename).on(HTTP_GET,
+        std::bind(&EpaperWebServer::handleServeGzip_P,
+            this,
+            contentType,
+            contents,
+            length,
+            _1));
   }
 
-  server
-    .buildHandler("/api/v1/variables")
-    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleServeFile, this, VariableDictionary::FILENAME, APPLICATION_JSON, "", _1));
+  server.buildHandler("/api/v1/variables")
+      .on(HTTP_PUT,
+          std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
+      .on(HTTP_GET,
+          std::bind(&EpaperWebServer::handleServeFile,
+              this,
+              VariableDictionary::FILENAME,
+              APPLICATION_JSON,
+              "",
+              _1));
 
-  server
-    .buildHandler("/api/v1/variables/:variable_name")
-    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
+  server.buildHandler("/api/v1/variables/:variable_name")
+      .on(HTTP_DELETE,
+          std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
 
-  server
-    .buildHandler("/api/v1/formatted_variables")
-    .on(HTTP_POST, std::bind(&EpaperWebServer::handleGetFormattedVariables, this, _1));
+  server.buildHandler("/api/v1/formatted_variables")
+      .on(HTTP_POST,
+          std::bind(&EpaperWebServer::handleGetFormattedVariables, this, _1));
 
-  server
-    .buildHandler("/api/v1/templates")
-    .on(
-      HTTP_POST,
-      std::bind(&EpaperWebServer::handleNoOp, this, _1),
-      std::bind(&EpaperWebServer::handleCreateFile, this, TEMPLATES_DIRECTORY, _1)
-    )
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleListDirectory, this, TEMPLATES_DIRECTORY, _1));
+  server.buildHandler("/api/v1/templates")
+      .on(HTTP_POST,
+          std::bind(&EpaperWebServer::handleNoOp, this, _1),
+          std::bind(&EpaperWebServer::handleCreateFile,
+              this,
+              TEMPLATES_DIRECTORY,
+              _1))
+      .on(HTTP_GET,
+          std::bind(&EpaperWebServer::handleListDirectory,
+              this,
+              TEMPLATES_DIRECTORY,
+              _1));
 
-  server
-    .buildHandler("/api/v1/templates/:filename")
-    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteTemplate, this, _1))
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowTemplate, this, _1))
-    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateTemplate, this, _1));
+  server.buildHandler("/api/v1/templates/:filename")
+      .on(HTTP_DELETE,
+          std::bind(&EpaperWebServer::handleDeleteTemplate, this, _1))
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowTemplate, this, _1))
+      .on(HTTP_PUT,
+          std::bind(&EpaperWebServer::handleUpdateTemplate, this, _1));
 
-  server
-    .buildHandler("/api/v1/bitmaps")
-    .on(
-      HTTP_POST,
-      std::bind(&EpaperWebServer::handleCreateBitmapFinish, this, _1),
-      std::bind(&EpaperWebServer::handleCreateBitmap, this, _1)
-    )
-    .on(
-      HTTP_GET,
-      std::bind(&EpaperWebServer::handleListBitmaps, this, _1)
-    );
+  server.buildHandler("/api/v1/bitmaps")
+      .on(HTTP_POST,
+          std::bind(&EpaperWebServer::handleCreateBitmapFinish, this, _1),
+          std::bind(&EpaperWebServer::handleCreateBitmap, this, _1))
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleListBitmaps, this, _1));
 
-  server
-    .buildHandler("/api/v1/bitmaps/:filename")
-    .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleDeleteBitmap, this, _1))
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowBitmap, this, _1));
+  server.buildHandler("/api/v1/bitmaps/:filename")
+      .on(HTTP_DELETE,
+          std::bind(&EpaperWebServer::handleDeleteBitmap, this, _1))
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleShowBitmap, this, _1));
 
-  server
-    .buildHandler("/api/v1/settings")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSettings, this, _1))
-    .on(HTTP_PUT, std::bind(&EpaperWebServer::handleUpdateSettings, this, _1));
+  server.buildHandler("/api/v1/settings")
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSettings, this, _1))
+      .on(HTTP_PUT,
+          std::bind(&EpaperWebServer::handleUpdateSettings, this, _1));
 
-  server
-    .buildHandler("/api/v1/system")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSystem, this, _1))
-    .on(HTTP_POST, std::bind(&EpaperWebServer::handlePostSystem, this, _1));
+  server.buildHandler("/api/v1/system")
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetSystem, this, _1))
+      .on(HTTP_POST, std::bind(&EpaperWebServer::handlePostSystem, this, _1));
 
-  server
-    .buildHandler("/api/v1/screens")
-    .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetScreens, this, _1));
+  server.buildHandler("/api/v1/screens")
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetScreens, this, _1));
 
-  server
-    .buildHandler("/firmware")
-    .handleOTA();
+  server.buildHandler("/api/v1/resolve_variables")
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleResolveVariables, this, _1));
 
-  server.onNotFound([this](AsyncWebServerRequest *request) {
+  server.buildHandler("/firmware").handleOTA();
+
+  server.onNotFound([this](AsyncWebServerRequest* request) {
     if (request->url() == "/" || request->url().startsWith("/app")) {
-      _handleServeGzip_P(TEXT_HTML, INDEX_HTML_GZ, INDEX_HTML_GZ_LENGTH, request);
+      _handleServeGzip_P(TEXT_HTML,
+          INDEX_HTML_GZ,
+          INDEX_HTML_GZ_LENGTH,
+          request);
     } else {
       request->send(404);
     }
   });
+
+  wsServer.onEvent([this](AsyncWebSocket* server,
+    AsyncWebSocketClient* client,
+    AwsEventType type,
+    void* arg,
+    uint8_t* data,
+    size_t len
+  ) {
+    if (type == WS_EVT_DATA) {
+      AwsFrameInfo* info = (AwsFrameInfo*)arg;
+      if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+        StaticJsonDocument<1024> reqBuffer;
+        auto err = deserializeJson(reqBuffer, reinterpret_cast<const char*>(data), len);
+
+        if (err) {
+          Serial.println(reinterpret_cast<const char*>(data));
+          Serial.println("Error processing websocket message");
+          Serial.println(err.c_str());
+        } else {
+          if (reqBuffer["type"] == "resolve") {
+            JsonArray variables = reqBuffer[F("variables")];
+
+            StaticJsonDocument<256> response;
+            driver->resolveVariables(variables, response.to<JsonArray>());
+            size_t len = measureJson(response);
+
+            AsyncWebSocketMessageBuffer* buffer = server->makeBuffer(len);
+            serializeJson(response, reinterpret_cast<char*>(buffer->get()), len+1);
+            client->text(buffer);
+          }
+        }
+      }
+    }
+  });
+  server.addHandler(&wsServer);
 
   server.clearBuilders();
   server.begin();
@@ -181,33 +228,28 @@ void EpaperWebServer::handleUpdateVariables(RequestContext& request) {
   request.response.json["success"] = true;
 }
 
-void EpaperWebServer::handleServeGzip_P(
-  const char* contentType,
-  const uint8_t* text,
-  size_t length,
-  RequestContext& request
-) {
+void EpaperWebServer::handleServeGzip_P(const char* contentType,
+    const uint8_t* text,
+    size_t length,
+    RequestContext& request) {
   _handleServeGzip_P(contentType, text, length, request.rawRequest);
 }
 
-void EpaperWebServer::_handleServeGzip_P(
-  const char* contentType,
-  const uint8_t* text,
-  size_t length,
-  AsyncWebServerRequest* request
-) {
-  AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, text, length);
+void EpaperWebServer::_handleServeGzip_P(const char* contentType,
+    const uint8_t* text,
+    size_t length,
+    AsyncWebServerRequest* request) {
+  AsyncWebServerResponse* response =
+      request->beginResponse_P(200, contentType, text, length);
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
 
-void EpaperWebServer::handleServeFile(
-  const char* filename,
-  const char* contentType,
-  const char* defaultText,
-  RequestContext& request
-) {
-  if (! serveFile(filename, contentType, request)) {
+void EpaperWebServer::handleServeFile(const char* filename,
+    const char* contentType,
+    const char* defaultText,
+    RequestContext& request) {
+  if (!serveFile(filename, contentType, request)) {
     if (defaultText) {
       request.response.sendRaw(200, contentType, defaultText);
     } else {
@@ -217,7 +259,8 @@ void EpaperWebServer::handleServeFile(
   }
 }
 
-bool EpaperWebServer::serveFile(const char* file, const char* contentType, RequestContext& request) {
+bool EpaperWebServer::serveFile(
+    const char* file, const char* contentType, RequestContext& request) {
   if (SPIFFS.exists(file)) {
     request.rawRequest->send(SPIFFS, file, contentType);
     return true;
@@ -232,19 +275,28 @@ bool EpaperWebServer::serveFile(const char* file, const char* contentType, Reque
 
 void EpaperWebServer::handleCreateBitmapFinish(RequestContext& request) {
   char tmpMetadataFile[32];
-  snprintf_P(tmpMetadataFile, 31, PSTR("%s/%s"), TMP_DIRECTORY, METADATA_FILENAME);
+  snprintf_P(tmpMetadataFile,
+      31,
+      PSTR("%s/%s"),
+      TMP_DIRECTORY,
+      METADATA_FILENAME);
 
   auto param = request.rawRequest->getParam(F("bitmap"), true, true);
 
   if (param == nullptr) {
-    request.response.json[F("error")] = F("file upload named \"bitmap\" not found in request");
+    request.response.json[F("error")] =
+        F("file upload named \"bitmap\" not found in request");
     request.response.setCode(400);
     return;
   }
 
   if (SPIFFS.exists(tmpMetadataFile)) {
     char metadataFile[32];
-    snprintf_P(metadataFile, 31, PSTR("%s/%s"), BITMAP_METADATA_DIRECTORY, param->value().c_str());
+    snprintf_P(metadataFile,
+        31,
+        PSTR("%s/%s"),
+        BITMAP_METADATA_DIRECTORY,
+        param->value().c_str());
 
     Serial.printf_P(PSTR("%s -> %s\n"), tmpMetadataFile, metadataFile);
     SPIFFS.remove(metadataFile);
@@ -255,7 +307,8 @@ void EpaperWebServer::handleCreateBitmapFinish(RequestContext& request) {
     } else {
       SPIFFS.remove(tmpMetadataFile);
 
-      request.response.json[F("error")] = F("failure while persisting image metadata");
+      request.response.json[F("error")] =
+          F("failure while persisting image metadata");
       request.response.setCode(500);
     }
   } else {
@@ -344,7 +397,8 @@ void EpaperWebServer::listDirectory(const char* dirName, JsonArray result) {
 #endif
 }
 
-void EpaperWebServer::handleListDirectory(const char* dirName, RequestContext& request) {
+void EpaperWebServer::handleListDirectory(
+    const char* dirName, RequestContext& request) {
   JsonArray responseObj = request.response.json.to<JsonArray>();
   listDirectory(dirName, responseObj);
 }
@@ -365,7 +419,8 @@ void EpaperWebServer::handleShowTemplate(RequestContext& request) {
   }
 }
 
-void EpaperWebServer::handleDeleteFile(const String& path, RequestContext& request) {
+void EpaperWebServer::handleDeleteFile(
+    const String& path, RequestContext& request) {
   if (SPIFFS.exists(path.c_str())) {
     if (SPIFFS.remove(path.c_str())) {
       request.response.json["success"] = true;
@@ -391,7 +446,8 @@ void EpaperWebServer::handleDeleteTemplate(RequestContext& request) {
   handleDeleteFile(path, request);
 }
 
-void EpaperWebServer::handleCreateFile(const char* filePrefix, RequestContext& request) {
+void EpaperWebServer::handleCreateFile(
+    const char* filePrefix, RequestContext& request) {
   static File updateFile;
 
   if (request.upload.index == 0) {
@@ -405,7 +461,9 @@ void EpaperWebServer::handleCreateFile(const char* filePrefix, RequestContext& r
     }
   }
 
-  if (!updateFile || updateFile.write(request.upload.data, request.upload.length) != request.upload.length) {
+  if (!updateFile ||
+      updateFile.write(request.upload.data, request.upload.length) !=
+          request.upload.length) {
     request.response.setCode(500);
     request.response.json["error"] = F("Failed to write to file");
   }
@@ -415,7 +473,8 @@ void EpaperWebServer::handleCreateFile(const char* filePrefix, RequestContext& r
   }
 }
 
-void EpaperWebServer::handleUpdateJsonFile(const String& path, RequestContext& request) {
+void EpaperWebServer::handleUpdateJsonFile(
+    const String& path, RequestContext& request) {
   JsonObject body = request.getJsonBody().as<JsonObject>();
 
   if (body.isNull()) {
@@ -474,7 +533,8 @@ void EpaperWebServer::handleUpdateSettings(RequestContext& request) {
 }
 
 void EpaperWebServer::handleGetSettings(RequestContext& request) {
-  AsyncResponseStream* stream = request.rawRequest->beginResponseStream(APPLICATION_JSON);
+  AsyncResponseStream* stream =
+      request.rawRequest->beginResponseStream(APPLICATION_JSON);
   stream->setCode(200);
   settings.dump(*stream);
 
@@ -509,7 +569,15 @@ void EpaperWebServer::handleGetFormattedVariables(RequestContext& request) {
   JsonObject req = request.getJsonBody().as<JsonObject>();
 
   JsonArray variables = req[F("variables")];
-  JsonArray response = request.response.json.createNestedArray(F("resolved_variables"));
+  JsonArray response =
+      request.response.json.createNestedArray(F("resolved_variables"));
 
   driver->resolveVariables(variables, response);
+}
+
+void EpaperWebServer::handleResolveVariables(RequestContext& request) {
+  // JsonObject response = request.response.json.as<JsonObject>();
+  // response["whatddyawant"] = "123";
+  JsonObject response = request.response.json.createNestedObject("variables");
+  driver->dumpRegionValues(response);
 }

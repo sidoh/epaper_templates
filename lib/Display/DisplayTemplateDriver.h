@@ -50,6 +50,8 @@ class DisplayTemplateDriver {
 
   // Helper to resolve variable values (used in REST API)
   void resolveVariables(JsonArray toResolve, JsonArray response);
+  // Helper to return all current variable values
+  void dumpRegionValues(JsonObject response);
 
   // Sets the JSON template to load from SPIFFS.  Clears any regions that may
   // have been parsed from the previous template.
@@ -117,7 +119,8 @@ class DisplayTemplateDriver {
       uint8_t textSize,
       std::shared_ptr<const VariableFormatter> formatter,
       JsonObject updateRects,
-      JsonObject spec);
+      JsonObject spec,
+      uint16_t index);
   std::shared_ptr<Region> addBitmapRegion(
       uint16_t x,
       uint16_t y,
@@ -125,10 +128,12 @@ class DisplayTemplateDriver {
       uint16_t h,
       uint16_t color,
       VariableFormatterFactory& formatterFactory,
-      JsonObject spec);
+      JsonObject spec,
+      uint16_t index);
   std::shared_ptr<Region> addRectangleRegion(
       VariableFormatterFactory& formatterFactory,
-      JsonObject spec);
+      JsonObject spec,
+      uint16_t index);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);

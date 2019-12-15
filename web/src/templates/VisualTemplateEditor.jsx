@@ -11,7 +11,7 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import { useDebounce } from "react-use";
 import useGlobalState from "../state/global_state";
-import api from "../util/api";
+import api, { useEpaperWebsocket } from "../util/api";
 import { drillUpdate, drillFilter } from "../util/mungers";
 import SiteLoader from "../util/SiteLoader";
 import { FormatterEditor } from "./FormatterEditor";
@@ -32,6 +32,12 @@ const EditorSections = {
   editor: React.memo(SvgFieldEditor, isHiddenEqual),
   location: React.memo(LocationEditor, isHiddenEqual),
   formatters: React.memo(FormatterEditor, isHiddenEqual)
+};
+
+const RegionTypeKeys = {
+  t: "text",
+  b: "bitmaps",
+  r: "rectangles"
 };
 
 function SvgEditor({ subNavMode, onChange, ...rest }) {
@@ -57,7 +63,7 @@ function SvgEditor({ subNavMode, onChange, ...rest }) {
   );
 }
 
-function sliceVariableRequest(variables, maxSize = 256) {
+function sliceVariableRequest(variables, maxSize = 250) {
   const requests = [];
   let currentRequest = [];
 
@@ -91,9 +97,11 @@ export function VisualTemplateEditor({
     bitmaps: {},
     text: {}
   });
+  const [rvIndex, setRvIndex] = useState([]);
   const [activeEditElements, setActiveEditElements] = useState([]);
   const [isDragging, setDragging] = useState(false);
   const [creatingElement, setCreatingElement] = useState(null);
+  const [sendMessage, lastMessage, readyState] = useEpaperWebsocket();
 
   // Do this to work around RJSF using onChange fn from current props to update next props.
   const currentActiveElements = useRef(null);
@@ -164,52 +172,77 @@ export function VisualTemplateEditor({
 
   useDebounce(
     () => {
-      const variables = [
-        ["text", ["value"]],
-        ["bitmaps", ["value"]],
-        ["rectangles", ["w", "h"]]
-      ].flatMap(([type, keys]) => {
-        return (value[type] || [])
-          .flatMap((def, i) => {
-            if (def === MarkedForDeletion) {
-              return {};
-            }
+      // sendMessage("hello!")
+      // const index = [];
 
-            return keys
-              .map(k => {
-                const { variable, formatter } = def[k] || {};
+      // const variables = [
+      //   ["text", ["value"]],
+      //   ["bitmaps", ["value"]],
+      //   ["rectangles", ["w", "h"]]
+      // ].flatMap(([type, keys]) => {
+      //   return (value[type] || [])
+      //     .flatMap((def, i) => {
+      //       if (def === MarkedForDeletion) {
+      //         return {};
+      //       }
 
-                if (variable) {
-                  return { variable, formatter, ref: [type, i, k] };
-                }
-              })
-              .filter(x => x);
+      //       return keys
+      //         .map(k => {
+      //           const { variable, formatter } = def[k] || {};
+      //           index.push([type, i, k])
+
+      //           if (variable) {
+      //             return [variable, formatter, index.length-1];
+      //           }
+      //         })
+      //         .filter(x => x);
+      //     })
+      //     .filter(x => x[0]);
+      // });
+
+      // setRvIndex(index);
+
+      // sliceVariableRequest(variables).map(x => {
+      //   sendMessage(JSON.stringify({type: "resolve",variables:x}))
+      // });
+      api.get("/resolve_variables").then(x => {
+        const next = produce(resolvedVariables, draft => {
+          Object.entries(x.data.variables).forEach(([key, variables]) => {
+            const [typeKey, id] = key.split("-");
+            const type = RegionTypeKeys[typeKey];
+
+            // For now, assume we've only got one variable
+            const value = variables[0][1];
+
+            draft[type][id] = value;
           })
-          .filter(x => x.variable);
-      });
-
-      const promises = sliceVariableRequest(variables).map(x => {
-        return api.post("/formatted_variables", { variables: x });
-      });
-
-      Promise.all(promises).then(results => {
-        setResolvedVariables(
-          results
-            .flatMap(x => x.data.resolved_variables)
-            .reduce(
-              (a, x) => {
-                const [type, id] = x.ref;
-                a[type][id] = x.value;
-                return a;
-              },
-              { bitmaps: {}, text: {}, rectangles: {} }
-            )
-        );
+        })
+        setResolvedVariables(next);
       });
     },
     1000,
-    [value, globalState.variables]
+    [value, resolvedVariables]
   );
+
+  // useEffect(() => {
+  //   if (lastMessage && lastMessage.data) {
+  //     try {
+  //       const parsed = JSON.parse(lastMessage.data);
+  //       const next = produce(resolvedVariables, draft => {
+  //         parsed.forEach(x => {
+  //           if (x.ref !== undefined && x.value) {
+  //             const [type, id] = rvIndex[x.ref];
+  //             draft[type][id] = x.value;
+  //           }
+  //         });
+  //       });
+  //       setResolvedVariables(next);
+  //     } catch (err) {
+  //       console.log(err);
+  //       console.warn("unparsed websocket message", lastMessage.data);
+  //     }
+  //   }
+  // }, [resolvedVariables, rvIndex, lastMessage])
 
   const onDelete = useCallback(
     paths => {

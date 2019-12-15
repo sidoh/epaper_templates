@@ -8,8 +8,9 @@ BitmapRegion::BitmapRegion(
   uint16_t w,
   uint16_t h,
   uint16_t color,
-  std::shared_ptr<const VariableFormatter> formatter
-) : Region(variable, {x, y, w, h}, color, formatter)
+  std::shared_ptr<const VariableFormatter> formatter,
+  uint16_t index
+) : Region(variable, {x, y, w, h}, color, formatter, "b-" + String(index))
 { }
 
 BitmapRegion::~BitmapRegion() { }

@@ -260,7 +260,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
 }
 
 std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
-    VariableFormatterFactory& formatterFactory, JsonObject spec) {
+    VariableFormatterFactory& formatterFactory, JsonObject spec, uint16_t index) {
   String variable = RectangleRegion::Dimension::extractVariable(spec);
 
   RectangleRegion::Dimension w =
@@ -278,7 +278,8 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
       h,
       extractColor(spec),
       formatterFactory.create(formatterDefinition),
-      fillStyleFromString(spec["style"]));
+      fillStyleFromString(spec["style"]),
+      index);
   regions.add(region);
   region->updateValue(vars.get(variable));
   return region;
@@ -286,10 +287,9 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
 
 void DisplayTemplateDriver::renderRectangles(
     VariableFormatterFactory& formatterFactory, JsonArray rectangles) {
-  for (JsonArray::iterator it = rectangles.begin(); it != rectangles.end();
-       ++it) {
-    JsonObject rect = it->as<JsonObject>();
-    addRectangleRegion(formatterFactory, rect);
+  size_t ix = 0;
+  for (JsonObject rect : rectangles) {
+    addRectangleRegion(formatterFactory, rect, ix++);
   }
 }
 
@@ -349,7 +349,7 @@ void DisplayTemplateDriver::renderBitmaps(
     if (bitmap.containsKey("variable")) {
       const String& variable = bitmap["variable"];
       std::shared_ptr<Region> region =
-          addBitmapRegion(x, y, w, h, color, formatterFactory, bitmap);
+          addBitmapRegion(x, y, w, h, color, formatterFactory, bitmap, i);
       region->updateValue(vars.get(variable));
     }
   }
@@ -400,7 +400,8 @@ void DisplayTemplateDriver::renderTexts(
           textSize,
           formatter,
           updateRects,
-          text);
+          text,
+          i);
       region->updateValue(vars.get(variable));
     }
   }
@@ -424,15 +425,18 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
     uint16_t h,
     uint16_t color,
     VariableFormatterFactory& formatterFactory,
-    JsonObject spec) {
-  std::shared_ptr<Region> region(
-      new BitmapRegion(spec["variable"].as<const char*>(),
-          x,
-          y,
-          w,
-          h,
-          color,
-          formatterFactory.create(spec)));
+    JsonObject spec,
+    uint16_t index) {
+  std::shared_ptr<Region> region = std::make_shared<BitmapRegion>(
+    spec["variable"].as<const char*>(),
+    x,
+    y,
+    w,
+    h,
+    color,
+    formatterFactory.create(spec),
+    index
+  );
   regions.add(region);
 
   return region;
@@ -445,7 +449,8 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
     uint8_t textSize,
     std::shared_ptr<const VariableFormatter> formatter,
     JsonObject updateRects,
-    JsonObject spec) {
+    JsonObject spec,
+    uint16_t index) {
   auto region = std::make_shared<TextRegion>(spec["variable"].as<const char*>(),
       x,
       y,
@@ -453,7 +458,8 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
       color,
       font,
       formatter,
-      textSize);
+      textSize,
+      index);
   regions.add(region);
 
   return region;
@@ -537,17 +543,25 @@ void DisplayTemplateDriver::resolveVariables(
   JsonVariant formatters = tmpl["formatters"];
   VariableFormatterFactory formatterFactory(formatters);
 
-  for (JsonObject var : toResolve) {
-    String name = var["variable"];
+  for (JsonArray var : toResolve) {
+    String name = var[0];
     String value = vars.get(name);
 
-    auto formatter = formatterFactory.create(var);
+    auto formatter = formatterFactory.create(var[1]);
 
     JsonObject resolvedVar = response.createNestedObject();
     resolvedVar["value"] = formatter->format(value);
+    resolvedVar["ref"] = var[2];
+  }
+}
 
-    if (var.containsKey("ref")) {
-      resolvedVar["ref"] = var["ref"];
-    }
+void DisplayTemplateDriver::dumpRegionValues(JsonObject response) {
+  auto head = regions.getHead();
+
+  while (head) {
+    auto region = head->data;
+    JsonArray data = response.createNestedArray(region->getId());
+    region->dumpResolvedDefinition(data);
+    head = head->next;
   }
 }

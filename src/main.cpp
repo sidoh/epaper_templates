@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#include <WiFi.h>
+
 // Make sure TimeLib.h is included first so that Time.h doesn't get included.
 // This breaks builds on case-sensitive filesystems.
 #include <TimeLib.h>
@@ -214,6 +216,10 @@ void loop() {
   if (timeClient.update() && lastSecond != second()) {
     lastSecond = second();
     driver->updateVariable("timestamp", String(timeClient.getEpochTime()));
+  }
+
+  if (webServer) {
+    webServer->handleClient();
   }
 
   driver->loop();

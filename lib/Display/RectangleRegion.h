@@ -32,7 +32,9 @@ class RectangleRegion : public Region {
       Dimension height,
       uint16_t color,
       std::shared_ptr<const VariableFormatter> formatter,
-      FillStyle fillStyle);
+      FillStyle fillStyle,
+      uint16_t index
+  );
   ~RectangleRegion();
 
   virtual void render(GxEPD2_GFX* display);

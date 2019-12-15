@@ -23,7 +23,11 @@ module.exports = {
           ]
         },
         proxy: {
-          '/api': "http://10.133.8.108"
+          '/api': "http://10.133.8.108",
+          '/socket': {
+            target: "ws://10.133.8.108",
+            ws: true
+          }
         }
       }
     }),

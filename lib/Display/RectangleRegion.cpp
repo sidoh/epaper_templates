@@ -8,8 +8,10 @@ RectangleRegion::RectangleRegion(const String& variable,
     RectangleRegion::Dimension h,
     uint16_t color,
     std::shared_ptr<const VariableFormatter> formatter,
-    FillStyle fillStyle)
-    : Region(variable, {x, y, 0, 0}, color, formatter)
+    FillStyle fillStyle,
+    uint16_t index
+  )
+    : Region(variable, {x, y, 0, 0}, color, formatter, "r-" + String(index))
     , fillStyle(fillStyle)
     , w(w)
     , h(h)

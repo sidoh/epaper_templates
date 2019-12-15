@@ -25,6 +25,7 @@ public:
   void onSettingsChange(OnChangeFn changeFn);
   void begin();
   uint16_t getPort() const;
+  void handleClient();
 
 private:
   DisplayTemplateDriver*& driver;
@@ -33,6 +34,7 @@ private:
   RichHttpServer<RichHttpConfig> server;
   uint16_t port;
   OnChangeFn changeFn;
+  AsyncWebSocket wsServer;
 
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);
@@ -67,6 +69,7 @@ private:
   void handleGetSettings(RequestContext& request);
 
   void handleGetScreens(RequestContext& request);
+  void handleResolveVariables(RequestContext& request);
 
   // Misc helpers
   void handleUpdateFile(ArUploadHandlerFunction* request, const char* filename);

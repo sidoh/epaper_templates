@@ -10,12 +10,14 @@ TextRegion::TextRegion(
   uint16_t color,
   const GFXfont* font,
   std::shared_ptr<const VariableFormatter> formatter,
-  uint8_t size
+  uint8_t size,
+  uint16_t index
 ) : Region(
       variable,
       {x, y, 0, 0},
       color,
-      formatter
+      formatter,
+      "t-" + String(index)
     )
   , font(font)
   , fixedBound(fixedBound)
