@@ -70,17 +70,18 @@ const actions = {
         return api
           .get(`/bitmaps/${file}`, { responseType: "arraybuffer" })
           .then(x => {
-            const hash = simpleHash(new Uint8Array(x.data));
+            const data = new Uint8Array(x.data);
+            const hash = simpleHash(data);
 
             const newState = produce(store.state, draft => {
               if (!store.state.cachedBitmaps[filename]) {
                 draft.cachedBitmaps[filename] = {
-                  data: fromByteArray(x.data),
+                  data: fromByteArray(data),
                   hash
                 };
               } else {
                 Object.assign(draft.cachedBitmaps[filename], {
-                  data: x.data,
+                  data: fromByteArray(data),
                   hash
                 });
               }

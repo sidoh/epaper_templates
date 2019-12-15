@@ -18,6 +18,10 @@ import {
 import { original } from "immer";
 
 const resolveVariableFn = (valueDef, resolvedValues, defaultValue = null) => {
+  if (!valueDef) {
+    return defaultValue;
+  }
+
   if (valueDef.type == "static") {
     return valueDef.value;
   }
@@ -557,7 +561,14 @@ export function SvgCanvas({
     if (selectionBox) {
       const active = Object.keys(FieldTypeDefinitions).flatMap(type => {
         const refs = elementRefs.current;
-        return (definition[type] || [])
+        let def = definition[type] || [];
+
+        if (! Array.isArray(def)) {
+          console.error(`Definitions for ${type} are invalid.  Expected array, was: ${def}`);
+          def = [];
+        }
+
+        return def
           .map((x, i) => {
             const elementRef = refs[type] && refs[type][i];
 
@@ -629,7 +640,6 @@ export function SvgCanvas({
           />
         </rect>
       )}
-      {/* {cursorPosition && <SvgCursorIndicator {...cursorPosition} />} */}
     </svg>
   );
 }
