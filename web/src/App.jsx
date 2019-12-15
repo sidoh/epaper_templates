@@ -11,6 +11,7 @@ import VariablesIndex from "./variables/VariablesIndex";
 import Dashboard from "./dashboard/Dashboard";
 import BitmapsIndex from "./bitmaps/BitmapsIndex";
 import useGlobalState from "./state/global_state";
+import ErrorBoundary from "./util/ErrorBoundary";
 
 const App = () => {
   const [globalState, globalActions] = useGlobalState();
@@ -25,23 +26,25 @@ const App = () => {
         <NavBar />
 
         <Container className="main-content">
-          <Switch>
-            <Route path="/templates">
-              <TemplatesIndex />
-            </Route>
-            <Route path="/settings">
-              <SettingsForm />
-            </Route>
-            <Route path="/variables">
-              <VariablesIndex />
-            </Route>
-            <Route path="/bitmaps">
-              <BitmapsIndex />
-            </Route>
-            <Route exact path="/">
-              <Dashboard />
-            </Route>
-          </Switch>
+          <ErrorBoundary>
+            <Switch>
+              <Route path="/templates">
+                <TemplatesIndex />
+              </Route>
+              <Route path="/settings">
+                <SettingsForm />
+              </Route>
+              <Route path="/variables">
+                <VariablesIndex />
+              </Route>
+              <Route path="/bitmaps">
+                <BitmapsIndex />
+              </Route>
+              <Route exact path="/">
+                <Dashboard />
+              </Route>
+            </Switch>
+          </ErrorBoundary>
         </Container>
       </Router>
     </div>
