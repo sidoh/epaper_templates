@@ -172,53 +172,26 @@ export function VisualTemplateEditor({
 
   useDebounce(
     () => {
-      // sendMessage("hello!")
-      // const index = [];
+      api.get("/resolve_variables")
+        .then(
+          x => {
+          const next = produce(resolvedVariables, draft => {
+            Object.entries(x.data.variables).forEach(([key, variables]) => {
+              const [typeKey, id] = key.split("-");
+              const type = RegionTypeKeys[typeKey];
 
-      // const variables = [
-      //   ["text", ["value"]],
-      //   ["bitmaps", ["value"]],
-      //   ["rectangles", ["w", "h"]]
-      // ].flatMap(([type, keys]) => {
-      //   return (value[type] || [])
-      //     .flatMap((def, i) => {
-      //       if (def === MarkedForDeletion) {
-      //         return {};
-      //       }
+              // For now, assume we've only got one variable
+              const value = variables[0][1];
 
-      //       return keys
-      //         .map(k => {
-      //           const { variable, formatter } = def[k] || {};
-      //           index.push([type, i, k])
-
-      //           if (variable) {
-      //             return [variable, formatter, index.length-1];
-      //           }
-      //         })
-      //         .filter(x => x);
-      //     })
-      //     .filter(x => x[0]);
-      // });
-
-      // setRvIndex(index);
-
-      // sliceVariableRequest(variables).map(x => {
-      //   sendMessage(JSON.stringify({type: "resolve",variables:x}))
-      // });
-      api.get("/resolve_variables").then(x => {
-        const next = produce(resolvedVariables, draft => {
-          Object.entries(x.data.variables).forEach(([key, variables]) => {
-            const [typeKey, id] = key.split("-");
-            const type = RegionTypeKeys[typeKey];
-
-            // For now, assume we've only got one variable
-            const value = variables[0][1];
-
-            draft[type][id] = value;
+              draft[type][id] = value;
+            })
           })
-        })
-        setResolvedVariables(next);
-      });
+          setResolvedVariables(next);
+        },
+        err => {
+          globalActions.addError("Error resolving variables: " + err.message);
+        }
+      );
     },
     1000,
     [value, resolvedVariables]
