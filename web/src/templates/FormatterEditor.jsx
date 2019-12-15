@@ -148,8 +148,11 @@ export function FormatterEditor({ value, onUpdate }) {
   const [editing, setEditing] = useState(null);
 
   const onNew = useCallback(() => {
+    if (!value.formatters) {
+      onUpdate(produce(value, draft => { draft.formatters = [] }));
+    }
     setEditing("new");
-  }, []);
+  }, [value]);
 
   const onEdit = useCallback(
     index => {
