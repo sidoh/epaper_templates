@@ -172,21 +172,22 @@ export function VisualTemplateEditor({
 
   useDebounce(
     () => {
-      api.get("/resolve_variables")
-        .then(
-          x => {
-          const next = produce(resolvedVariables, draft => {
-            Object.entries(x.data.variables).forEach(([key, variables]) => {
-              const [typeKey, id] = key.split("-");
-              const type = RegionTypeKeys[typeKey];
+      api.get("/resolve_variables").then(
+        x => {
+          const draft = {};
 
-              // For now, assume we've only got one variable
-              const value = variables[0][1];
+          Object.entries(x.data.variables).forEach(([key, variables]) => {
+            const [typeKey, id] = key.split("-");
+            const type = RegionTypeKeys[typeKey];
 
-              draft[type][id] = value;
-            })
-          })
-          setResolvedVariables(next);
+            if (!draft[type]) {
+              draft[type] = {};
+            }
+
+            draft[type][id] = Object.fromEntries(variables);
+          });
+
+          setResolvedVariables(draft);
         },
         err => {
           globalActions.addError("Error resolving variables: " + err.message);
@@ -194,28 +195,28 @@ export function VisualTemplateEditor({
       );
     },
     1000,
-    [value, resolvedVariables]
+    [value]
   );
 
-  // useEffect(() => {
-  //   if (lastMessage && lastMessage.data) {
-  //     try {
-  //       const parsed = JSON.parse(lastMessage.data);
-  //       const next = produce(resolvedVariables, draft => {
-  //         parsed.forEach(x => {
-  //           if (x.ref !== undefined && x.value) {
-  //             const [type, id] = rvIndex[x.ref];
-  //             draft[type][id] = x.value;
-  //           }
-  //         });
-  //       });
-  //       setResolvedVariables(next);
-  //     } catch (err) {
-  //       console.log(err);
-  //       console.warn("unparsed websocket message", lastMessage.data);
-  //     }
-  //   }
-  // }, [resolvedVariables, rvIndex, lastMessage])
+  useEffect(() => {
+    if (lastMessage && lastMessage.data) {
+      try {
+        const parsed = JSON.parse(lastMessage.data);
+        const next = produce(resolvedVariables, draft => {
+          parsed.forEach(x => {
+            if (x.ref !== undefined && x.value) {
+              const [type, id] = rvIndex[x.ref];
+              draft[type][id] = x.value;
+            }
+          });
+        });
+        setResolvedVariables(next);
+      } catch (err) {
+        console.log(err);
+        console.warn("unparsed websocket message", lastMessage.data);
+      }
+    }
+  }, [resolvedVariables, rvIndex, lastMessage]);
 
   const onDelete = useCallback(
     paths => {
@@ -249,14 +250,16 @@ export function VisualTemplateEditor({
   _currentOnDelete.current = onDelete;
 
   useEffect(() => {
-    const shouldSkip = (e) => {
+    const shouldSkip = e => {
       // Skip if the target is an input field
       const tagName = e.target.tagName.toLowerCase();
-      return (tagName === "input" || tagName === "textarea")
-    }
+      return tagName === "input" || tagName === "textarea";
+    };
 
     const shortcutsHandler = e => {
-      if (shouldSkip(e)) { return }
+      if (shouldSkip(e)) {
+        return;
+      }
 
       var keyCode = e.keyCode;
 
@@ -291,7 +294,9 @@ export function VisualTemplateEditor({
     };
 
     const copyHandler = e => {
-      if (shouldSkip(e)) { return }
+      if (shouldSkip(e)) {
+        return;
+      }
 
       e.preventDefault();
       const data = drillFilter(
@@ -302,7 +307,9 @@ export function VisualTemplateEditor({
     };
 
     const pasteHandler = e => {
-      if (shouldSkip(e)) { return }
+      if (shouldSkip(e)) {
+        return;
+      }
 
       e.preventDefault();
 

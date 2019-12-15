@@ -17,6 +17,16 @@ import {
 } from "./schema";
 import { original } from "immer";
 
+const resolveVariableFn = (valueDef, resolvedValues, defaultValue = null) => {
+  if (valueDef.type == "static") {
+    return valueDef.value;
+  }
+
+  const varName = valueDef.variable;
+
+  return (resolvedValues && resolvedValues[varName]) || defaultValue;
+};
+
 const SvgLine = React.memo(
   React.forwardRef((props, ref) => {
     const {
@@ -53,7 +63,7 @@ const SvgText = React.memo(
       definition: { x = 0, y = 0, value: valueDef = {}, color = "black" },
       onClick,
       isActive,
-      resolvedValue,
+      resolvedValues,
       className
     } = props;
     const style = useMemo(() => {
@@ -65,13 +75,10 @@ const SvgText = React.memo(
       };
     }, [definition, isActive]);
 
-    const text = useMemo(() => {
-      if (valueDef.type == "static") {
-        return valueDef.value;
-      }
-
-      return resolvedValue || "<$>";
-    }, [valueDef, resolvedValue]);
+    const text = useMemo(() => resolveVariableFn(valueDef, resolvedValues, "<$>"), [
+      valueDef,
+      resolvedValues
+    ]);
 
     return (
       <text
@@ -118,7 +125,9 @@ const SvgRectangle = React.memo(
         if (def.type === "static") {
           return def.value || 0;
         } else if (def.variable) {
-          return resolvedValue;
+          const varName = def.variable;
+
+          return (resolvedValues && resolvedValues[varName]) || 0;
         } else {
           return 0;
         }
@@ -151,10 +160,11 @@ const SvgBitmap = React.memo(
         y = 0,
         w: width = 0,
         h: height = 0,
-        color = "black"
+        color = "black",
+        value: valueDef
       },
-      _static,
-      resolvedValue,
+      static: _static,
+      resolvedValues,
       isActive,
       onClick,
       className
@@ -162,9 +172,12 @@ const SvgBitmap = React.memo(
     const [globalState, globalActions] = useGlobalState();
     const [src, setSrc] = useState(null);
 
-    useEffect(() => {
-      const file = _static || resolvedValue;
+    const file = useMemo(() => resolveVariableFn(valueDef, resolvedValues), [
+      valueDef,
+      resolvedValues
+    ]);
 
+    useEffect(() => {
       if (file) {
         globalActions.loadBitmap(file).then(x => {
           setSrc(
@@ -177,7 +190,7 @@ const SvgBitmap = React.memo(
           );
         });
       }
-    }, [_static, resolvedValue, color]);
+    }, [file, color]);
 
     return (
       <>
@@ -302,7 +315,7 @@ const SvgCursorIndicator = ({ x, y, size = 5 }) => {
     <g className="cursor-position">
       <line x1={x - size} x2={x + size} y1={y} y2={y} />
       <line x1={x} x2={x} y1={y - size} y2={y + size} />
-      <rect x={x-size} y={y-size} width={size*2} height={size*2} />
+      <rect x={x - size} y={y - size} width={size * 2} height={size * 2} />
       {/* <circle cx={x} cy={y} r={size} /> */}
     </g>
   );
@@ -569,12 +582,15 @@ export function SvgCanvas({
       ref={svgRef}
       viewBox={`0 0 ${_width} ${_height}`}
       style={svgStyle}
-      className={[selectionParams.current ? "selecting" : "", cursorPosition ? "cursor" : ""].join(" ")}
+      className={[
+        selectionParams.current ? "selecting" : "",
+        cursorPosition ? "cursor" : ""
+      ].join(" ")}
     >
       {Object.keys(FieldTypeDefinitions)
         .flatMap(type =>
           (definition[type] || []).map((x, i) => {
-            const resolvedValue =
+            const resolvedValues =
               resolvedVariables[type] && resolvedVariables[type][i];
 
             return (
@@ -584,7 +600,7 @@ export function SvgCanvas({
                 onUpdateActive={onUpdateActive}
                 toggleActiveElement={toggleActiveElement}
                 setActiveElements={setActiveElements}
-                resolvedValue={resolvedValue}
+                resolvedValues={resolvedValues}
                 key={`${type}-${i}`}
                 isActive={isRegionActive(type, i)}
                 definition={x}
