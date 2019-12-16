@@ -597,6 +597,7 @@ export function SvgCanvas({
       viewBox={`0 0 ${_width} ${_height}`}
       style={svgStyle}
       className={[
+        "template-canvas",
         selectionParams.current ? "selecting" : "",
         cursorPosition ? "cursor" : ""
       ].join(" ")}

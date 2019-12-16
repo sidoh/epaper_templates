@@ -389,7 +389,7 @@ const ScreenSettings = {
 };
 
 export const Schema = {
-  $id: "https://sidoh.org/epaper-templates/template.schema.json",
+  $id: "https://sidoh.github.io/epaper_templates/template.schema.json",
   $schema: "https://json-schema.org/draft-08/schema#",
   type: "object",
   definitions: { ...Definitions },

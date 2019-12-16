@@ -100,11 +100,9 @@ function FormatterListItem({ formatter, index, onEdit, onDelete }) {
         <BadgedText badge={def && def.type}>{formatter.name}</BadgedText>
       </a>
 
-      <div className="button-list">
-        <a href="#" className="text-danger" onClick={_onDelete}>
-          <MemoizedFontAwesomeIcon icon={faTrash} />
-        </a>
-      </div>
+      <a href="#" className="text-danger" onClick={_onDelete}>
+        <MemoizedFontAwesomeIcon icon={faTrash} />
+      </a>
     </div>
   );
 }
@@ -149,7 +147,11 @@ export function FormatterEditor({ value, onUpdate }) {
 
   const onNew = useCallback(() => {
     if (!value.formatters) {
-      onUpdate(produce(value, draft => { draft.formatters = [] }));
+      onUpdate(
+        produce(value, draft => {
+          draft.formatters = [];
+        })
+      );
     }
     setEditing("new");
   }, [value]);
