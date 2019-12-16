@@ -6,7 +6,8 @@ import {
   faClipboard,
   faExclamationCircle,
   faCopy,
-  faExternalLinkAlt
+  faExternalLinkAlt,
+  faRecycle
 } from "@fortawesome/free-solid-svg-icons";
 import Button from "react-bootstrap/Button";
 
@@ -23,6 +24,10 @@ export default class ErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI.
     return { error: error };
+  }
+
+  onRefresh() {
+    window.location.reload();
   }
 
   render() {
@@ -61,20 +66,28 @@ export default class ErrorBoundary extends React.Component {
               <li>The template or data you were working with</li>
               <li>If possible, a reliable way to reproduce the issue</li>
             </ul>
-            <a
-              href={`https://github.com/sidoh/epaper_templates/issues/new?title=[Unexpected Webpage Error] ${
-                error_object.message
-              }&body=\`\`\`json%0A${JSON.stringify(errorDefn)}%0A\`\`\``}
-              target="_blank"
-              className="btn btn-info"
-              variant="info"
-            >
-              <MemoizedFontAwesomeIcon
-                icon={faExternalLinkAlt}
-                className="fa-fw mr-2"
-              />
-              Create Github Issue
-            </a>
+
+            <div className="d-flex">
+              <a
+                href={`https://github.com/sidoh/epaper_templates/issues/new?title=[Unexpected Webpage Error] ${
+                  error_object.message
+                }&body=\`\`\`json%0A${JSON.stringify(errorDefn)}%0A\`\`\``}
+                target="_blank"
+                className="btn btn-info mr-2"
+                variant="info"
+              >
+                <MemoizedFontAwesomeIcon
+                  icon={faExternalLinkAlt}
+                  className="fa-fw mr-2"
+                />
+                Create Github Issue
+              </a>
+
+              <Button variant="outline-warning" onClick={this.onRefresh}>
+                <MemoizedFontAwesomeIcon icon={faRecycle} className="fa-fw mr-2" />
+                Reload Page
+              </Button>
+            </div>
           </div>
 
           <div>

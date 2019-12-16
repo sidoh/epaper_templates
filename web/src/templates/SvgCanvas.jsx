@@ -75,14 +75,15 @@ const SvgText = React.memo(
       return {
         fill: color,
         ...fontStyle,
-        fontSize: `calc(${fontStyle.fontSize}pt * ${definition.font_size || 1} * 1.4)`
+        fontSize: `calc(${fontStyle.fontSize}pt * ${definition.font_size ||
+          1} * 1.4)`
       };
     }, [definition, isActive]);
 
-    const text = useMemo(() => resolveVariableFn(valueDef, resolvedValues, "<$>"), [
-      valueDef,
-      resolvedValues
-    ]);
+    const text = useMemo(
+      () => resolveVariableFn(valueDef, resolvedValues, "<$>"),
+      [valueDef, resolvedValues]
+    );
 
     return (
       <text
@@ -563,8 +564,10 @@ export function SvgCanvas({
         const refs = elementRefs.current;
         let def = definition[type] || [];
 
-        if (! Array.isArray(def)) {
-          console.error(`Definitions for ${type} are invalid.  Expected array, was: ${def}`);
+        if (!Array.isArray(def)) {
+          console.error(
+            `Definitions for ${type} are invalid.  Expected array, was: ${def}`
+          );
           def = [];
         }
 
@@ -599,13 +602,27 @@ export function SvgCanvas({
       ].join(" ")}
     >
       <defs>
-        <style type="text/css" dangerouslySetInnerHTML={{__html: `
+        <style
+          type="text/css"
+          dangerouslySetInnerHTML={{
+            __html: `
           @import url("https://sidoh.github.io/freefont_web/fonts/stylesheet.css");
-        `}} />
+        `
+          }}
+        />
       </defs>
       {Object.keys(FieldTypeDefinitions)
-        .flatMap(type =>
-          (definition[type] || []).map((x, i) => {
+        .flatMap(type => {
+          let def = definition[type] || [];
+
+          if (!Array.isArray(def)) {
+            console.error(
+              `Definitions for ${type} are invalid.  Expected array, was`, def
+            );
+            def = [];
+          }
+
+          return def.map((x, i) => {
             const resolvedValues =
               resolvedVariables[type] && resolvedVariables[type][i];
 
@@ -624,8 +641,8 @@ export function SvgCanvas({
                 id={i}
               />
             );
-          })
-        )
+          });
+        })
         .filter(x => x)}
       {selectionParams.current && (
         <rect

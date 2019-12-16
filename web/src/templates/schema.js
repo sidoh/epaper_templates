@@ -172,7 +172,10 @@ const Definitions = {
   font: {
     title: "Font",
     type: "string",
-    enum: Object.keys(FontDefinitions)
+    enum: Object.keys(FontDefinitions),
+    enumNames: Object.values(FontDefinitions).map(
+      x => `${x.title} (${x.style.fontSize}pt)`
+    )
   },
   caseFormatterItem: {},
   valueChoice: {
