@@ -22,6 +22,7 @@ import { SvgCanvas } from "./SvgCanvas";
 import { SvgFieldEditor } from "./SvgFieldEditor";
 import "./VisualTemplateEditor.scss";
 import deepmerge from "deepmerge";
+import { onUpdateLocation } from "./template_updaters";
 
 const isHiddenEqual = (n, p) => {
   return n === p || (n.isDragging && p.isDragging);
@@ -290,6 +291,15 @@ export function VisualTemplateEditor({
         ) {
           _currentOnDelete.current(currentActiveElements.current);
         }
+      } else if (keyCode >= 37 && keyCode <= 40) {
+        if (currentActiveElements.current.length > 0) {
+          e.preventDefault();
+        }
+
+        const dimension = keyCode % 2 == 0 ? "y" : "x";
+        const amount = 5 * (keyCode <= 38 ? -1 : 1) * (e.shiftKey ? 1/5 : 1);
+
+        onUpdateLocation(onUpdateActive, dimension, amount);
       }
     };
 

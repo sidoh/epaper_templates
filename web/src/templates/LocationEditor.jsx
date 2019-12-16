@@ -10,38 +10,29 @@ import ReactSlider from "react-slider";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import { onUpdateLocation } from "./template_updaters";
 
 export function LocationEditor({ onUpdateActive }) {
   const [nudgeDistance, setNudgeDistance] = useState(1);
-  const onUpdateLocation = useCallback(
-    (dimension, amount) => {
-      const fn = obj => {
-        [`${dimension}`, `${dimension}1`, `${dimension}2`].forEach(d => {
-          if (obj[d] != null) {
-            obj[d] += amount;
-          }
-        });
-      };
-
-      onUpdateActive(fn);
-    },
+  const _onUpdateLocation = useCallback(
+    onUpdateLocation.bind(this, onUpdateActive),
     [onUpdateActive]
   );
 
-  const onLeft = useCallback(() => onUpdateLocation("x", -nudgeDistance), [
-    onUpdateLocation,
+  const onLeft = useCallback(() => _onUpdateLocation("x", -nudgeDistance), [
+    _onUpdateLocation,
     nudgeDistance
   ]);
-  const onRight = useCallback(() => onUpdateLocation("x", nudgeDistance), [
-    onUpdateLocation,
+  const onRight = useCallback(() => _onUpdateLocation("x", nudgeDistance), [
+    _onUpdateLocation,
     nudgeDistance
   ]);
-  const onUp = useCallback(() => onUpdateLocation("y", -nudgeDistance), [
-    onUpdateLocation,
+  const onUp = useCallback(() => _onUpdateLocation("y", -nudgeDistance), [
+    _onUpdateLocation,
     nudgeDistance
   ]);
-  const onDown = useCallback(() => onUpdateLocation("y", nudgeDistance), [
-    onUpdateLocation,
+  const onDown = useCallback(() => _onUpdateLocation("y", nudgeDistance), [
+    _onUpdateLocation,
     nudgeDistance
   ]);
 
