@@ -249,7 +249,7 @@ You can download a copy of the image by clicking on the "Download" icon (1st ico
 
 # Examples
 
-The [examples directory][./examples] has a few sample templates.
+The [examples directory](./examples) has a few sample templates.
 
 # REST API
 
@@ -267,4 +267,3 @@ The following RESTful routes are available:
 
 [info-license]:   https://github.com/sidoh/epaper_templates/blob/master/LICENSE
 [shield-license]: https://img.shields.io/badge/license-MIT-blue.svg
-[examples]:       https://github.com/sidoh/epaper_templates/examples
