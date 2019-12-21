@@ -14,79 +14,110 @@
       "y2": 55
     }
   ],
-  "formatters": { },
+  "formatters": [],
   "text": [
     {
       "x": 0,
       "y": 50,
       "font": "FreeSans18pt7b",
       "font_size": 2,
-      "variable": "timestamp",
-      "formatter": "time",
-      "args": {
-        "timezone": "PT",
-        "format": "%H:%M"
+      "value": {
+        "type": "variable",
+        "variable": "timestamp",
+        "formatter": {
+          "type": "time",
+          "args": {
+            "timezone": "PT",
+            "format": "%H:%M"
+          }
+        }
       }
     },
     {
       "x": 185,
       "y": 18,
       "font": "FreeSansBold9pt7b",
-      "variable": "timestamp",
-      "formatter": "time",
-      "update_rect": "datetime",
-      "args": {
-        "timezone": "PT",
-        "format": "%A"
+      "value": {
+        "formatter": {
+          "type": "time",
+          "args": {
+            "timezone": "PT",
+            "format": "%A"
+          }
+        },
+        "variable": "timestamp",
+        "type": "variable"
       }
     },
     {
       "x": 185,
       "y": 45,
       "font": "FreeSans9pt7b",
-      "variable": "timestamp",
-      "formatter": "time",
-      "update_rect": "datetime",
-      "args": {
-        "timezone": "PT",
-        "format": "%m/%d/%Y"
-      }
+      "value": {
+        "type": "variable",
+        "variable": "timestamp",
+        "formatter": {
+          "type": "time",
+          "args": {
+            "timezone": "PT",
+            "format": "%m/%d/%Y"
+          }
+        }
+      },
+      "font_size": 1
     },
     {
       "x": 5,
       "y": 72,
       "font": "FreeSansBold9pt7b",
-      "static": "Sleep"
+      "value": {
+        "type": "static",
+        "value": "Sleep"
+      }
     },
     {
-      "x": "65",
+      "x": 65,
       "y": 72,
       "font": "FreeSans9pt7b",
-      "variable": "lights-out-time",
-      "formatter": "time",
-      "args": {
-        "timezone": "PT",
-        "format": "%H:%M"
+      "value": {
+        "type": "variable",
+        "variable": "lights-out-time",
+        "formatter": {
+          "type": "time",
+          "args": {
+            "timezone": "PT",
+            "format": "%H:%M"
+          }
+        }
       }
     },
     {
       "x": 115,
       "y": 72,
       "font": "FreeSansBold9pt7b",
-      "static": "|"
+      "value": {
+        "type": "static",
+        "value": "|"
+      }
     },
     {
       "x": 120,
       "y": 72,
       "font": "FreeSans9pt7b",
-      "variable": "lights-out-time-relative"
+      "value": {
+        "type": "variable",
+        "variable": "lights-out-time-relative",
+        "formatter": {
+          "args": {}
+        }
+      }
     }
   ],
   "bitmaps": [],
   "rectangles": [
     {
       "style": "filled",
-      "x": 6,
+      "x": 7,
       "y": 80,
       "height": {
         "static": 40
@@ -96,19 +127,36 @@
         "variable": "sleep-time-percent",
         "variable_mode": "percent"
       },
-      "color": "black"
+      "color": "black",
+      "w": {
+        "formatter": {
+          "args": {
+            "base": 0.35714285714
+          },
+          "type": "ratio"
+        },
+        "type": "variable",
+        "variable": "sleep-time-percent"
+      },
+      "h": {
+        "type": "static",
+        "value": "40"
+      }
     },
     {
       "style": "outline",
       "x": 6,
       "y": 79,
-      "height": {
-        "static": 42
+      "color": "black",
+      "w": {
+        "type": "static",
+        "value": "282"
       },
-      "width": {
-        "static": 282
-      },
-      "color": "black"
+      "h": {
+        "type": "static",
+        "value": "42"
+      }
     }
-  ]
+  ],
+  "background_color": "white"
 }
