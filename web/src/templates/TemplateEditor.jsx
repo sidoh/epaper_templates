@@ -4,17 +4,32 @@ import Form from "react-bootstrap/Form";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import SiteLoader from "../util/SiteLoader";
-import ReactJson from "react-json-view";
 import { faSave, faTv, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useHistory } from "react-router-dom";
+import { Prompt, useHistory } from "react-router-dom";
 
 import "./TemplateEditor.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import api from "../util/api";
+import VisualTemplateEditor from "./VisualTemplateEditor";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import produce from "immer";
+import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
+import { useUndoableMap } from "../util/use-undo-reducer";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import useGlobalState from "../state/global_state";
+import { useLocation } from "react-use";
 
-const RawJsonEditor = ({ value, onChange }) => {
+const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isHidden) {
+      setSubNav([]);
+    }
+  }, [isHidden]);
 
   useEffect(() => {
     if (value) {
@@ -47,6 +62,7 @@ const RawJsonEditor = ({ value, onChange }) => {
       <Form.Control
         as="textarea"
         className="json-textarea"
+        style={{ height: "400px" }}
         value={internalValue}
         onChange={_onChange}
         onBlur={save}
@@ -55,45 +71,118 @@ const RawJsonEditor = ({ value, onChange }) => {
   );
 };
 
-const TreeJsonEditor = ({ value, onChange }) => {
-  const _onChange = useCallback(
-    e => {
-      onChange(e.updated_src);
-    },
-    [onChange]
-  );
-
-  return <ReactJson src={value} onEdit={_onChange} theme="solarized" />;
+const isHiddenEqual = (n, p) => {
+  return n === p || (n.isHidden && p.isHidden);
 };
 
-const SwitchableJsonEditor = ({ value, onChange }) => {
+const editorMemoize = c => React.memo(c, isHiddenEqual);
+
+const EditorModeHandlers = {
+  json: editorMemoize(RawJsonEditor),
+  visual: editorMemoize(VisualTemplateEditor)
+};
+
+const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
+  const [subNav, setSubNav] = useState([]);
   const [mode, setMode] = useState("visual");
-  const ViewComponent = mode === "visual" ? TreeJsonEditor : RawJsonEditor;
+  const [subNavMode, setSubNavMode] = useState(null);
+  const ViewComponent = EditorModeHandlers[mode];
+
+  const updateSubNav = useCallback(
+    items => {
+      if (subNavMode == null && items.length > 0) {
+        setSubNavMode(items.length > 0 ? items[0].key : null);
+      }
+
+      setSubNav(items);
+    },
+    [subNavMode]
+  );
 
   return (
     <>
-      <Nav variant="pills" activeKey={mode} onSelect={setMode} className="mb-2">
-        <Nav.Item>
-          <Nav.Link eventKey="visual">Visual</Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link eventKey="json">JSON</Nav.Link>
-        </Nav.Item>
-      </Nav>
-      <ViewComponent value={value} onChange={onChange} />
+      <Container fluid className="p-0 m-0">
+        <Row>
+          <Col sm={12} lg={7}>
+            <Nav
+              variant="pills"
+              activeKey={mode}
+              onSelect={setMode}
+              className="template-topnav"
+            >
+              <Nav.Item>
+                <Nav.Link eventKey="visual">Visual</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="json">Raw</Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Col>
+          <Col sm={12} lg={5}>
+            <Nav
+              variant="pills"
+              activeKey={subNavMode}
+              onSelect={setSubNavMode}
+              className="template-topnav"
+            >
+              {subNav.map(({ key, title }) => (
+                <Nav.Item key={key}>
+                  <Nav.Link eventKey={key}>{title}</Nav.Link>
+                </Nav.Item>
+              ))}
+            </Nav>
+          </Col>
+        </Row>
+
+        {Object.entries(EditorModeHandlers).map(([k, ViewComponent]) => {
+          const isHidden = k !== mode;
+          return (
+            <div key={k} className={isHidden ? "d-none" : "d-block"}>
+              <ViewComponent
+                isHidden={isHidden}
+                value={value}
+                onChange={onChange}
+                setSubNav={updateSubNav}
+                subNavMode={subNavMode}
+                setSubNavMode={setSubNavMode}
+                {...rest}
+              />
+            </div>
+          );
+        })}
+      </Container>
     </>
   );
 };
 
 export default ({ path, template, triggerReload }) => {
-  const [json, setJson] = useState(null);
+  // const [json, setJson] = useState(null);
+  const [
+    json,
+    {
+      set: setJson,
+      clearHistory,
+      undo,
+      redo,
+      markForCollapse,
+      markSaved,
+      isSaved,
+      collapse
+    }
+  ] = useUndoableMap();
   const [name, setName] = useState(null);
+  const [globalState, globalActions] = useGlobalState();
   const isNew = path === "new";
   const history = useHistory();
+  const location = useLocation();
 
   useEffect(() => {
-    setJson(template);
-  }, [setJson, template]);
+    if (template) {
+      setJson(template);
+      clearHistory();
+      markSaved();
+    }
+  }, [template]);
 
   useEffect(() => {
     if (isNew) {
@@ -117,23 +206,55 @@ export default ({ path, template, triggerReload }) => {
 
       const filename = name.endsWith(".json") ? name : `${name}.json`;
 
-      const data = new FormData();
-      const file = new Blob([JSON.stringify(json)], { type: "text/json" });
-      data.append("file", file, filename);
-      api.post("/templates", data).then(() => {
-        triggerReload();
-        history.push(`/templates/${filename}`);
+      // Filter out items that were marked for deletion
+      const updated = produce(json, draft => {
+        ["formatters", ...Object.keys(FieldTypeDefinitions)].forEach(
+          fieldType => {
+            if (draft[fieldType]) {
+              draft[fieldType] = draft[fieldType].filter(
+                x => x !== MarkedForDeletion
+              );
+              draft[fieldType].forEach(x => {
+                Object.keys(x)
+                  .filter(k => k.startsWith("__"))
+                  .forEach(k => delete x[k]);
+              });
+            }
+          }
+        );
       });
+
+      const data = new FormData();
+      const file = new Blob([JSON.stringify(updated)], { type: "text/json" });
+
+      data.append("file", file, filename);
+      api.post("/templates", data).then(
+        () => {
+          triggerReload();
+
+          if (!location.pathname.endsWith(filename)) {
+            history.push(`/templates/${filename}`);
+          }
+
+          setJson(updated);
+          markSaved();
+        },
+        e => {
+          globalActions.addError("Error saving: " + e);
+        }
+      );
     },
     [triggerReload, path, name, json]
   );
 
   const onDelete = useCallback(
     e => {
-      api.delete(`/templates/${path}`).then(() => {
-        triggerReload();
-        history.push("/templates");
-      });
+      if (confirm("Are you sure you want to delete this template?")) {
+        api.delete(`/templates/${path}`).then(() => {
+          triggerReload();
+          history.push("/templates");
+        });
+      }
     },
     [triggerReload, path, name, json]
   );
@@ -148,52 +269,102 @@ export default ({ path, template, triggerReload }) => {
   );
 
   return (
-    <Form onSubmit={onSubmit}>
-      {(json == null || name == null) && <SiteLoader />}
-      {json != null && name != null && (
-        <>
-          <Form.Group>
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              disabled={!isNew}
-              name="name"
-              value={name}
-              onChange={onChangeName}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <SwitchableJsonEditor value={json} onChange={setJson} />
-          </Form.Group>
-
-          <div className="d-flex">
-            <Button type="submit" variant="primary">
-              <FontAwesomeIcon className="fa-fw mr-1" icon={faSave} />
-              Save
-            </Button>
-
-            {!isNew && (
-              <>
-                <Button
-                  variant="secondary"
-                  className="ml-2"
-                  onClick={onActivate}
-                >
-                  <FontAwesomeIcon className="fa-fw mr-1" icon={faTv} />
-                  Activate Template
-                </Button>
-
-                <div className="flex-grow-1"></div>
-
-                <Button variant="danger" onClick={onDelete}>
-                  <FontAwesomeIcon className="fa-fw mr-1" icon={faTrash} />
-                  Delete
-                </Button>
-              </>
+    <>
+      {globalState.errors.map((msg, i) => {
+        return (
+          <Alert
+            variant="danger"
+            onClose={() => globalActions.dismissError(i)}
+            dismissible
+          >
+            {msg}
+          </Alert>
+        );
+      })}
+      <Prompt
+        when={!isSaved}
+        message={
+          "You have unsaved changes.  Are you sure you want to leave this page?"
+        }
+      />
+      <Form onSubmit={onSubmit}>
+        {(json == null || name == null) && <SiteLoader />}
+        {json != null && name != null && (
+          <>
+            {isNew && (
+              <Form.Group>
+                <Form.Label>Name</Form.Label>
+                <Form.Control
+                  name="name"
+                  value={name}
+                  onChange={onChangeName}
+                />
+              </Form.Group>
             )}
-          </div>
-        </>
-      )}
-    </Form>
+
+            <Form.Group>
+              <Container>
+                <Row>
+                  <Col md={8} lg={1} className="px-lg-0 py-lg-0 pb-4">
+                    <div className="button-sidebar d-flex flex-lg-column flex-row">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        className="w-100"
+                      >
+                        <MemoizedFontAwesomeIcon
+                          className="fa-fw mr-1"
+                          size="sm"
+                          icon={faSave}
+                        />
+                        <span>Save</span>
+                      </Button>
+
+                      <div className="gutter" />
+
+                      {!isNew && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            onClick={onActivate}
+                            size="sm"
+                          >
+                            <MemoizedFontAwesomeIcon
+                              className="fa-fw mr-1"
+                              size="sm"
+                              icon={faTv}
+                            />
+                            <span>Activate</span>
+                          </Button>
+
+                          <div className="spacer"></div>
+
+                          <Button variant="danger" onClick={onDelete} size="sm">
+                            <MemoizedFontAwesomeIcon
+                              className="fa-fw mr-1"
+                              size="sm"
+                              icon={faTrash}
+                            />
+                            <span>Delete</span>
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </Col>
+                  <Col sm={12} md={11}>
+                    <SwitchableJsonEditor
+                      value={json}
+                      onChange={setJson}
+                      {...{ undo, redo, collapse, markForCollapse }}
+                    />
+                  </Col>
+                </Row>
+              </Container>
+            </Form.Group>
+          </>
+        )}
+      </Form>
+    </>
   );
 };

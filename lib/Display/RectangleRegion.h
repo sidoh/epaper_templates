@@ -1,23 +1,17 @@
-#include <Region.h>
-
-#include <GxEPD2_EPD.h>
-#include <GxEPD2_GFX.h>
 #include <Adafruit_GFX.h>
 #include <ArduinoJson.h>
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_GFX.h>
+#include <Region.h>
+#include <FillStyle.h>
 
 #include <memory>
 
 #pragma once
 
 class RectangleRegion : public Region {
-public:
-  enum class RectangleStyle {
-    FILLED, OUTLINE
-  };
-
-  enum class DimensionType {
-    STATIC, DYNAMIC, DYNAMIC_PCT
-  };
+ public:
+  enum class DimensionType { STATIC, VARIABLE };
 
   struct Dimension {
     DimensionType type;
@@ -27,25 +21,26 @@ public:
 
     static bool hasVariable(JsonObject spec);
     static String extractVariable(JsonObject spec);
+    static JsonObject extractFormatterDefinition(JsonObject spec);
     static Dimension fromSpec(JsonObject spec);
   };
 
-  RectangleRegion(
-    const String& variable,
-    uint16_t x,
-    uint16_t y,
-    Dimension width,
-    Dimension height,
-    uint16_t color,
-    std::shared_ptr<const VariableFormatter> formatter,
-    RectangleStyle style
+  RectangleRegion(const String& variable,
+      uint16_t x,
+      uint16_t y,
+      Dimension width,
+      Dimension height,
+      uint16_t color,
+      std::shared_ptr<const VariableFormatter> formatter,
+      FillStyle fillStyle,
+      uint16_t index
   );
   ~RectangleRegion();
 
   virtual void render(GxEPD2_GFX* display);
 
-  static RectangleStyle styleFromString(const String& str);
-private:
-  const RectangleStyle style;
+ private:
+  const FillStyle fillStyle;
   const Dimension w, h;
+  Rectangle previousBoundingBox;
 };

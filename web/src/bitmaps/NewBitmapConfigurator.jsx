@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
 import "./NewBitmapConfigurator.scss";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const LabelWithError = ({ label, error }) => {
   return (
@@ -95,7 +96,7 @@ export default ({ onSave }) => {
           <div className="d-flex mt-4">
             <div className="mr-auto" />
             <Button type="submit" variant="primary">
-              <FontAwesomeIcon icon={faPlusCircle} className="fa-fw mr-1" />
+              <MemoizedFontAwesomeIcon icon={faPlusCircle} className="fa-fw mr-1" />
               Create Bitmap
             </Button>
           </div>

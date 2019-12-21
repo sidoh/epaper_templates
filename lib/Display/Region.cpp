@@ -4,11 +4,13 @@ Region::Region(
   const String& variable,
   Rectangle boundingBox,
   uint16_t color,
-  std::shared_ptr<const VariableFormatter> formatter
+  std::shared_ptr<const VariableFormatter> formatter,
+  String id
 ) : variable(variable)
   , boundingBox(boundingBox)
   , color(color)
   , formatter(formatter)
+  , id(id)
 { }
 
 Region::~Region() { }
@@ -49,4 +51,14 @@ Rectangle Region::updateScreen(GxEPD2_GFX* display) {
 
 Rectangle Region::getBoundingBox() {
   return boundingBox;
+}
+
+void Region::dumpResolvedDefinition(JsonArray r) {
+  JsonArray arr = r.createNestedArray();
+  arr.add(variable);
+  arr.add(this->variableValue);
+}
+
+String Region::getId() {
+  return id;
 }

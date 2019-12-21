@@ -13,6 +13,7 @@ import api from "../util/api";
 import SiteLoader from "../util/SiteLoader";
 import { useTimeoutFn } from "react-use";
 import "./VariablesIndex.scss";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const UpdatedRecentlyBadge = ({ lastUpdated }) => {
   const [isHidden, setHidden] = useState(false);
@@ -32,7 +33,7 @@ const UpdatedRecentlyBadge = ({ lastUpdated }) => {
       className={`text-success save-success${isHidden ? " hidden" : ""}`}
       ref={badgeElmt}
     >
-      <FontAwesomeIcon icon={faCheck} />
+      <MemoizedFontAwesomeIcon icon={faCheck} />
     </div>
   );
 };
@@ -117,13 +118,13 @@ const VariableEditor = ({
       <div className="flex-grow-1 button-container">
         {isNew && (
           <Button variant="success" onClick={_onSubmit}>
-            <FontAwesomeIcon icon={faSave} className="fa-fw mr-1" />
+            <MemoizedFontAwesomeIcon icon={faSave} className="fa-fw mr-1" />
           </Button>
         )}
         {!isNew && (
           <>
             <Button variant="danger" onClick={onDelete}>
-              <FontAwesomeIcon icon={faTrash} className="fa-fw mr-1" />
+              <MemoizedFontAwesomeIcon icon={faTrash} className="fa-fw mr-1" />
             </Button>
             {lastUpdated && <UpdatedRecentlyBadge lastUpdated={lastUpdated} />}
           </>
@@ -152,7 +153,7 @@ const VariablesEditor = ({
         />
       ))}
       <Button variant="success" onClick={onAdd}>
-        <FontAwesomeIcon icon={faPlus} className="fa-fw mr-1" />
+        <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-1" />
         Add Variable
       </Button>
     </div>

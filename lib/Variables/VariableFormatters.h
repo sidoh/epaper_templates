@@ -53,16 +53,25 @@ private:
   uint8_t digits;
 };
 
+class RatioVariableFormatter : public VariableFormatter {
+public:
+  RatioVariableFormatter(float baseValue);
+
+  virtual String format(const String& value) const;
+private:
+  float baseValue;
+};
+
 class VariableFormatterFactory {
 public:
-  VariableFormatterFactory(JsonObject referenceFormatters);
+  VariableFormatterFactory(const JsonVariant& referenceFormatters);
 
   std::shared_ptr<const VariableFormatter> create(JsonObject spec);
 
 private:
-  std::map<String, std::shared_ptr<const VariableFormatter>> internedFormatters;
-  JsonObject referenceFormatters;
+  std::map<String, std::shared_ptr<const VariableFormatter>> refFormatters;
 
+  std::shared_ptr<const VariableFormatter> getReference(String refKey, bool allowReference);
   std::shared_ptr<const VariableFormatter> _createInternal(JsonObject spec, bool allowReference);
   std::shared_ptr<const VariableFormatter> defaultFormatter;
 };

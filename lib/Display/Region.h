@@ -51,7 +51,8 @@ public:
     const String& variable,
     Rectangle boundingBox,
     uint16_t color,
-    std::shared_ptr<const VariableFormatter> formatter
+    std::shared_ptr<const VariableFormatter> formatter,
+    String id
   );
   ~Region();
 
@@ -63,6 +64,8 @@ public:
   virtual void clearDirty();
   virtual const String& getVariableName() const;
   virtual Rectangle getBoundingBox();
+  virtual void dumpResolvedDefinition(JsonArray r);
+  virtual String getId();
 
 protected:
   const String variable;
@@ -71,6 +74,7 @@ protected:
   uint16_t color;
   bool dirty;
   std::shared_ptr<const VariableFormatter> formatter;
+  String id;
 };
 
 #endif

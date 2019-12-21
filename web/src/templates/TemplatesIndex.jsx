@@ -1,13 +1,20 @@
-import { faPlus, faTv } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPlus,
+  faTv,
+  faBackward,
+  faLongArrowAltLeft
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Col from "react-bootstrap/Col";
 import Nav from "react-bootstrap/Nav";
 import Row from "react-bootstrap/Row";
-import { NavLink, useRouteMatch } from "react-router-dom";
+import { Link, NavLink, useRouteMatch } from "react-router-dom";
 import api from "../util/api";
 import SiteLoader from "../util/SiteLoader";
 import TemplateEditor from "./TemplateEditor";
+import useGlobalState from "../state/global_state";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const TemplatesList = ({
   templates,
@@ -33,7 +40,7 @@ const TemplatesList = ({
               >
                 <span className="flex-grow-1">{displayName}</span>
                 {activeTemplate == x.name && (
-                  <FontAwesomeIcon className="fa-sm mt-1" icon={faTv} />
+                  <MemoizedFontAwesomeIcon className="fa-sm mt-1" icon={faTv} />
                 )}
               </NavLink>
             </Nav.Item>
@@ -44,7 +51,7 @@ const TemplatesList = ({
 
       <Nav.Item key="new">
         <NavLink to="/templates/new" className="nav-link bg-success">
-          <FontAwesomeIcon className="fa-fw mr-1" icon={faPlus} />
+          <MemoizedFontAwesomeIcon className="fa-fw mr-1" icon={faPlus} />
           New
         </NavLink>
       </Nav.Item>
@@ -55,6 +62,10 @@ const TemplatesList = ({
 export default props => {
   const { params: { template_name: templateName } = {} } =
     useRouteMatch("/templates/:template_name") || {};
+  const isNew = templateName === "new";
+  const isIndex = !isNew && !templateName;
+
+  const [globalState, globalActions] = useGlobalState();
   const [templates, setTemplates] = useState(null);
   const [templateContents, setTemplateContents] = useState({});
   const selectedTemplateContents =
@@ -63,9 +74,8 @@ export default props => {
 
   const triggerReload = useCallback(() => {
     api.get("/templates").then(x => setTemplates(x.data));
-
-    api.get("/settings").then(x => {
-      setActiveTemplate(x.data["display.template_name"]);
+    globalActions.loadSettings().then(settings => {
+      setActiveTemplate(settings["display.template_name"]);
     });
   }, [setActiveTemplate, templates, setTemplates]);
 
@@ -94,15 +104,35 @@ export default props => {
       {templates == null && <SiteLoader />}
       {templates != null && (
         <>
-          <h3 className="mb-4">Templates</h3>
+          <h3 className="mb-4">
+            {!isIndex && (
+              <>
+                <Link
+                  to="/templates"
+                  className="btn btn-primary mr-2"
+                  style={{ width: "3em" }}
+                >
+                  <MemoizedFontAwesomeIcon
+                    icon={faLongArrowAltLeft}
+                    className="fa-fw mr-1"
+                  />
+                </Link>
+              </>
+            )}
+            {isIndex && "Templates"}
+            {isNew && "New Template"}
+            {!isIndex && !isNew && `Template: ${templateName}`}
+          </h3>
           <Row>
-            <Col sm={3}>
-              <TemplatesList
-                activeTemplate={activeTemplate}
-                templates={templates}
-              />
-            </Col>
-            <Col sm={9}>
+            {!templateName && (
+              <Col sm={3}>
+                <TemplatesList
+                  activeTemplate={activeTemplate}
+                  templates={templates}
+                />
+              </Col>
+            )}
+            <Col sm={12}>
               {templateName && (
                 <TemplateEditor
                   path={templateName}

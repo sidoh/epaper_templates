@@ -19,7 +19,8 @@ public:
     uint16_t color,
     const GFXfont* font,
     std::shared_ptr<const VariableFormatter> formatter,
-    uint8_t size
+    uint8_t size,
+    uint16_t index
   );
   ~TextRegion();
 

@@ -1,0 +1,457 @@
+{
+  "$id": "https://sidoh.github.io/epaper_templates/template.schema.json",
+  "$schema": "https://json-schema.org/draft-08/schema#",
+  "type": "object",
+  "definitions": {
+    "referenceFormatter": {
+      "type": "object",
+      "title": "Formatter Definition",
+      "properties": {
+        "name": {
+          "title": "Reference Name",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_0]+$"
+        },
+        "formatter": {
+          "title": "",
+          "$ref": "#/definitions/formatter"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "fillStyle": {
+      "title": "Style",
+      "type": "string",
+      "enum": [
+        "outline",
+        "filled"
+      ]
+    },
+    "color": {
+      "title": "Color",
+      "type": "string",
+      "enum": [
+        "black",
+        "white"
+      ]
+    },
+    "storedBitmap": {
+      "type": "string"
+    },
+    "storedFormatter": {
+      "type": "string"
+    },
+    "horizontalPosition": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "verticalPosition": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "variable": {
+      "title": "Variable Name",
+      "type": "string"
+    },
+    "font": {
+      "title": "Font",
+      "type": "string",
+      "enum": [
+        "FreeMonoBold24pt7b",
+        "FreeSans18pt7b",
+        "FreeSans9pt7b",
+        "FreeSansBold9pt7b",
+        "FreeMono9pt7b"
+      ],
+      "enumNames": [
+        "FreeMono Bold (24pt)",
+        "Free Sans (18pt)",
+        "Free Sans (9pt)",
+        "Free Sans Bold (9pt)",
+        "Free Mono (9pt)"
+      ]
+    },
+    "caseFormatterItem": {},
+    "valueChoice": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": [
+            "static",
+            "variable"
+          ]
+        }
+      },
+      "dependencies": {
+        "type": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "enum": [
+                    "static"
+                  ]
+                },
+                "value": {
+                  "title": "Value",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "enum": [
+                    "variable"
+                  ]
+                },
+                "variable": {
+                  "$ref": "#/definitions/variable"
+                },
+                "formatter": {
+                  "$ref": "#/definitions/formatter"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "formatter": {
+      "title": "Formatter",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": [
+            "ref",
+            "identity",
+            "time",
+            "round",
+            "cases",
+            "ratio"
+          ],
+          "enumNames": [
+            "Pre-Defined Formatter",
+            "Identity (No-Op)",
+            "Time (strftime)",
+            "Round",
+            "Cases",
+            "Ratio"
+          ]
+        },
+        "args": {
+          "type": "object",
+          "title": "Arguments"
+        }
+      },
+      "dependencies": {
+        "type": {
+          "oneOf": [
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "identity"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "cases"
+                  ]
+                },
+                "args": {
+                  "type": "object",
+                  "properties": {
+                    "prefix": {
+                      "title": "Prefix",
+                      "type": "string"
+                    },
+                    "default": {
+                      "title": "Default Value",
+                      "type": "string"
+                    },
+                    "cases": {
+                      "type": "array",
+                      "title": "Cases",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "title": "Key"
+                          },
+                          "value": {
+                            "type": "string",
+                            "title": "Value"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "time"
+                  ]
+                },
+                "args": {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "title": "Format String (strftime)",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "round"
+                  ]
+                },
+                "args": {
+                  "type": "object",
+                  "properties": {
+                    "digits": {
+                      "title": "Number of digits",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "ref"
+                  ]
+                },
+                "ref": {
+                  "$ref": "#/definitions/storedFormatter"
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "ratio"
+                  ]
+                },
+                "args": {
+                  "type": "object",
+                  "properties": {
+                    "base": {
+                      "title": "Base value",
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "properties": {
+    "background_color": {
+      "title": "Background Color",
+      "$ref": "#/definitions/color"
+    },
+    "rotation": {
+      "title": "Screen Rotation",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "enumNames": [
+        "0°",
+        "90°",
+        "180°",
+        "270°"
+      ]
+    },
+    "formatters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/referenceFormatter"
+      }
+    },
+    "bitmaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "Bitmap",
+        "properties": {
+          "x": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "y": {
+            "$ref": "#/definitions/verticalPosition"
+          },
+          "w": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "h": {
+            "$ref": "#/definitions/verticalPosition"
+          },
+          "color": {
+            "$ref": "#/definitions/color"
+          },
+          "value": {
+            "title": "Value",
+            "type": "object",
+            "properties": {
+              "type": {
+                "title": "Type",
+                "type": "string",
+                "enum": [
+                  "static",
+                  "variable"
+                ]
+              }
+            },
+            "dependencies": {
+              "type": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "static"
+                        ]
+                      },
+                      "value": {
+                        "$ref": "#/definitions/storedBitmap"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "variable"
+                        ]
+                      },
+                      "variable": {
+                        "$ref": "#/definitions/variable"
+                      },
+                      "formatter": {
+                        "$ref": "#/definitions/formatter"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "text": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "Text",
+        "properties": {
+          "x": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "y": {
+            "$ref": "#/definitions/verticalPosition"
+          },
+          "font": {
+            "$ref": "#/definitions/font"
+          },
+          "font_size": {
+            "type": "integer",
+            "title": "Font Size"
+          },
+          "value": {
+            "title": "Value",
+            "$ref": "#/definitions/valueChoice"
+          }
+        }
+      }
+    },
+    "rectangles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "Rectangle",
+        "properties": {
+          "x": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "y": {
+            "$ref": "#/definitions/verticalPosition"
+          },
+          "style": {
+            "$ref": "#/definitions/fillStyle"
+          },
+          "color": {
+            "$ref": "#/definitions/color"
+          },
+          "w": {
+            "title": "Width",
+            "$ref": "#/definitions/valueChoice"
+          },
+          "h": {
+            "title": "Height",
+            "$ref": "#/definitions/valueChoice"
+          }
+        }
+      }
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "Line",
+        "properties": {
+          "x1": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "x2": {
+            "$ref": "#/definitions/horizontalPosition"
+          },
+          "y1": {
+            "$ref": "#/definitions/verticalPosition"
+          },
+          "y2": {
+            "$ref": "#/definitions/verticalPosition"
+          }
+        }
+      }
+    }
+  }
+}

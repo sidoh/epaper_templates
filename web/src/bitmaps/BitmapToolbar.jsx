@@ -18,6 +18,7 @@ import "./BitmapToolbar.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useToggle } from "react-use";
 import api from "../util/api";
+import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 
 const DimensionEditor = ({ label, value, onChange }) => {
   const _onChange = useCallback(e => onChange(e.target.value));
@@ -36,7 +37,7 @@ const ToolSwitcher = ({ name, icon, onChange, isActive }) => {
   return (
     <li>
       <Button className={isActive ? "active" : ""} onClick={onClick}>
-        <FontAwesomeIcon icon={icon} />
+        <MemoizedFontAwesomeIcon icon={icon} />
       </Button>
     </li>
   );
@@ -90,7 +91,7 @@ export default ({
       <ul className="tool-list">
         <li>
           <Button title="Save" onClick={onSave}>
-            <FontAwesomeIcon icon={faSave} />
+            <MemoizedFontAwesomeIcon icon={faSave} />
           </Button>
         </li>
         <li>
@@ -99,7 +100,7 @@ export default ({
             className={isLoaderActive ? "active" : ""}
             onClick={toggleLoaderActive}
           >
-            <FontAwesomeIcon icon={faFolderOpen} />
+            <MemoizedFontAwesomeIcon icon={faFolderOpen} />
           </Button>
         </li>
         <li>
@@ -108,17 +109,17 @@ export default ({
             className={isResizing ? "active" : ""}
             onClick={toggleResizing}
           >
-            <FontAwesomeIcon icon={faExpandArrowsAlt} />
+            <MemoizedFontAwesomeIcon icon={faExpandArrowsAlt} />
           </Button>
         </li>
         <li>
           <Button disabled={!canUndo} title="Undo" onClick={onUndo}>
-            <FontAwesomeIcon icon={faUndo} />
+            <MemoizedFontAwesomeIcon icon={faUndo} />
           </Button>
         </li>
         <li>
           <Button disabled={!canRedo} title="Redo" onClick={onRedo}>
-            <FontAwesomeIcon icon={faRedo} />
+            <MemoizedFontAwesomeIcon icon={faRedo} />
           </Button>
         </li>
       </ul>
@@ -129,12 +130,12 @@ export default ({
       <ul className="tool-list">
         <li>
           <Button onClick={onDownload} title="Download">
-            <FontAwesomeIcon icon={faDownload} />
+            <MemoizedFontAwesomeIcon icon={faDownload} />
           </Button>
         </li>
         <li>
           <Button title="Delete" variant="danger" onClick={onDelete}>
-            <FontAwesomeIcon icon={faTrash} />
+            <MemoizedFontAwesomeIcon icon={faTrash} />
           </Button>
         </li>
       </ul>
@@ -187,7 +188,7 @@ export default ({
           <ul className="tool-list">
             <li>
               <Button variant="success" onClick={onSaveResize}>
-                <FontAwesomeIcon icon={faCheck} />
+                <MemoizedFontAwesomeIcon icon={faCheck} />
               </Button>
             </li>
           </ul>

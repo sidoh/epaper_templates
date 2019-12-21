@@ -1,0 +1,8 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootstrap/scss/mixins/_breakpoints";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.alert.new-element {
+  border: 1px dashed $success;
+}

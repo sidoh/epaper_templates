@@ -1,0 +1,56 @@
+.visual-editor {
+  svg.template-canvas {
+    &.selecting > * {
+      cursor: crosshair !important;
+    }
+
+    &.cursor, &.cursor > *, &.cursor g > * {
+      cursor: crosshair !important;
+    }
+
+    cursor: crosshair;
+
+    .cursor-position {
+      fill: none;
+      cursor: none;
+      stroke: #393;
+      stroke-width: 1px;
+    }
+
+    image, text, line, rect {
+      stroke-width: 1px;
+      cursor: cell;
+      user-select: none;
+
+      &.active {
+        fill-opacity: 0.8;
+        z-index: 9;
+        cursor: move;
+      }
+    }
+
+    rect.selection-outline {
+      fill: none;
+      stroke: #666;
+      stroke-width: 1px;
+      stroke-dasharray: 3 2;
+    }
+
+    rect.outline {
+      fill: none;
+      stroke-width: 1px;
+    }
+
+    rect.filled,
+    rect.active.filled {
+      stroke-width: 0;
+    }
+
+    rect.selection {
+      fill: none;
+      stroke: #99f;
+      stroke-width: 1px;
+      stroke-dasharray: 6 2;
+    }
+  }
+}
