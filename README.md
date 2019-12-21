@@ -2,281 +2,230 @@
 
 Template-oriented driver for e-paper displays using Arduino.  Define a layout with a JSON template, and update the display by changing variables via a REST API or MQTT.
 
-## Demo
+# Demo
 
 [<img src="https://imgur.com/RhSOGSt.gif" width="400" />](https://youtu.be/Vg_ctuM1Ppc)
+
+# Setup
 
 ## Requirements
 
 1. An ESP32.
 2. A WaveShare e-Paper module.  Any module [supported by GxEPD2](https://github.com/ZinggJM/GxEPD2#supported-spi-e-paper-panels-from-good-display) will work.
 
-## Setup
+## Quickstart
 
+1. Connect display to MCU.  (see [waveshare site](https://www.waveshare.com/wiki/1.54inch_e-Paper_Module) for more information)
 1. Flash your MCU.
    1. With PlatformIO: for example `pio run -e esp32 -t upload`.
    1. Use a pre-compiled binary from the [releases page](https://github.com/sidoh/epaper_templates/releases).
 1. Setup WiFi.  A setup AP will appear named `epaper_XXXXXX`.  The default password is **waveshare**.
 1. Visit the Web UI to configure further.
 
+# Concepts
+
+This project aims to strike a particular balance of flexibility and ease-of-use.  In order to understand how to make use of it, let's briefly discuss some primitives:
+
+
 ## Variables
 
-Displays are made dynamic by binding _variables_ to certain regions.  When variables are updated, the corresponding regions are updated.  There are two ways to update variables:
+Variables are simple.  They're a key/value pair.  Your display is made dynamic by binding variables to regions on the screen (more on this later).
 
-#### REST API
+#### Special Variables
+
+* The `timestamp` variable contains the current unix timestamp.  You can use the `time` formatter (more on formatters below) to coerce it into the format you want.  Time is synchronized using NTP.
+
+## Regions
+
+A region is the generic term used for the types of things that can be displayed.  These include text, images, and various types of shapes.
+
+## Templates
+
+Templates define the layout of your screen.  A template consists of region definitions.  Templates are made dynamic by binding variables to regions.  You can, for example, define a text region that updates with a variable.
+
+Templates are simply a JSON file with a particular schema (available as a [JSON schema here](./template.schema.json)).  While you can generate these by hand, it's much easier to use the bundled web editor.
+
+## Formatters
+
+Sometimes you'll want to pre-process a variable's value before used in a region.  For example, if the variable `outside_temperature` corresponds to a thermometer reading, its value might contain more precision than you care about (e.g., `72.013045`).  Here, you could use the `round` formatter to trim off excess digits.
+
+You can either define a formatter inline with a variable, or you can create a reusable formatter and attach a reference to it from a variable (this is useful when you have many regions that need to use the same formatter).
+
+## Bitmaps
+
+This one's pretty obvious.  We can upload images to display on the screen.  Images use a very raw format -- a bitfield.  Each pixel is represented as a bit in the file, and are rows ordered left-to-right, columns top-to-bottom.  A `0b1` means the bit should be on (i.e., the pixel is black).
+
+The bundled web UI comes with a tool to convert any browser-displayable image to this format, as well as a pixel editor to create your own or tweak ones you've already uploaded.
+
+# Integrations
+
+With the single exception of the timestamp, this project is entirely push-based.  In order to make a dynamic display, you'll need to push variable updates using one of the following mechanisms:
+
+## REST API
+
+The RESTful `/api/v1/variables` route allows you to update the variables document like so:
 
 ```
 $ curl -v -X PUT -H'Content-Type: application/json' -d '{"variable_name":"variable_value"}' http://epaper-display/api/v1/variables
 ```
 
-#### MQTT
+Any regions bound to updated variables are immediately updated.
 
-Configure MQTT using the UI, or use the `/settings` endpoint:
+## MQTT
+
+MQTT works similarly, but requires a bit more setup.  The easiest way to get started is by using the UI:
+
+![MQTT Setup](./docs/mqtt_configuration.png)
+
+You can alternatively use the `/api/v1/settings` REST route:
+
 
 ```
 $ curl -v -X PUT -H'Content-Type: application/json' -d '{
-  "mqtt_server": "deepthought.sidoh.org",
-  "mqtt_username": "sidoh",
+  "mqtt_server": "my-mqtt-broker",
+  "mqtt_username": "user",
   "mqtt_password": "hunter2",
-  "mqtt_variables_topic_pattern": "template-displays/display1/:variable_name"
+  "mqtt_variables_topic_pattern": "template-displays/my_display/:variable_name"
 }' http://epaper-display/api/v1/settings
 ```
 
-You can then publish messages to, for example `template-displays/display1/variable_name` to update the value of the variable `variable_name`.
+**Note here that the `:variable_name` is important!**
+
+After this is done, you can then publish messages to, for example `template-displays/display1/my_cool_variable` to update the value of the variable `my_cool_variable`:
 
 ```
-mosquitto_pub -h my-mqtt-broker.com -u username -P hunter2 -t 'template-displays/display1/variable_name' -m "variable_value"
+mosquitto_pub -h my-mqtt-broker -u user -P hunter2 -t 'template-displays/display1/my_cool_variable' -m "variable_value"
 ```
 
-### Formatters
+# Web UI
 
-Variables can optionally be passed through a formatting function before being rendered.  The supported formatters are:
+This project features a powerful, fully embedded Web UI.  You can configure stuff, visually edit or tweak templates, upload or edit bitmaps, or change variables.
 
-#### `time`
+While things are generally pretty viewable on mobile, the heftier pages like the template and bitmap editors don't work well.  This is mostly due to my ineptitude in handling mobile browser events.  Happy to collaborate on a PR for anyone wanting to fix this!
 
-Format a UNIX epoch timestamp using standard [`strftime`](http://man7.org/linux/man-pages/man3/strftime.3.html) flags.
+The sections below go into a bit more detail on each of the pages.
 
-```json
-{
-  "text": [
-    {
-      "x": 100,
-      "y": 100,
-      "font": "FreeSansBold9pt7b",
-      "color": "black",
-      "variable": "my_variable",
-      "formatter": "time",
-      "args": {
-        "timezone": "PT",
-        "format": "%l:%M %p"
-      }
-    }
-  ]
-}
-```
+## Template Editor
 
-The timestamp will be converted to the provided timezone if one is specified.
+The UI includes a full-featured template editor:
 
-#### `cases`
+![Editor Overview](./docs/template_editor.png)
 
-Simple map from key to value.  Particularly useful for variable bitmaps:
+There's a lot going on here, but hopefully most of the useful features are either discoverable or intuitive.  The important pieces are briefly detailed below.
 
-```json
-{
-  "bitmaps": [
-    {
-      "x": 100,
-      "y": 100,
-      "w": 64,
-      "h": 64,
-      "variable": "my_variable",
-      "formatter": "cases",
-      "args": {
-        "prefix": "/b/",
-        "default": "unknown.bin",
-        "cases": {
-          "sunny": "sunny.bin",
-          "cloudy": "cloudy.bin"
-        }
-      }
-    }
-  ]
-}
-```
+#### Canvas preview
 
-## Templates
+The white square in the middle of the screen is a computed preview of your template.  It automatically resolves variable values from the server so you should be see a pretty faithful model of what the screen will really look like.
 
-Templates are composed of the following types of components:
+#### Adding regions
 
-1. Lines
-2. Text
-3. Bitmaps
-4. Rectangles
+To add a new region of a particular type, click the "+" icon next to the corresponding section.  You will then be prompted to click on a location within the canvas indicating where you'd like to place the newly added region.  After doing so, you'll see a form appear allowing you to edit all of the fields relevant to the type of region you've added:
 
-### Lines
+![New Region Configuration](./docs/new_region_config.png)
 
-Lines simply have start and end coordinates.  You can optionally specify a color.  Example:
+To bind a region to a variable, change its Value > Type to "variable" and type in the name of the variable you'd like to bind it to (the field should autocomplete).
 
-```json
-{
-  "lines": [
-    {"x1": 0, "x2": 100, "y1": 0, "y2": 100, "color": "black"}
-  ]
-}
-```
+#### Selecting and moving existing regions
 
-### Text
+The canvas preview features intuitive selection and movement functionality:
 
-Text can be defined statically, or using a variable.  Examples of each:
+* Click a region to select it, drag a selected region to move it around
+* Hold down Ctrl (or ⌘ on OS X) to select multiple regions
+* Click and drag to select many regions at once
+* Use arrow keys to nudge the location of a selection by `5px` in the appropriate direction.  Hold down shift while doing so to nudge by `1px`.
 
-```json
-{
-  "text": [
-      {
-      "x": 10,
-      "y": 220,
-      "font": "FreeSansBold9pt7b",
-      "static": "Outside"
-    },
-    {
-      "x": 120,
-      "y": 220,
-      "font": "FreeSans9pt7b",
-      "variable": "outside_temp_updated_at",
-      "formatter": "Time",
-      "args": {
-        "timezone": "PT",
-        "format": "%l:%M %p"
-      }
-    },
-    {
-      "x": 10,
-      "y": 275,
-      "font": "FreeMonoBold24pt7b",
-      "variable": "outside_temp"
-    }
-  ]
-}
-```
+#### Keyboard Shortcuts
 
-### Bitmaps
+| **Shortcut**   | **Action**  | **Description**
+|---|---|---|
+|Ctrl+Z<br />⌘+Z|Undo|Undoes the last action.|
+|Ctrl+Shift+Z<br/>⌘+Shift+Z|Redo|Redoes the last action.|
+|Ctrl+C<br/>⌘+C|Copy|Copies the selected regions to the clipboard.|
+|Ctrl+V<br/>⌘+V|Paste|Pastes a previously copied selection from the clipboard onto the canvas.|
+|Arrow Keys|Move|Nudge the location of a selection by `5px` in the appropriate direction.  Hold down shift while doing so to nudge by `1px`.
+|Backspace<br/>Delete|Delete|Deletes currently selected regions|
 
-Bitmaps are in a simple compacted format (where each pixel is a single bit).  You can use the Web UI to convert, edit, and resize existing images.  If you prefer to use the API, or want to do this in patch, [here is a ruby script](https://gist.github.com/sidoh/41a06173f1e4714cf573de1d05f1651e#file-png_to_bitfield-rb) that converts a PNG to the bitfield format.
+#### Sidebar
 
-They are referenced via filenames, and can be managed through the REST API:
+The visual editor features a sidebar which lists all of the regions in your template:
 
-```
-$ curl -X POST -F 'my-bitmap.bin=@path/to/bitmap.bin' http://epaper-display/api/v1/bitmaps
-$ curl -v http://epaper-display/api/v1/bitmaps
-[{"name":"/b/bitmap.bin","size":512}]
-$ curl -X DELETE http://epaper-display/api/v1/bitmaps/bitmap.bin
-```
+<img src="./docs/visual_editor_sidebar.png" width="200" />
 
-Example:
+You can select regions in this list by clicking on them.  Standard selection conventions apply: holding Ctrl (⌘ on OS X) selects multiple items.  Holding down Shift selects a range.
 
-```json
-{
-  "bitmaps": [
-    {
-      "x": 0,
-      "y": 0,
-      "w": 64,
-      "h": 64,
-      "color": "black",
-      "static": "/b/bitmap.bin"
-    },
-    {
-      "x": 100,
-      "y": 100,
-      "w": 64,
-      "h": 64,
-      "variable": "my_variable",
-      "formatter": "cases",
-      "args": {
-        "prefix": "/b/",
-        "default": "unknown.bin",
-        "cases": {
-          "sunny": "sunny.bin",
-          "cloudy": "cloudy.bin"
-        }
-      }
-    }
-  ]
-}
-```
+You can also delete regions by clicking on the trash can icon.
 
-### Rectangles
+#### Region fields editor
 
-Rectangles of static width can be specified like so:
+When you have one or more regions selected, the fields editor becomes interesting.  Access it by clicking on the "Editor" tab on the sidebar.
 
-```json
-{
-  "rectangles": [
-    {
-      "style": "outline",
-      "x": 50,
-      "y": 50,
-      "height": {
-        "static": 50
-      },
-      "width": {
-        "static": 50
-      },
-      "color": "black"
-    }
-  ]
-}
-```
+<img src="./docs/fields_editor.png" width="300"/>
 
-Rectangles can also have a dynamic dimension (rectangles with both dimensions being dynamic are currently not supported).  For example:
+This does something slightly fancy: it shows only fields that the selected regions have in common.  For example -- if you've got a text region and a bitmap region selected, you won't see `w` or `h` because text doesn't have those fields, but you will see `x` and `y`.
 
-```json
-{
-  "rectangles": [
-    {
-      "style": "filled",
-      "x": 51,
-      "y": 51,
-      "height": {
-        "static": 488
-      },
-      "width": {
-        "max": 48,
-        "variable": "rectangle-width",
-        "variable_mode": "percent"
-      },
-      "color": "black"
-    }
-  ]
-}
-```
+Fields where all of the selected regions have the same value show that value.  When there's any variation, the field is blank.
 
-When `variable_mode` is `percent`, you must specify a `max` as well.  The dimension of the rectangle will then be set to the percent of the specified variable (for example, a value of 50 would mean the rectangle would have half of its dimension).
+Changing any field updates the value for all selected regions.
 
-### Examples
+The "JSON" sub-tab shows and allows you to edit a more raw form of the same information:
+
+<img src="./docs/fields_json_editor.png" width="300" />
+
+#### Formatters
+
+This section is where you can configure pre-defined formatters:
+
+<img src="./docs/formatter_editor.png" width="300"/>
+
+Formatters defined here can be attached to any variable region.  This allows you to define a formatter once and use it many times.
+
+#### Raw mode
+
+If you click on the "Raw" tab, you'll see the unadulterated JSON template.  Here, you can paste in a template from somewhere else, or free-hand edit it if that tickles your fancy.
+
+## Variables
+
+<img src="./docs/variables_editor.png" />
+
+This is a rough interface to edit, add, or delete any variables registered with the system.
+
+## Images
+
+This is where you can upload, create, or edit bitmaps to be used in your templates!
+
+#### Index
+
+<img src="./docs/bitmap_index.png" width="400" />
+
+This shows all of the bitmaps that you've previously uploaded.  Click on a bitmap to edit it.
+
+#### Editor
+
+<img src="./docs/bitmap_editor.png" width="400" />
+
+This allows you to make pixel-level changes to your bitmap.  There are a two crude and familiar editor tools: a pencil and a fill bucket.  Select your desired color by clicking on the appropriate button to the right.
+
+#### Importing images
+
+<img src="./docs/bitmap_import.png" width="400" />
+
+Click on the totally-intuitive-and-definitely-not-cryptic folder icon to open an existing image file on your computer.  Because it must be mapped to a black/white bitfield, there is a sensitivity slider.  This changes the threshold at which we should consider a remapped pixel to be "on" vs. "off."
+
+Note that when you're opening a `.bin` file (an already processed bitmap), you'll have a different view.  Because the raw format does not include dimension data (we only know the number of pixels, and don't have the aspect ratio), you'll see text boxes allowing you to select the appropriate values.
+
+#### Resize
+
+You can resize a bitmap by clicking on the totally-intuitive-and-definitely-not-cryptic "expand" icon (3rd from the left).  This will bring up some text boxes that allow you to enter the desired dimensions.  Click on the checkmark when you're done.
+
+#### Downloading
+
+You can download a copy of the image by clicking on the "Download" icon (1st icon under "File" section).
+
+# Examples
 
 The [examples directory][examples] has a few sample templates.
 
-### Managing templates
-
-Templates can be managed via the REST API:
-
-```
-$ curl -X POST -F 'image=@data/path/to/template.json' http://epaper-display/api/v1/templates
-$ curl http://epaper-display/api/v1/templates
-[{"name":"/t/template.json","size":3527}]
-$ curl -X DELETE http://epaper-display/api/v1/templates/template.json
-```
-
-### Selecting a template
-
-```
-$ curl -X PUT -H'Content-Type:application/json' \
-  -d '{"template_path":"/templates/template.json"}' \
-  http://epaper-display/api/v1/settings
-```
-
-## REST API
+# REST API
 
 The following RESTful routes are available:
 
