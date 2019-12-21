@@ -1,6 +1,32 @@
-# e-Paper Templates [![Build Status](https://travis-ci.org/sidoh/epaper_templates.svg?branch=master)](https://travis-ci.org/sidoh/epaper_templates) [![release](http://github-release-version.herokuapp.com/github/sidoh/epaper_templates/release.svg?style=flat)](https://github.com/sidoh/epaper_templates/releases/latest) [![License][shield-license]][info-license]
+# e-Paper Templates [![Build Status](https://travis-ci.org/sidoh/epaper_templates.svg?branch=master)](https://travis-ci.org/sidoh/epaper_templates) [![release](http://github-release-version.herokuapp.com/github/sidoh/epaper_templates/release.svg?style=flat)](https://github.com/sidoh/epaper_templates/releases/latest) [![License][shield-license]][info-license] {ignore=true}
 
 Template-oriented driver for e-paper displays using Arduino.  Define a layout with a JSON template, and update the display by changing variables via a REST API or MQTT.
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=2 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Demo](#demo)
+- [Setup](#setup)
+  - [Requirements](#requirements)
+  - [Quickstart](#quickstart)
+- [Concepts](#concepts)
+  - [Variables](#variables)
+  - [Regions](#regions)
+  - [Templates](#templates)
+  - [Formatters](#formatters)
+  - [Bitmaps](#bitmaps)
+- [Integrations](#integrations)
+  - [REST API](#rest-api)
+  - [MQTT](#mqtt)
+- [Web UI](#web-ui)
+  - [Template Editor](#template-editor)
+  - [Variables](#variables-1)
+  - [Images](#images)
+- [Examples](#examples)
+- [REST API](#rest-api-1)
+
+<!-- /code_chunk_output -->
 
 # Demo
 
