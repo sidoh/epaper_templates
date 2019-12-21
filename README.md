@@ -249,7 +249,7 @@ You can download a copy of the image by clicking on the "Download" icon (1st ico
 
 # Examples
 
-The [examples directory][examples] has a few sample templates.
+The [examples directory][./examples] has a few sample templates.
 
 # REST API
 
