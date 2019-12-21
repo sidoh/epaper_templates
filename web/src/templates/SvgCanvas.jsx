@@ -115,7 +115,7 @@ const SvgRectangle = React.memo(
       },
       onClick,
       isActive,
-      resolvedValue,
+      resolvedValues,
       className
     } = props;
 
@@ -139,7 +139,7 @@ const SvgRectangle = React.memo(
       };
 
       return [extract("w"), extract("h")];
-    }, [resolvedValue, widthDef, heightDef]);
+    }, [resolvedValues, widthDef, heightDef]);
 
     const classes = useMemo(() => {
       return [className, style === "filled" ? "filled" : "outline"];
