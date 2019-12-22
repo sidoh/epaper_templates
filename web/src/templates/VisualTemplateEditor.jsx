@@ -229,7 +229,10 @@ export function VisualTemplateEditor({
           const value = region.value;
           const indexValue = currentRvIndex.current[id];
 
-          if (value !== indexValue && value && value.type === "variable") {
+          // Skip initial resolution
+          if (!indexValue) {
+            setRvIndex(id, value);
+          } else if (value !== indexValue && value && value.type === "variable") {
             const message = {
               type: "resolve",
               variables: [[value.variable, value.formatter, id]]
@@ -252,6 +255,10 @@ export function VisualTemplateEditor({
           parsed.forEach(x => {
             if (x.ref !== undefined && x.v) {
               const [type, id] = parseRegionIdentifier(x.ref);
+              if (!draft[type]) {
+                draft[type] = {};
+              }
+
               if (!draft[type][id]) {
                 draft[type][id] = {[x.k]: x.v}
               } else {
