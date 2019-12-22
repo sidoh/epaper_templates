@@ -518,7 +518,11 @@ export function SvgCanvas({
           // setCursorPosition(extractEventCoordinates(e));
         }
       },
-      onMouseLeave: endMouseMove,
+      onMouseEnter: e => {
+        if ((selectionParams.current || isDragging.current) && !e.buttons) {
+          endMouseMove(e);
+        }
+      },
       onMouseMove: e => {
         if (creatingElement) {
           setCursorPosition(extractEventCoordinates(e));
