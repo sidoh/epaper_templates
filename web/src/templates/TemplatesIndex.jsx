@@ -88,8 +88,7 @@ export default props => {
   useEffect(() => {
     if (
       templateName &&
-      templateName !== "new" &&
-      !templateContents[templateName]
+      templateName !== "new"
     ) {
       api
         .get(`/templates/${templateName}`)
@@ -97,7 +96,7 @@ export default props => {
           setTemplateContents({ ...templateContents, [templateName]: x.data })
         );
     }
-  }, [templateName, templateContents]);
+  }, [templateName]);
 
   return (
     <>
