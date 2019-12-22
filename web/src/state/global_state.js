@@ -16,8 +16,8 @@ const initialState = {
 };
 
 function createLoadFunction(apiPath, stateVariable, fn = x => x) {
-  return store => {
-    if (store.state[stateVariable] !== initialState[stateVariable]) {
+  return (store, {forceReload = false} = {}) => {
+    if (!forceReload && store.state[stateVariable] !== initialState[stateVariable]) {
       return Promise.resolve(store.state[stateVariable]);
     } else {
       return api.get(apiPath).then(x => {

@@ -74,7 +74,7 @@ export default props => {
 
   const triggerReload = useCallback(() => {
     api.get("/templates").then(x => setTemplates(x.data));
-    globalActions.loadSettings().then(settings => {
+    globalActions.loadSettings({forceReload: true}).then(settings => {
       setActiveTemplate(settings["display.template_name"]);
     });
   }, [setActiveTemplate, templates, setTemplates]);
@@ -86,10 +86,7 @@ export default props => {
   }, [triggerReload, templates]);
 
   useEffect(() => {
-    if (
-      templateName &&
-      templateName !== "new"
-    ) {
+    if (templateName && templateName !== "new") {
       api
         .get(`/templates/${templateName}`)
         .then(x =>
@@ -97,6 +94,11 @@ export default props => {
         );
     }
   }, [templateName]);
+
+  const isSelectedTemplateActive =
+    templateName &&
+    activeTemplate &&
+    templateName === activeTemplate.split("/")[2];
 
   return (
     <>
@@ -137,6 +139,7 @@ export default props => {
                   path={templateName}
                   template={selectedTemplateContents}
                   triggerReload={triggerReload}
+                  isActive={isSelectedTemplateActive}
                 />
               )}
             </Col>

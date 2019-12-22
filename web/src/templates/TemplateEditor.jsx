@@ -4,7 +4,12 @@ import Form from "react-bootstrap/Form";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import SiteLoader from "../util/SiteLoader";
-import { faSave, faTv, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSave,
+  faTv,
+  faTrash,
+  faExclamationTriangle
+} from "@fortawesome/free-solid-svg-icons";
 import { Prompt, useHistory } from "react-router-dom";
 
 import "./TemplateEditor.scss";
@@ -19,7 +24,7 @@ import { FieldTypeDefinitions, MarkedForDeletion } from "./schema";
 import { useUndoableMap } from "../util/use-undo-reducer";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import useGlobalState from "../state/global_state";
-import { useLocation } from "react-use";
+import { useLocation, useBoolean } from "react-use";
 
 const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -155,8 +160,7 @@ const SwitchableJsonEditor = ({ value, onChange, ...rest }) => {
   );
 };
 
-export default ({ path, template, triggerReload }) => {
-  // const [json, setJson] = useState(null);
+export default ({ isActive, path, template, triggerReload }) => {
   const [
     json,
     {
@@ -172,6 +176,7 @@ export default ({ path, template, triggerReload }) => {
   ] = useUndoableMap();
   const [name, setName] = useState(null);
   const [globalState, globalActions] = useGlobalState();
+  const [activeWarningHidden, toggleActiveWarningHidden] = useBoolean(false);
   const isNew = path === "new";
   const history = useHistory();
   const location = useLocation();
@@ -291,6 +296,36 @@ export default ({ path, template, triggerReload }) => {
         {(json == null || name == null) && <SiteLoader />}
         {json != null && name != null && (
           <>
+            {!isNew && !isActive && !activeWarningHidden && (
+              <Alert
+                dismissible
+                onClose={e => toggleActiveWarningHidden()}
+                variant="secondary"
+              >
+                <h5 className="text-warning">
+                  <MemoizedFontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="fa-fw mr-2"
+                  />
+                  This template isn't active.
+                </h5>
+
+                <p>
+                  Variables using reference formatters will not be properly
+                  formatted. To fix this, activate this template:
+                </p>
+
+                <Button variant="primary" onClick={onActivate}>
+                  <MemoizedFontAwesomeIcon
+                    className="fa-fw mr-1"
+                    size="sm"
+                    icon={faTv}
+                  />
+                  <span>Activate</span>
+                </Button>
+              </Alert>
+            )}
+
             {isNew && (
               <Form.Group>
                 <Form.Label>Name</Form.Label>
