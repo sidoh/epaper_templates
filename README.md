@@ -7,6 +7,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 <!-- code_chunk_output -->
 
 - [Demo](#demo)
+- [Examples](#examples)
 - [Setup](#setup)
   - [Requirements](#requirements)
   - [Quickstart](#quickstart)
@@ -23,7 +24,6 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
   - [Template Editor](#template-editor)
   - [Variables](#variables-1)
   - [Images](#images)
-- [Examples](#examples)
 - [REST API](#rest-api-1)
 
 <!-- /code_chunk_output -->
@@ -31,6 +31,18 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 # Demo
 
 [<img src="https://imgur.com/RhSOGSt.gif" width="400" />](https://youtu.be/Vg_ctuM1Ppc)
+
+# Examples
+
+The [examples directory](./examples) has a few sample templates.  Here are a few:
+
+### Alarm clock
+
+<a href="./examples/alarm_clock"><img src="./examples/alarm_clock/preview.png" width="400" /></a>
+
+### Weather Dashboard
+
+<a href="./examples/weather_dashboard"><img src="./examples/weather_dashboard/preview.png" width="400" /></a>
 
 # Setup
 
@@ -51,7 +63,6 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 # Concepts
 
 This project aims to strike a particular balance of flexibility and ease-of-use.  In order to understand how to make use of it, let's briefly discuss some primitives:
-
 
 ## Variables
 
@@ -246,10 +257,6 @@ You can resize a bitmap by clicking on the totally-intuitive-and-definitely-not-
 #### Downloading
 
 You can download a copy of the image by clicking on the "Download" icon (1st icon under "File" section).
-
-# Examples
-
-The [examples directory](./examples) has a few sample templates.
 
 # REST API
 
