@@ -576,8 +576,6 @@ void EpaperWebServer::handleGetFormattedVariables(RequestContext& request) {
 }
 
 void EpaperWebServer::handleResolveVariables(RequestContext& request) {
-  // JsonObject response = request.response.json.as<JsonObject>();
-  // response["whatddyawant"] = "123";
   JsonObject response = request.response.json.createNestedObject("variables");
   driver->dumpRegionValues(response);
 }

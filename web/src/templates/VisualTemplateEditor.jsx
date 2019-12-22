@@ -9,7 +9,7 @@ import React, {
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
-import { useDebounce } from "react-use";
+import { useDebounce, useMap } from "react-use";
 import useGlobalState from "../state/global_state";
 import api, { useEpaperWebsocket } from "../util/api";
 import { drillUpdate, drillFilter } from "../util/mungers";
@@ -38,7 +38,32 @@ const EditorSections = {
 const RegionTypeKeys = {
   t: "text",
   b: "bitmaps",
-  r: "rectangles"
+  r: "rectangles",
+  l: "lines"
+};
+
+const parseRegionIdentifier = key => {
+  const [typeKey, id] = key.split("-");
+  return [RegionTypeKeys[typeKey], id];
+};
+
+const generateRegionIdentifier = (type, index) => {
+  const [key] = Object.entries(RegionTypeKeys).find(([k, v]) => v === type);
+  return `${key}-${index}`;
+};
+
+const regionIterator = (defn, fn) => {
+  Object.values(RegionTypeKeys).forEach(key => {
+    (defn[key] || []).forEach((regionDef, i) => {
+      const id = generateRegionIdentifier(key, i);
+      fn({
+        region: regionDef,
+        type: key,
+        index: i,
+        id
+      });
+    });
+  });
 };
 
 function SvgEditor({ subNavMode, onChange, ...rest }) {
@@ -98,7 +123,7 @@ export function VisualTemplateEditor({
     bitmaps: {},
     text: {}
   });
-  const [rvIndex, setRvIndex] = useState([]);
+  const [rvIndex, { set: setRvIndex }] = useMap();
   const [activeEditElements, setActiveEditElements] = useState([]);
   const [isDragging, setDragging] = useState(false);
   const [creatingElement, setCreatingElement] = useState(null);
@@ -110,6 +135,9 @@ export function VisualTemplateEditor({
 
   const currentValue = useRef(null);
   currentValue.current = value;
+
+  const currentRvIndex = useRef(null);
+  currentRvIndex.current = rvIndex;
 
   const onUpdateActive = useCallback(
     (updateFn, meta = {}) => {
@@ -171,31 +199,48 @@ export function VisualTemplateEditor({
     [activeEditElements]
   );
 
+  useEffect(() => {
+    api.get("/resolve_variables").then(
+      x => {
+        const draft = {};
+
+        Object.entries(x.data.variables).forEach(([key, variables]) => {
+          const [type, id] = parseRegionIdentifier(key);
+
+          if (!draft[type]) {
+            draft[type] = {};
+          }
+
+          draft[type][id] = Object.fromEntries(variables);
+        });
+
+        setResolvedVariables(draft);
+      },
+      err => {
+        globalActions.addError("Error resolving variables: " + err.message);
+      }
+    );
+  }, []);
+
   useDebounce(
     () => {
-      api.get("/resolve_variables").then(
-        x => {
-          const draft = {};
+      if (currentRvIndex.current) {
+        regionIterator(value, ({ region, id }) => {
+          const value = region.value;
+          const indexValue = currentRvIndex.current[id];
 
-          Object.entries(x.data.variables).forEach(([key, variables]) => {
-            const [typeKey, id] = key.split("-");
-            const type = RegionTypeKeys[typeKey];
-
-            if (!draft[type]) {
-              draft[type] = {};
-            }
-
-            draft[type][id] = Object.fromEntries(variables);
-          });
-
-          setResolvedVariables(draft);
-        },
-        err => {
-          globalActions.addError("Error resolving variables: " + err.message);
-        }
-      );
+          if (value !== indexValue && value && value.type === "variable") {
+            const message = {
+              type: "resolve",
+              variables: [[value.variable, value.formatter, id]]
+            };
+            sendMessage(JSON.stringify(message));
+            setRvIndex(id, value);
+          }
+        });
+      }
     },
-    1000,
+    100,
     [value]
   );
 
@@ -205,9 +250,9 @@ export function VisualTemplateEditor({
         const parsed = JSON.parse(lastMessage.data);
         const next = produce(resolvedVariables, draft => {
           parsed.forEach(x => {
-            if (x.ref !== undefined && x.value) {
-              const [type, id] = rvIndex[x.ref];
-              draft[type][id] = x.value;
+            if (x.ref !== undefined && x.v) {
+              const [type, id] = parseRegionIdentifier(x.ref);
+              draft[type][id][x.k] = x.v;
             }
           });
         });
@@ -297,7 +342,7 @@ export function VisualTemplateEditor({
         }
 
         const dimension = keyCode % 2 == 0 ? "y" : "x";
-        const amount = 5 * (keyCode <= 38 ? -1 : 1) * (e.shiftKey ? 1/5 : 1);
+        const amount = 5 * (keyCode <= 38 ? -1 : 1) * (e.shiftKey ? 1 / 5 : 1);
 
         onUpdateLocation(onUpdateActive, dimension, amount);
       }

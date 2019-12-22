@@ -550,7 +550,8 @@ void DisplayTemplateDriver::resolveVariables(
     auto formatter = formatterFactory.create(var[1]);
 
     JsonObject resolvedVar = response.createNestedObject();
-    resolvedVar["value"] = formatter->format(value);
+    resolvedVar["k"] = name;
+    resolvedVar["v"] = formatter->format(value);
     resolvedVar["ref"] = var[2];
   }
 }
