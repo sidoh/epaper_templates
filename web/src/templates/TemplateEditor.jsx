@@ -236,13 +236,13 @@ export default ({ isActive, path, template, triggerReload }) => {
       api.post("/templates", data).then(
         () => {
           triggerReload();
+          markSaved();
 
           if (!location.pathname.endsWith(filename)) {
             history.push(`/templates/${filename}`);
           }
 
           setJson(updated);
-          markSaved();
         },
         e => {
           globalActions.addError("Error saving: " + e);
