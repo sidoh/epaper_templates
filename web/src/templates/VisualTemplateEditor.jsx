@@ -252,7 +252,11 @@ export function VisualTemplateEditor({
           parsed.forEach(x => {
             if (x.ref !== undefined && x.v) {
               const [type, id] = parseRegionIdentifier(x.ref);
-              draft[type][id][x.k] = x.v;
+              if (!draft[type][id]) {
+                draft[type][id] = {[x.k]: x.v}
+              } else {
+                draft[type][id][x.k] = x.v;
+              }
             }
           });
         });
