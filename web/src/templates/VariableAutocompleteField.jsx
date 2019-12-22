@@ -20,11 +20,17 @@ export const VariableAutocompleteField = ({
       const [first] = e;
 
       if (first) {
-        onChange(first);
+        if (typeof first === "string") {
+          onChange(first);
+        } else {
+          onChange(first.label)
+        }
       }
     },
     [onChange]
   );
+
+  const _onInputChange = useCallback(v => onChange(v), [onChange])
 
   const selected = formData ? [formData] : [];
 
@@ -34,6 +40,7 @@ export const VariableAutocompleteField = ({
       <Typeahead
         id={idSchema.$id}
         onChange={_onChange}
+        onInputChange={_onInputChange}
         options={Object.keys(globalState.variables)}
         selected={selected}
         allowNew={true}
