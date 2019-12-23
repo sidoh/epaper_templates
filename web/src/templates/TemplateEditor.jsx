@@ -205,6 +205,15 @@ export default ({ isActive, path, template, triggerReload }) => {
     [setName]
   );
 
+  const onActivate = useCallback(
+    e => {
+      api
+        .put("/settings", { "display.template_name": `/t/${name}` })
+        .then(triggerReload);
+    },
+    [name, triggerReload]
+  );
+
   const onSubmit = useCallback(
     e => {
       e.preventDefault();
@@ -237,12 +246,14 @@ export default ({ isActive, path, template, triggerReload }) => {
         () => {
           triggerReload();
           markSaved();
+          onActivate();
 
           if (!location.pathname.endsWith(filename)) {
             history.push(`/templates/${filename}`);
           }
 
           setJson(updated);
+          markSaved();
         },
         e => {
           globalActions.addError("Error saving: " + e);
@@ -262,15 +273,6 @@ export default ({ isActive, path, template, triggerReload }) => {
       }
     },
     [triggerReload, path, name, json]
-  );
-
-  const onActivate = useCallback(
-    e => {
-      api
-        .put("/settings", { "display.template_name": `/t/${name}` })
-        .then(triggerReload);
-    },
-    [name, triggerReload]
   );
 
   return (
