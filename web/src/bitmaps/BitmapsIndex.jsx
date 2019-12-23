@@ -24,6 +24,7 @@ import NewBitmapConfigurator from "./NewBitmapConfigurator";
 import simpleHash from "../util/hash";
 import { fromByteArray, toByteArray } from "base64-js";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import useGlobalState from "../state/global_state";
 
 const BitmapPreview = ({ definition, data }) => {
   const { metadata: { width = 64, height = 64 } = {} } = definition;
@@ -185,6 +186,7 @@ const ShowBitmapEditor = ({ reload, doneLoading, bitmapData, bitmapList }) => {
 };
 
 export default props => {
+  const [globalState, globalActions] = useGlobalState();
   const [bitmapList, setBitmapList] = useState(null);
   const [bitmaps, { set: setBitmap }] = useMap({});
   const [bitmapCache, setBitmapCache] = useLocalStorage("bitmap_cache", {});
@@ -213,11 +215,6 @@ export default props => {
 
   const reloadBitmaps = useCallback(
     (bitmapList, forceReload = []) => {
-      // const { metadata: { hash = null } = {} } = x;
-
-      // if (bitmapCache[x.name] && bitmapCache[x.name].hash == hash) {
-      //   return false;
-      // }
       const isCached = x => {
         const { name, metadata: { hash = null } = {} } = x;
         return bitmapCache[name] && bitmapCache[name].hash == hash;
@@ -262,6 +259,8 @@ export default props => {
 
   const reload = useCallback(
     (forceReload = [], onComplete = () => {}) => {
+      globalActions.loadBitmaps({forceReload: true})
+
       reloadList()
         .then(e => reloadBitmaps(e, forceReload))
         .then(onComplete);
