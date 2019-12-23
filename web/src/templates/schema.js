@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { original } from "immer";
 
 export const MarkedForDeletion = "__deleted";
 
@@ -364,12 +365,71 @@ const DefaultElementFactories = {
   }
 };
 
+// Called after button is clicked, held, and cursor is moved.  e.g., when
+// dragging to create a box of certain dimensions or line
+const DefaultElementUpdaters = {
+  bitmaps: (e, el, x, y) => {
+    el.x = x;
+    el.y = y;
+  },
+  text: (e, el, x, y) => {
+    el.x = x;
+    el.y = y;
+  },
+  lines: (e, el, x, y) => {
+    if (! e.shiftKey) {
+      el.x2 = x;
+      el.y2 = y;
+    } else {
+      const dX = Math.abs(el.x1 - x);
+      const dY = Math.abs(el.y1 - y);
+
+      if (dX > dY) {
+        el.x2 = x;
+        el.y2 = el.y1;
+      } else {
+        el.x2 = el.x1;
+        el.y2 = y;
+      }
+    }
+  },
+  rectangles: (e, el, x, y) => {
+    const { x: x1, y: y1 } = el.__mousedown;
+
+    let w = Math.abs(x - x1);
+    let h = Math.abs(y - y1);
+
+    if (e.shiftKey) {
+      w = Math.max(w, h);
+      h = Math.max(w, h);
+    }
+
+    el.x = Math.min(x, x1);
+    el.w.value = w;
+
+    el.y = Math.min(y, y1);
+    el.h.value = h;
+  }
+};
+
 export const createDefaultElement = (
   type,
   { position: { x = 0, y = 0 } = {} } = {}
 ) => {
   const fn = DefaultElementFactories[type] || (() => ({}));
   return fn(...[x, y].map(x => Math.round(x)));
+};
+
+export const updateDefaultElement = (
+  e,
+  defn,
+  { position: { x = 0, y = 0 } = {} } = {}
+) => {
+  // only update if first position has been received
+  if (defn.__mousedown) {
+    const fn = DefaultElementUpdaters[defn.__creating] || (() => ({}));
+    return fn(...[e, defn, ...[x, y].map(x => Math.round(x))]);
+  }
 };
 
 const ScreenSettings = {

@@ -6,7 +6,7 @@ import {
   deepClearNonMatching,
   deepPatch
 } from "../util/mungers";
-import createSchema from "./schema";
+import createSchema, { FieldTypeDefinitions } from "./schema";
 import { ArrayFieldTemplate } from "./ArrayFieldTemplate";
 
 import "./SvgFieldEditor.scss";
@@ -30,18 +30,22 @@ const VisualEditor = ({ schema, value, onChange }) => {
   );
 
   const uiSchema = useMemo(() => {
-    return {
-      value: {
-        variable: {
-          "ui:field": "typeahead",
-          typeahead: {
-            allowNew: true,
-            newSelectionPrefix: "New variable: ",
-            minLength: 0,
-            options: Object.keys(globalState.variables || {})
-          }
+    const variableDef = {
+      variable: {
+        "ui:field": "typeahead",
+        typeahead: {
+          allowNew: true,
+          newSelectionPrefix: "New variable: ",
+          minLength: 0,
+          options: Object.keys(globalState.variables || {})
         }
       }
+    };
+
+    return {
+      value: {...variableDef},
+      w: {...variableDef},
+      h: { ...variableDef}
     };
   }, [globalState.variables]);
 
@@ -181,13 +185,13 @@ export function SvgFieldEditor({
     return selectedValues || {};
   }, [schema, value]);
 
-  const isCreating = !!formValues["__creating"];
+  const creatingType = formValues["__creating"];
 
   return (
     <>
-      {isCreating ? (
+      {creatingType ? (
         <Alert variant="secondary" className="new-element">
-          <h5>Creating new element</h5>
+          <h5>Creating new {FieldTypeDefinitions[creatingType].title}</h5>
           <p>
             <i>Select position on canvas to continue.</i>
           </p>

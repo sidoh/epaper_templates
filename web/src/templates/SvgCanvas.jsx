@@ -13,7 +13,8 @@ import {
   FontDefinitions,
   getFontDefinition,
   MarkedForDeletion,
-  createDefaultElement
+  createDefaultElement,
+  updateDefaultElement
 } from "./schema";
 import { original } from "immer";
 
@@ -52,7 +53,7 @@ const SvgLine = React.memo(
         ref={ref}
         className={className}
         {...{ x1, y1, x2, y2 }}
-        className={isActive ? "active" : ""}
+        className={className}
         onClick={onClick}
         style={style}
       />
@@ -298,17 +299,23 @@ const WrappedSvgElement = React.memo(props => {
     return <></>;
   }
 
+  const isCreating = !!props.definition.__creating;
+
   return (
     <>
       <Element
         {...rest}
         ref={refCallback}
         isActive={isActive}
+        isCreating={!!props.definition.__creating}
         onClick={onClick}
-        className={isActive ? "active" : ""}
+        className={[
+          isActive ? "active" : "",
+          isCreating ? "creating" : ""
+        ].join(" ")}
       />
 
-      {boundingBoxProps && (
+      {!isCreating && boundingBoxProps && (
         <rect {...boundingBoxProps} className="selection-outline" />
       )}
     </>
@@ -410,7 +417,7 @@ export function SvgCanvas({
   //   * Setting cursor position
   //
   const eventListeners = useMemo(() => {
-    const extractEventCoordinates = e => {
+    const extractEventCoordinates = (e, { rounded = false } = {}) => {
       const svg = svgRef.current;
       const pt = svg.createSVGPoint();
       pt.x = e.clientX;
@@ -418,7 +425,10 @@ export function SvgCanvas({
 
       const { x, y } = pt.matrixTransform(svg.getScreenCTM().inverse());
 
-      return { x, y };
+      const _x = rounded ? Math.round(x) : x;
+      const _y = rounded ? Math.round(y) : y;
+
+      return { x: _x, y: _y };
     };
 
     const scaleDimensions = (width, height) => {
@@ -441,11 +451,8 @@ export function SvgCanvas({
 
           onUpdateActive(
             defn => {
-              Object.assign(
-                defn,
-                createDefaultElement(defn.__creating, { position: coords })
-              );
               delete defn.__creating;
+              delete defn.__mousdown;
             },
             { skipHistory: true }
           );
@@ -486,7 +493,20 @@ export function SvgCanvas({
 
     return {
       onMouseDown: e => {
-        if (e.target.classList.contains("active")) {
+        if (creatingElement) {
+          const coords = extractEventCoordinates(e, { rounded: true});
+
+          onUpdateActive(
+            defn => {
+              defn.__mousedown = coords;
+              Object.assign(
+                defn,
+                createDefaultElement(defn.__creating, { position: coords })
+              );
+            },
+            { skipHistory: true }
+          );
+        } else if (e.target.classList.contains("active")) {
           isDragging.current = true;
           // tell parent component we're dragging
           setDragging(true);
@@ -514,9 +534,7 @@ export function SvgCanvas({
         }
       },
       onClick: e => {
-        if (!endMouseMove(e)) {
-          // setCursorPosition(extractEventCoordinates(e));
-        }
+        endMouseMove(e);
       },
       onMouseEnter: e => {
         if ((selectionParams.current || isDragging.current) && !e.buttons) {
@@ -525,7 +543,13 @@ export function SvgCanvas({
       },
       onMouseMove: e => {
         if (creatingElement) {
-          setCursorPosition(extractEventCoordinates(e));
+          const coords = extractEventCoordinates(e);
+
+          onUpdateActive(defn => {
+            updateDefaultElement(e, defn, { position: coords })
+          })
+
+          setCursorPosition(coords);
         } else if (isDragging.current) {
           if (!e.buttons) {
             endMouseMove(e);
@@ -622,7 +646,8 @@ export function SvgCanvas({
 
           if (!Array.isArray(def)) {
             console.error(
-              `Definitions for ${type} are invalid.  Expected array, was`, def
+              `Definitions for ${type} are invalid.  Expected array, was`,
+              def
             );
             def = [];
           }

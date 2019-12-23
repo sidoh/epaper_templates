@@ -226,20 +226,31 @@ export function VisualTemplateEditor({
     () => {
       if (currentRvIndex.current) {
         regionIterator(value, ({ region, id }) => {
-          const value = region.value;
-          const indexValue = currentRvIndex.current[id];
+          ["w", "h", "value"].forEach(valueKey => {
+            const value = region[valueKey];
 
-          // Skip initial resolution
-          if (!indexValue) {
-            setRvIndex(id, value);
-          } else if (value !== indexValue && value && value.type === "variable") {
-            const message = {
-              type: "resolve",
-              variables: [[value.variable, value.formatter, id]]
-            };
-            sendMessage(JSON.stringify(message));
-            setRvIndex(id, value);
-          }
+            if (!value) {
+              return;
+            }
+
+            const indexValue = currentRvIndex.current[id];
+
+            // Skip initial resolution
+            if (!indexValue) {
+              setRvIndex(id, value);
+            } else if (
+              value !== indexValue &&
+              value &&
+              value.type === "variable"
+            ) {
+              const message = {
+                type: "resolve",
+                variables: [[value.variable, value.formatter, id]]
+              };
+              sendMessage(JSON.stringify(message));
+              setRvIndex(id, value);
+            }
+          });
         });
       }
     },
@@ -260,7 +271,7 @@ export function VisualTemplateEditor({
               }
 
               if (!draft[type][id]) {
-                draft[type][id] = {[x.k]: x.v}
+                draft[type][id] = { [x.k]: x.v };
               } else {
                 draft[type][id][x.k] = x.v;
               }
