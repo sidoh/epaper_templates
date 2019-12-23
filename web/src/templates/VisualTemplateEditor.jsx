@@ -116,7 +116,8 @@ export function VisualTemplateEditor({
   undo,
   redo,
   collapse,
-  markForCollapse
+  markForCollapse,
+  onSave
 }) {
   const [globalState, globalActions] = useGlobalState();
   const [resolvedVariables, setResolvedVariables] = useState({
@@ -345,6 +346,9 @@ export function VisualTemplateEditor({
 
           e.preventDefault();
           return false;
+        } else if (keyCode == 83) {
+          e.preventDefault();
+          onSave(e);
         }
       } else if (keyCode === 8) {
         if (
