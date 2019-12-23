@@ -90,8 +90,8 @@ const BitmapFields = {
   properties: {
     x: { $ref: "#/definitions/horizontalPosition" },
     y: { $ref: "#/definitions/verticalPosition" },
-    w: { $ref: "#/definitions/horizontalPosition" },
-    h: { $ref: "#/definitions/verticalPosition" },
+    w: { title: "Width", $ref: "#/definitions/horizontalPosition" },
+    h: { title: "Height", $ref: "#/definitions/verticalPosition" },
     color: { $ref: "#/definitions/color" },
     value: {
       title: "Value",
@@ -110,7 +110,7 @@ const BitmapFields = {
               type: "object",
               properties: {
                 type: { enum: ["static"] },
-                value: { $ref: "#/definitions/storedBitmap" }
+                value: { title: "Value", $ref: "#/definitions/storedBitmap" }
               }
             },
             {
@@ -377,7 +377,7 @@ const DefaultElementUpdaters = {
     el.y = y;
   },
   lines: (e, el, x, y) => {
-    if (! e.shiftKey) {
+    if (!e.shiftKey) {
       el.x2 = x;
       el.y2 = y;
     } else {
