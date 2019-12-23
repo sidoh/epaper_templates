@@ -216,6 +216,7 @@ export function VisualTemplateEditor({
         });
 
         setResolvedVariables(draft);
+        setRvIndex("__initial_resolved", true);
       },
       err => {
         globalActions.addError("Error resolving variables: " + err.message);
@@ -225,7 +226,11 @@ export function VisualTemplateEditor({
 
   useDebounce(
     () => {
-      if (currentRvIndex.current) {
+      if (
+        readyState &&
+        currentRvIndex.current &&
+        currentRvIndex.current.__initial_resolved
+      ) {
         regionIterator(value, ({ region, id }) => {
           ["w", "h", "value"].forEach(valueKey => {
             const value = region[valueKey];
@@ -256,7 +261,7 @@ export function VisualTemplateEditor({
       }
     },
     100,
-    [value]
+    [value, readyState]
   );
 
   useEffect(() => {
