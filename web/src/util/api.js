@@ -9,7 +9,6 @@ const api = axios.create({
 
 export const useEpaperWebsocket = () => {
   const options = useMemo(() => ({
-    onOpen: () => console.log("opened"),
     shouldReconnect: (closeEvent) => true
   }), []);
 
