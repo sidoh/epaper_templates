@@ -335,14 +335,14 @@ void DisplayTemplateDriver::renderBitmaps(
 
       if (bitmap["type"] == "static") {
         renderBitmap(bitmap["value"].as<const char*>(), x, y, w, h, color);
-        return;
+        continue;
       }
       // fall back on v1 format where "static" and "variable" are inline with
       // the definition
     } else {
       if (bitmap.containsKey("static")) {
         renderBitmap(bitmap["static"].as<const char*>(), x, y, w, h, color);
-        return;
+        continue;
       }
     }
 
