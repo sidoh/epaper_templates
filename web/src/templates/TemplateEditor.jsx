@@ -365,6 +365,7 @@ export default ({ isActive, path, template, triggerReload }) => {
                           <Button
                             variant="secondary"
                             onClick={onActivate}
+                            disabled={isActive}
                             size="sm"
                           >
                             <MemoizedFontAwesomeIcon
