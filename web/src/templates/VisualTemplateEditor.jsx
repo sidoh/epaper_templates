@@ -113,6 +113,7 @@ export function VisualTemplateEditor({
   setSubNav,
   subNavMode,
   setSubNavMode,
+  isActive,
   undo,
   redo,
   collapse,
@@ -222,7 +223,7 @@ export function VisualTemplateEditor({
         globalActions.addError("Error resolving variables: " + err.message);
       }
     );
-  }, []);
+  }, [isActive]);
 
   useDebounce(
     () => {

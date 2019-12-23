@@ -394,7 +394,7 @@ export default ({ isActive, path, template, triggerReload }) => {
                     <SwitchableJsonEditor
                       value={json}
                       onChange={setJson}
-                      {...{ undo, redo, collapse, markForCollapse, onSave: onSubmit }}
+                      {...{ undo, redo, collapse, markForCollapse, onSave: onSubmit, isActive }}
                     />
                   </Col>
                 </Row>
