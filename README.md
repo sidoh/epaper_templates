@@ -175,6 +175,7 @@ The canvas preview features intuitive selection and movement functionality:
 
 | **Shortcut**   | **Action**  | **Description**
 |---|---|---|
+|Ctrl+S<br />⌘+S|Save|Saves template.  If template is active, refreshes the screen.|
 |Ctrl+Z<br />⌘+Z|Undo|Undoes the last action.|
 |Ctrl+Shift+Z<br/>⌘+Shift+Z|Redo|Redoes the last action.|
 |Ctrl+C<br/>⌘+C|Copy|Copies the selected regions to the clipboard.|
