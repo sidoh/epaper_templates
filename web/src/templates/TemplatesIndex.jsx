@@ -80,6 +80,10 @@ export default props => {
   }, [setActiveTemplate, templates, setTemplates]);
 
   useEffect(() => {
+    globalActions.loadBitmaps();
+  }, []);
+
+  useEffect(() => {
     if (templates == null) {
       triggerReload();
     }

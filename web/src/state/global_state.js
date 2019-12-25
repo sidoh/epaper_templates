@@ -12,7 +12,8 @@ const initialState = {
   screenMetadata: {},
   bitmaps: {},
   cachedBitmaps: {},
-  errors: []
+  errors: [],
+  loadedPages: {},
 };
 
 function createLoadFunction(apiPath, stateVariable, fn = x => x) {
@@ -24,7 +25,11 @@ function createLoadFunction(apiPath, stateVariable, fn = x => x) {
         const value = fn(x.data);
         const newState = {
           ...store.state,
-          [stateVariable]: value
+          [stateVariable]: value,
+          loadedPages: {
+            ...store.state.loadedPages,
+            [stateVariable]: true
+          }
         };
         store.setState(newState);
         return value;

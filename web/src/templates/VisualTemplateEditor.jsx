@@ -459,10 +459,15 @@ export function VisualTemplateEditor({
     };
   }, []);
 
+  const hasLoaded =
+    screenMetadata &&
+    rvIndex.__initial_resolved &&
+    globalState.loadedPages.bitmaps;
+
   return (
     <div className="visual-editor">
-      {!screenMetadata && <SiteLoader />}
-      {screenMetadata && (
+      {!hasLoaded && <SiteLoader />}
+      {hasLoaded && (
         <Container fluid={true} className="p-0">
           <Row>
             <Col sm={12} lg={7}>
