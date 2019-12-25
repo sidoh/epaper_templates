@@ -67,7 +67,7 @@ This project aims to strike a particular balance of flexibility and ease-of-use.
 
 ## Variables
 
-Variables are simple.  They're a key/value pair.  Your display is made dynamic by binding variables to regions on the screen (more on this later).
+Variables are named values that power dynamic portions of your display (for example, you might have an `outside_temperature` variable).  They can be updated via the REST API or MQTT.
 
 #### Special Variables
 
@@ -75,29 +75,29 @@ Variables are simple.  They're a key/value pair.  Your display is made dynamic b
 
 ## Regions
 
-A region is the generic term used for the types of things that can be displayed.  These include text, images, and various types of shapes.
+A region defines a displayable unit.  It can be text, an image, or various types of shapes.
 
 ## Templates
 
-Templates define the layout of your screen.  A template consists of region definitions.  Templates are made dynamic by binding variables to regions.  You can, for example, define a text region that updates with a variable.
+Templates define the layout of your display, and consists of an arbitrary number of regions.  Templates are made dynamic by binding variables to regions.  You can, for example, define a text region that updates with a variable.
 
-Templates are simply a JSON file with a particular schema (available as a [JSON schema here](./template.schema.json)).  While you can generate these by hand, it's much easier to use the bundled web editor.
+Templates are just JSON files ([schema is available here](./template.schema.json)).  While you can generate these by hand, it's much easier to use the bundled web editor.
 
 ## Formatters
 
-Sometimes you'll want to pre-process a variable's value before used in a region.  For example, if the variable `outside_temperature` corresponds to a thermometer reading, its value might contain more precision than you care about (e.g., `72.013045`).  Here, you could use the `round` formatter to trim off excess digits.
+Formatters allow you to process the value of a variable within a region.  For example, if the variable `outside_temperature` corresponds to a thermometer reading, its value might contain more precision than you care about (e.g., `72.013045`).  Here, you could use the `round` formatter to trim off excess digits.
 
 You can either define a formatter inline with a variable, or you can create a reusable formatter and attach a reference to it from a variable (this is useful when you have many regions that need to use the same formatter).
 
 ## Bitmaps
 
-This one's pretty obvious.  We can upload images to display on the screen.  Images use a very raw format -- a bitfield.  Each pixel is represented as a bit in the file, and are rows ordered left-to-right, columns top-to-bottom.  A `0b1` means the bit should be on (i.e., the pixel is black).
+Bitmaps are displayable images in a very raw format.  Each pixel is represented as a bit in the file; rows ordered left-to-right, columns top-to-bottom.  A `1` means the bit should be on (i.e., the pixel is black).
 
 The bundled web UI comes with a tool to convert any browser-displayable image to this format, as well as a pixel editor to create your own or tweak ones you've already uploaded.
 
 # Integrations
 
-With the single exception of the timestamp, this project is entirely push-based.  In order to make a dynamic display, you'll need to push variable updates using one of the following mechanisms:
+With the single exception of the timestamp, this variable updates are entirely push-based.  In order to make a dynamic display, you'll need to push variable updates using one of the following mechanisms:
 
 ## REST API
 
