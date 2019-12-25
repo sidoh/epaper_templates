@@ -31,6 +31,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 # Demo
 
 [<img src="https://imgur.com/RhSOGSt.gif" width="400" />](https://youtu.be/Vg_ctuM1Ppc)
+[<img src="https://imgur.com/ElH2fqN.gif" width="400" />](https://www.youtube.com/watch?v=h0xRwF95yeg)
 
 # Examples
 
