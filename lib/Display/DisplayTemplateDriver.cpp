@@ -9,6 +9,7 @@ DisplayTemplateDriver::DisplayTemplateDriver(
     GxEPD2_GFX* display, Settings& settings)
     : display(display)
     , settings(settings)
+    , onVariableUpdateFn(nullptr)
     , dirty(true)
     , shouldFullUpdate(false)
     , lastFullUpdate(0) {
@@ -182,6 +183,10 @@ void DisplayTemplateDriver::updateVariable(
     }
 
     curr = curr->next;
+  }
+
+  if (this->onVariableUpdateFn) {
+    this->onVariableUpdateFn(key, value);
   }
 
 #if defined(ESP32)
@@ -565,4 +570,8 @@ void DisplayTemplateDriver::dumpRegionValues(JsonObject response) {
     region->dumpResolvedDefinition(data);
     head = head->next;
   }
+}
+
+void DisplayTemplateDriver::onVariableUpdate(VariableUpdateObserverFn fn) {
+  this->onVariableUpdateFn = fn;
 }

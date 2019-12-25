@@ -27,7 +27,10 @@ EpaperWebServer::EpaperWebServer(
           settings.web.port == 0 ? 80 : settings.web.port, authProvider))
     , port(settings.web.port)
     , changeFn(nullptr)
-    , wsServer("/socket") {}
+    , wsServer("/socket")
+{
+  driver->onVariableUpdate(std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
+}
 
 EpaperWebServer::~EpaperWebServer() { server.reset(); }
 
@@ -151,12 +154,15 @@ void EpaperWebServer::begin() {
           if (reqBuffer["type"] == "resolve") {
             JsonArray variables = reqBuffer[F("variables")];
 
-            StaticJsonDocument<256> response;
-            driver->resolveVariables(variables, response.to<JsonArray>());
-            size_t len = measureJson(response);
+            StaticJsonDocument<256> responseBuffer;
+            responseBuffer["type"] = "resolve";
+            JsonArray response = responseBuffer.createNestedArray("body");
+
+            driver->resolveVariables(variables, response);
+            size_t len = measureJson(responseBuffer);
 
             AsyncWebSocketMessageBuffer* buffer = server->makeBuffer(len);
-            serializeJson(response, reinterpret_cast<char*>(buffer->get()), len+1);
+            serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
             client->text(buffer);
           }
         }
@@ -167,6 +173,20 @@ void EpaperWebServer::begin() {
 
   server.clearBuilders();
   server.begin();
+}
+
+void EpaperWebServer::handleVariableUpdate(const String& name, const String& value) {
+  StaticJsonDocument<128> responseBuffer;
+  responseBuffer["type"] = "variable";
+  JsonObject body = responseBuffer.createNestedObject("body");
+  body["k"] = name;
+  body["v"] = value;
+
+  size_t len = measureJson(responseBuffer);
+  AsyncWebSocketMessageBuffer* buffer = wsServer.makeBuffer(len);
+  serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
+
+  wsServer.textAll(buffer);
 }
 
 void EpaperWebServer::handleNoOp(RequestContext& request) {

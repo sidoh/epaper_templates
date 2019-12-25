@@ -125,6 +125,7 @@ export function VisualTemplateEditor({
     bitmaps: {},
     text: {}
   });
+  const [forceResolveFlag, setForceResolveFlag] = useState(null);
   const [rvIndex, { set: setRvIndex }] = useMap();
   const [activeEditElements, setActiveEditElements] = useState([]);
   const [isDragging, setDragging] = useState(false);
@@ -223,7 +224,7 @@ export function VisualTemplateEditor({
         globalActions.addError("Error resolving variables: " + err.message);
       }
     );
-  }, [isActive]);
+  }, [isActive, forceResolveFlag]);
 
   useDebounce(
     () => {
@@ -269,23 +270,28 @@ export function VisualTemplateEditor({
     if (lastMessage && lastMessage.data) {
       try {
         const parsed = JSON.parse(lastMessage.data);
-        const next = produce(resolvedVariables, draft => {
-          parsed.forEach(x => {
-            if (x.ref !== undefined && x.v) {
-              const [type, id] = parseRegionIdentifier(x.ref);
-              if (!draft[type]) {
-                draft[type] = {};
-              }
 
-              if (!draft[type][id]) {
-                draft[type][id] = { [x.k]: x.v };
-              } else {
-                draft[type][id][x.k] = x.v;
+        if (parsed.type == "resolve") {
+          const next = produce(resolvedVariables, draft => {
+            parsed.body.forEach(x => {
+              if (x.ref !== undefined && x.v) {
+                const [type, id] = parseRegionIdentifier(x.ref);
+                if (!draft[type]) {
+                  draft[type] = {};
+                }
+
+                if (!draft[type][id]) {
+                  draft[type][id] = { [x.k]: x.v };
+                } else {
+                  draft[type][id][x.k] = x.v;
+                }
               }
-            }
+            });
           });
-        });
-        setResolvedVariables(next);
+          setResolvedVariables(next);
+        } else if (parsed.type == "variable") {
+          setForceResolveFlag(new Date());
+        }
       } catch (err) {
         console.log(err);
         console.warn("unparsed websocket message", lastMessage.data);

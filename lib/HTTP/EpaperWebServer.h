@@ -36,6 +36,9 @@ private:
   OnChangeFn changeFn;
   AsyncWebSocket wsServer;
 
+  // Variable update observer
+  void handleVariableUpdate(const String& name, const String& value);
+
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);
   void handleDeleteVariable(RequestContext& request);

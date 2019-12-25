@@ -11,8 +11,6 @@
 #include <VariableFormatters.h>
 #include <gfxfont.h>
 
-#include <memory>
-
 #if defined(ESP32)
 #include <SPIFFS.h>
 extern "C" {
@@ -38,6 +36,9 @@ extern "C" {
 #include <Fonts/FreeSansBold9pt7b.h>
 
 #include <memory>
+#include <functional>
+
+typedef std::function<void(const String&, const String&)> VariableUpdateObserverFn;
 
 class DisplayTemplateDriver {
  public:
@@ -69,6 +70,9 @@ class DisplayTemplateDriver {
   // and performing partial updates on the bounding boxes.
   void loop();
 
+  // Registers fn as an observer when a variable changes
+  void onVariableUpdate(VariableUpdateObserverFn fn);
+
   void init();
 
  private:
@@ -77,6 +81,7 @@ class DisplayTemplateDriver {
   String templateFilename;
   Settings& settings;
   String newTemplate;
+  VariableUpdateObserverFn onVariableUpdateFn;
 
   DoublyLinkedList<std::shared_ptr<Region>> regions;
 
