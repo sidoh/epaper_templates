@@ -76,6 +76,8 @@ void initDisplay() {
 void applySettings() {
   Serial.println(F("Applying settings"));
 
+  Timezones.setDefaultTimezone(*settings.system.timezone);
+
   if (hasConnected && settings.network.wifi_ssid.length() > 0 && settings.network.wifi_ssid != WiFi.SSID()) {
     Serial.println(F("Switching WiFi networks"));
 

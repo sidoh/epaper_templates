@@ -38,6 +38,8 @@ TimezonesClass::TimezonesClass() {
   timezonesByName["MT"] = &usMT;
   timezonesByName["AZ"] = &usAZ;
   timezonesByName["PT"] = &usPT;
+
+  this->defaultTimezone = &DEFAULT_TIMEZONE;
 }
 
 TimezonesClass::~TimezonesClass() { }
@@ -53,7 +55,7 @@ Timezone& TimezonesClass::getTimezone(const String& tzName) {
 
   Serial.println(F("WARN - couldn't find specified timezone.  Returning default."));
 
-  return DEFAULT_TIMEZONE;
+  return *this->defaultTimezone;
 }
 
 String TimezonesClass::getTimezoneName(Timezone &tz) {
@@ -63,6 +65,10 @@ String TimezonesClass::getTimezoneName(Timezone &tz) {
     }
   }
   return "";
+}
+
+void TimezonesClass::setDefaultTimezone(Timezone& tz) {
+  this->defaultTimezone = &tz;
 }
 
 TimezonesClass Timezones;
