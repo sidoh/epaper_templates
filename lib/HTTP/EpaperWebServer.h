@@ -38,6 +38,8 @@ private:
 
   // Variable update observer
   void handleVariableUpdate(const String& name, const String& value);
+  // Region update observer
+  void handleRegionUpdate(const String& regionId, const String& variableKey, const String& variableValue);
 
   // Variables CRUD
   void handleUpdateVariables(RequestContext& request);

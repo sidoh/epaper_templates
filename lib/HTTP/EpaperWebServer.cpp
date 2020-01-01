@@ -30,6 +30,7 @@ EpaperWebServer::EpaperWebServer(
     , wsServer("/socket")
 {
   driver->onVariableUpdate(std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
+  driver->onRegionUpdate(std::bind(&EpaperWebServer::handleRegionUpdate, this, _1, _2, _3));
 }
 
 EpaperWebServer::~EpaperWebServer() { server.reset(); }
@@ -180,6 +181,21 @@ void EpaperWebServer::handleVariableUpdate(const String& name, const String& val
   responseBuffer["type"] = "variable";
   JsonObject body = responseBuffer.createNestedObject("body");
   body["k"] = name;
+  body["v"] = value;
+
+  size_t len = measureJson(responseBuffer);
+  AsyncWebSocketMessageBuffer* buffer = wsServer.makeBuffer(len);
+  serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
+
+  wsServer.textAll(buffer);
+}
+
+void EpaperWebServer::handleRegionUpdate(const String& regionId, const String& variableName, const String& value) {
+  StaticJsonDocument<128> responseBuffer;
+  responseBuffer["type"] = "region";
+  JsonObject body = responseBuffer.createNestedObject("body");
+  body["id"] = regionId;
+  body["k"] = variableName;
   body["v"] = value;
 
   size_t len = measureJson(responseBuffer);

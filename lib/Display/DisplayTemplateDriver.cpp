@@ -10,6 +10,7 @@ DisplayTemplateDriver::DisplayTemplateDriver(
     : display(display)
     , settings(settings)
     , onVariableUpdateFn(nullptr)
+    , onRegionUpdateFn(nullptr)
     , dirty(true)
     , shouldFullUpdate(false)
     , lastFullUpdate(0) {
@@ -179,13 +180,20 @@ void DisplayTemplateDriver::updateVariable(
     std::shared_ptr<Region> region = curr->data;
 
     if (region->getVariableName() == key) {
-      this->dirty = region->updateValue(value) || this->dirty;
+      if (region->updateValue(value)) {
+        this->dirty = true;
+
+        if (this->onRegionUpdateFn) {
+          this->onRegionUpdateFn(region->getId(), key, region->getVariableValue(key));
+        }
+      }
     }
 
     curr = curr->next;
   }
 
-  if (this->onVariableUpdateFn) {
+  // Do not update timestamp
+  if (this->onVariableUpdateFn && key != "timestamp") {
     this->onVariableUpdateFn(key, value);
   }
 
@@ -574,4 +582,8 @@ void DisplayTemplateDriver::dumpRegionValues(JsonObject response) {
 
 void DisplayTemplateDriver::onVariableUpdate(VariableUpdateObserverFn fn) {
   this->onVariableUpdateFn = fn;
+}
+
+void DisplayTemplateDriver::onRegionUpdate(RegionUpdateObserverFn fn) {
+  this->onRegionUpdateFn = fn;
 }

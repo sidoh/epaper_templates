@@ -40,6 +40,12 @@ extern "C" {
 
 typedef std::function<void(const String&, const String&)> VariableUpdateObserverFn;
 
+typedef const String& TRegionId;
+typedef const String& TVariableName;
+typedef const String& TVariableValue;
+
+typedef std::function<void(TRegionId, TVariableName, TVariableValue)> RegionUpdateObserverFn;
+
 class DisplayTemplateDriver {
  public:
   DisplayTemplateDriver(GxEPD2_GFX* display, Settings& settings);
@@ -73,6 +79,9 @@ class DisplayTemplateDriver {
   // Registers fn as an observer when a variable changes
   void onVariableUpdate(VariableUpdateObserverFn fn);
 
+  // Registers fn as an observer when a region changes
+  void onRegionUpdate(RegionUpdateObserverFn fn);
+
   void init();
 
  private:
@@ -82,6 +91,7 @@ class DisplayTemplateDriver {
   Settings& settings;
   String newTemplate;
   VariableUpdateObserverFn onVariableUpdateFn;
+  RegionUpdateObserverFn onRegionUpdateFn;
 
   DoublyLinkedList<std::shared_ptr<Region>> regions;
 

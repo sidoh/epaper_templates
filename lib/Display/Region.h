@@ -59,6 +59,11 @@ public:
   virtual bool updateValue(const String& value);
   virtual void render(GxEPD2_GFX* display) = 0;
 
+  // Returns the formatted value for the given variable.  Presently regions only
+  // support a single variable, but a future version should support multiple
+  // variables per region, so we pass in the variable to resolve.
+  virtual const String& getVariableValue(const String& variable);
+
   virtual Rectangle updateScreen(GxEPD2_GFX* display);
   virtual bool isDirty() const;
   virtual void clearDirty();

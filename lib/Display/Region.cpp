@@ -27,6 +27,10 @@ bool Region::isDirty() const {
   return this->dirty;
 }
 
+const String& Region::getVariableValue(const String& variable) {
+  return this->variableValue;
+}
+
 bool Region::updateValue(const String &value) {
   String newValue = formatter->format(value);
 

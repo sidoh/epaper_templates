@@ -296,15 +296,23 @@ export function VisualTemplateEditor({
             });
           });
           setResolvedVariables(next);
-        // } else if (parsed.type == "variable") {
-        //   setForceResolveFlag(parsed.body);
+        } else if (parsed.type == "region") {
+          if (isActive) {
+            const {id: regionId, k: key, v: value} = parsed.body;
+            const [type, id] = parseRegionIdentifier(regionId);
+
+            const next = produce(resolvedVariables, draft => {
+              draft[type][id][key] = value;
+            });
+            setResolvedVariables(next);
+          }
         }
       } catch (err) {
         console.log(err);
-        console.warn("unparsed websocket message", lastMessage.data);
+        console.warn("error handling websocket message", lastMessage.data);
       }
     }
-  }, [resolvedVariables, rvIndex, lastMessage]);
+  }, [isActive, resolvedVariables, rvIndex, lastMessage]);
 
   const onDelete = useCallback(
     paths => {
