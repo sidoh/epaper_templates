@@ -296,8 +296,8 @@ export function VisualTemplateEditor({
             });
           });
           setResolvedVariables(next);
-        } else if (parsed.type == "variable") {
-          setForceResolveFlag(new Date());
+        // } else if (parsed.type == "variable") {
+        //   setForceResolveFlag(parsed.body);
         }
       } catch (err) {
         console.log(err);
