@@ -37,7 +37,7 @@ export default props => {
         setFormState(data);
       });
     }
-  });
+  }, [ui_schema]);
 
   const onChange = useCallback(
     form => setFormState({ ...formState, ...form.formData }),
