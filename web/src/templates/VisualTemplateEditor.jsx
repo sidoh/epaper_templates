@@ -203,27 +203,34 @@ export function VisualTemplateEditor({
   );
 
   useEffect(() => {
-    api.get("/resolve_variables").then(
-      x => {
-        const draft = {};
+    if (
+      forceResolveFlag === null ||
+        ((forceResolveFlag.k === "timestamp" &&
+          parseInt(forceResolveFlag.v) % 5 === 0) ||
+          forceResolveFlag.k !== "timestamp")
+    ) {
+      api.get("/resolve_variables").then(
+        x => {
+          const draft = {};
 
-        Object.entries(x.data.variables).forEach(([key, variables]) => {
-          const [type, id] = parseRegionIdentifier(key);
+          Object.entries(x.data.variables).forEach(([key, variables]) => {
+            const [type, id] = parseRegionIdentifier(key);
 
-          if (!draft[type]) {
-            draft[type] = {};
-          }
+            if (!draft[type]) {
+              draft[type] = {};
+            }
 
-          draft[type][id] = Object.fromEntries(variables);
-        });
+            draft[type][id] = Object.fromEntries(variables);
+          });
 
-        setResolvedVariables(draft);
-        setRvIndex("__initial_resolved", true);
-      },
-      err => {
-        globalActions.addError("Error resolving variables: " + err.message);
-      }
-    );
+          setResolvedVariables(draft);
+          setRvIndex("__initial_resolved", true);
+        },
+        err => {
+          globalActions.addError("Error resolving variables: " + err.message);
+        }
+      );
+    }
   }, [isActive, forceResolveFlag]);
 
   useDebounce(

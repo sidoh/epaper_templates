@@ -52,9 +52,10 @@ export default props => {
       v ? v.toString() : ""
     ]);
 
-    api
-      .put("/settings", Object.fromEntries(settingsFields))
-      .then(x => setSaving(false), x => setErrors(x));
+    api.put("/settings", Object.fromEntries(settingsFields)).then(
+      x => setSaving(false),
+      x => setErrors(x)
+    );
   }, []);
 
   return (
