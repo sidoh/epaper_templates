@@ -6,7 +6,8 @@ export function SelectWidget({ value, onChange, label, schema }) {
     () => schema.enum.map(x => ({ label: x, value: x })),
     [schema]
   );
-  const _onChange = useCallback(e => onChange(parseInt(e.target.value)), onChange);
+
+  const _onChange = useCallback(e => onChange(e.target.value), [onChange]);
 
   return (
     <Form.Control as="select" value={value} onChange={_onChange}>
