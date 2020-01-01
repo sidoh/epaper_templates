@@ -3,6 +3,8 @@ const styleMinify = require('@neutrinojs/style-minify')
 const GenerateHeaderFile = require("./util/generate-cpp-asset-index")
 const CompressionPlugin = require('compression-webpack-plugin')
 
+const API_SERVER_ADDRESS = '192.168.0.34'
+
 module.exports = {
   options: {
     root: __dirname,
@@ -23,9 +25,9 @@ module.exports = {
           ]
         },
         proxy: {
-          '/api': "http://10.133.8.108",
+          '/api': `http://${API_SERVER_ADDRESS}`,
           '/socket': {
-            target: "ws://10.133.8.108",
+            target: `ws://${API_SERVER_ADDRESS}`,
             ws: true
           }
         }
