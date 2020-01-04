@@ -31,7 +31,19 @@ def build_web():
                 os.mkdir("../dist")
 
             copyfile("build/web_assets.h", "../dist/web_assets.h")
+        except BaseException as e:
+            raise BaseException("Error building web assets: " + e)
         finally:
-            os.chdir("..");
+            os.chdir("..")
+    else:
+        print("""
+        [ERROR] Could not build web assets.
+
+        npm is not installed.  Please follow these instructions to install it:
+
+        https://nodejs.org/en/download/package-manager/
+        """.strip())
+
+        raise BaseException("Could not build web assets.  Please install nodejs.")
 
 build_web()
