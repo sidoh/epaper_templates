@@ -55,7 +55,8 @@ const LineFields = {
     x1: { $ref: "#/definitions/horizontalPosition" },
     x2: { $ref: "#/definitions/horizontalPosition" },
     y1: { $ref: "#/definitions/verticalPosition" },
-    y2: { $ref: "#/definitions/verticalPosition" }
+    y2: { $ref: "#/definitions/verticalPosition" },
+    color: { $ref: "#/definitions/color" },
   }
 };
 
@@ -80,6 +81,7 @@ const TextFields = {
     y: { $ref: "#/definitions/verticalPosition" },
     font: { $ref: "#/definitions/font" },
     font_size: { type: "integer", title: "Font Size" },
+    color: { $ref: "#/definitions/color" },
     value: { title: "Value", $ref: "#/definitions/valueChoice" }
   }
 };
