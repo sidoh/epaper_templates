@@ -526,7 +526,7 @@ const uint16_t DisplayTemplateDriver::parseColor(const String& colorName) {
   } else if (colorName.equalsIgnoreCase("red")) {
     return GxEPD_RED;
   } else {
-    return GxEPD_DARKGREY;
+    return GxEPD_WHITE;
   }
 }
 
