@@ -18,29 +18,29 @@ inline static GxEPD2_GFX* __gxepd2_build_3c_driver(const uint8_t dc, const uint8
 }
 
 const std::map<const char*, GxEPD2::Panel, cmp_str> DisplayTypeHelpers::PANELS_BY_NAME = {
-  { "GDEP015OC1", GxEPD2::Panel::GDEP015OC1 },
-  { "GDE0213B1", GxEPD2::Panel::GDE0213B1 },
-  { "GDEH0213B72", GxEPD2::Panel::GDEH0213B72 },
-  { "GDEH0213B73", GxEPD2::Panel::GDEH0213B73 },
-  { "GDEW0213I5F", GxEPD2::Panel::GDEW0213I5F },
-  { "GDEW026T0", GxEPD2::Panel::GDEW026T0 },
-  { "GDEH029A1", GxEPD2::Panel::GDEH029A1 },
-  { "GDEW029T5", GxEPD2::Panel::GDEW029T5 },
-  { "GDEW027W3", GxEPD2::Panel::GDEW027W3 },
-  { "GDEW0371W7", GxEPD2::Panel::GDEW0371W7 },
-  { "GDEW042T2", GxEPD2::Panel::GDEW042T2 },
-  { "GDEW0583T7", GxEPD2::Panel::GDEW0583T7 },
-  { "GDEW075T8", GxEPD2::Panel::GDEW075T8 },
-  { "GDEW075T7", GxEPD2::Panel::GDEW075T7 },
-  { "ED060SCT", GxEPD2::Panel::ED060SCT },
-  { "GDEW0154Z04", GxEPD2::Panel::GDEW0154Z04 },
-  { "GDEW0213Z16", GxEPD2::Panel::GDEW0213Z16 },
-  { "GDEW029Z10", GxEPD2::Panel::GDEW029Z10 },
-  { "GDEW027C44", GxEPD2::Panel::GDEW027C44 },
-  { "GDEW042Z15", GxEPD2::Panel::GDEW042Z15 },
-  { "GDEW0583Z21", GxEPD2::Panel::GDEW0583Z21 },
-  { "GDEW075Z09", GxEPD2::Panel::GDEW075Z09 },
-  { "GDEW075Z08", GxEPD2::Panel::GDEW075Z08 }
+  { "GDEP015OC1 (1.54\" B/W)", GxEPD2::Panel::GDEP015OC1 },
+  { "GDEW0154Z04 (1.54\" B/W/R)", GxEPD2::Panel::GDEW0154Z04 },
+  { "GDE0213B1 (2.13\" B/W)", GxEPD2::Panel::GDE0213B1 },
+  { "GDEH0213B72 (2.13\" B/W)", GxEPD2::Panel::GDEH0213B72 },
+  { "GDEH0213B73 (2.13\" B/W)", GxEPD2::Panel::GDEH0213B73 },
+  { "GDEW0213I5F (2.13\" B/W FLEX)", GxEPD2::Panel::GDEW0213I5F },
+  { "GDEW0213Z16 (2.13\" B/W/R)", GxEPD2::Panel::GDEW0213Z16 },
+  { "GDEH029A1 (2.9\" B/W)", GxEPD2::Panel::GDEH029A1 },
+  { "GDEW029T5 (2.9\" B/W)", GxEPD2::Panel::GDEW029T5 },
+  { "GDEW029Z10 (2.9\" B/W/R)", GxEPD2::Panel::GDEW029Z10 },
+  { "GDEW026T0 (2.6\" B/W)", GxEPD2::Panel::GDEW026T0 },
+  { "GDEW027C44 (2.7\" B/W/R)", GxEPD2::Panel::GDEW027C44 },
+  { "GDEW027W3 (2.7\" B/W)", GxEPD2::Panel::GDEW027W3 },
+  { "GDEW0371W7 (3.7\" B/W)", GxEPD2::Panel::GDEW0371W7 },
+  { "GDEW042T2 (4.2\" B/W)", GxEPD2::Panel::GDEW042T2 },
+  { "GDEW042Z15 (4.2\" B/W/R)", GxEPD2::Panel::GDEW042Z15 },
+  { "GDEW0583T7 (5.83\" B/W)", GxEPD2::Panel::GDEW0583T7 },
+  { "GDEW0583Z21 (5.83\" B/W/R)", GxEPD2::Panel::GDEW0583Z21 },
+  { "ED060SCT (6\" B/W)", GxEPD2::Panel::ED060SCT },
+  { "GDEW075T8 (7.5\" B/W)", GxEPD2::Panel::GDEW075T8 },
+  { "GDEW075T7 (7.5\" B/W 800X480)", GxEPD2::Panel::GDEW075T7 },
+  { "GDEW075Z09 (7.5\" B/W/R)", GxEPD2::Panel::GDEW075Z09 },
+  { "GDEW075Z08 (7.5\" B/W/R 800X480)", GxEPD2::Panel::GDEW075Z08 }
 };
 
 // Data generated with:
@@ -103,6 +103,7 @@ bool DisplayTypeHelpers::is3Color(GxEPD2::Panel type) {
     case GxEPD2::Panel::GDEW042Z15:
     case GxEPD2::Panel::GDEW0583Z21:
     case GxEPD2::Panel::GDEW075Z09:
+    case GxEPD2::Panel::GDEW075Z08:
       return true;
     default:
       return false;
@@ -132,6 +133,14 @@ GxEPD2_GFX* DisplayTypeHelpers::buildDisplay(GxEPD2::Panel type, uint8_t dc, uin
       return __gxepd2_build_bw_driver<GxEPD2_583>(dc, rst, busy);
     case GxEPD2::Panel::GDEW075T8:
       return __gxepd2_build_bw_driver<GxEPD2_750>(dc, rst, busy);
+    case GxEPD2::Panel::GDEH0213B73:
+      return __gxepd2_build_bw_driver<GxEPD2_213_B73>(dc, rst, busy);
+    case GxEPD2::Panel::GDEW026T0:
+      return __gxepd2_build_bw_driver<GxEPD2_260>(dc, rst, busy);
+    case GxEPD2::Panel::GDEW0371W7:
+      return __gxepd2_build_bw_driver<GxEPD2_371>(dc, rst, busy);
+    case GxEPD2::Panel::GDEW075T7:
+      return __gxepd2_build_bw_driver<GxEPD2_750_T7>(dc, rst, busy);
 
     // Color displays
     case GxEPD2::Panel::ED060SCT:
@@ -150,6 +159,8 @@ GxEPD2_GFX* DisplayTypeHelpers::buildDisplay(GxEPD2::Panel type, uint8_t dc, uin
       return __gxepd2_build_3c_driver<GxEPD2_583c>(dc, rst, busy);
     case GxEPD2::Panel::GDEW075Z09:
       return __gxepd2_build_3c_driver<GxEPD2_750c>(dc, rst, busy);
+    case GxEPD2::Panel::GDEW075Z08:
+      return __gxepd2_build_3c_driver<GxEPD2_750c_Z08>(dc, rst, busy);
     default:
       Serial.printf_P(PSTR("Unsupported display type, using default.  Provided display: %d\n"), static_cast<size_t>(type));
       return buildDisplay(DisplayTypeHelpers::DEFAULT_PANEL, dc, rst, busy);
