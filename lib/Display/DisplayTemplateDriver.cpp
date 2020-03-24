@@ -244,7 +244,9 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
     return;
   }
 
-  display->fillScreen(parseColor(tmpl["background_color"]));
+  uint16_t background_color = parseColor(tmpl["background_color"]);
+
+  display->fillScreen(background_color);
 
   if (tmpl.containsKey("rotation")) {
     display->setRotation(tmpl["rotation"]);
@@ -264,7 +266,7 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>());
+    renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>(), background_color);
   }
 
   if (tmpl.containsKey("rectangles")) {
@@ -371,7 +373,8 @@ void DisplayTemplateDriver::renderBitmaps(
 void DisplayTemplateDriver::renderTexts(
     VariableFormatterFactory& formatterFactory,
     JsonObject updateRects,
-    JsonArray texts) {
+    JsonArray texts,
+    uint16_t background_color) {
   for (size_t i = 0; i < texts.size(); i++) {
     JsonObject text = texts[i];
 
@@ -409,6 +412,7 @@ void DisplayTemplateDriver::renderTexts(
       std::shared_ptr<Region> region = addTextRegion(x,
           y,
           color,
+          background_color,
           font,
           textSize,
           formatter,
@@ -458,6 +462,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
 std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
     uint16_t y,
     uint16_t color,
+    uint16_t background_color,
     const GFXfont* font,
     uint8_t textSize,
     std::shared_ptr<const VariableFormatter> formatter,
@@ -469,6 +474,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
       y,
       nullptr,  // fixed bound -- deprecated
       color,
+      background_color,
       font,
       formatter,
       textSize,
@@ -511,10 +517,16 @@ const GFXfont* DisplayTemplateDriver::parseFont(const String& fontName) {
 const uint16_t DisplayTemplateDriver::parseColor(const String& colorName) {
   if (colorName.equalsIgnoreCase("black")) {
     return GxEPD_BLACK;
+  } else if (colorName.equalsIgnoreCase("dgrey")) {
+    return GxEPD_DARKGREY;
+  } else if (colorName.equalsIgnoreCase("lgrey")) {
+    return GxEPD_LIGHTGREY;
+  } else if (colorName.equalsIgnoreCase("yellow")) {
+    return GxEPD_YELLOW;
   } else if (colorName.equalsIgnoreCase("red")) {
     return GxEPD_RED;
   } else {
-    return GxEPD_WHITE;
+    return GxEPD_DARKGREY;
   }
 }
 

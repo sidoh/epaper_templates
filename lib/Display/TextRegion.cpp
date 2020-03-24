@@ -8,6 +8,7 @@ TextRegion::TextRegion(
   uint16_t y,
   std::shared_ptr<Rectangle> fixedBound,
   uint16_t color,
+  uint16_t background_color,
   const GFXfont* font,
   std::shared_ptr<const VariableFormatter> formatter,
   uint8_t size,
@@ -36,7 +37,7 @@ void TextRegion::render(GxEPD2_GFX* display) {
     this->currentBound.y,
     this->currentBound.w,
     this->currentBound.h,
-    GxEPD_WHITE
+    background_color
   );
 
   display->setTextColor(color);
