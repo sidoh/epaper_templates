@@ -89,7 +89,6 @@ def should_build():
         return False
 
 if should_build():
-    #build_web()
-    print("Building!")
+    build_web()
 else:
     print("No need to rebuild web assets.")
