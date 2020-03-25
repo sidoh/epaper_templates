@@ -77,10 +77,9 @@ void MqttClient::begin() {
   mqttClient.setKeepAlive(60);
 
   // Configure client
-  char nameBuffer[30];
-  sprintf_P(nameBuffer, PSTR("epaper-display-%u"), ESP_CHIP_ID());
+  sprintf_P(this->clientName, PSTR("epaper-display-%u"), ESP_CHIP_ID());
+  mqttClient.setClientId(this->clientName);
 
-  mqttClient.setClientId(nameBuffer);
   if (this->username.length() > 0) {
     mqttClient.setCredentials(this->username.c_str(), this->password.c_str());
   }
