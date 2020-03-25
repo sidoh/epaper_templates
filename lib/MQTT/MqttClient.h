@@ -42,6 +42,7 @@ private:
   String domain;
   String username;
   String password;
+  char clientName[30];
 
   unsigned long lastConnectAttempt;
   TVariableUpdateFn variableUpdateCallback;
