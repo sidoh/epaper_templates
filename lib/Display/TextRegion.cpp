@@ -25,6 +25,7 @@ TextRegion::TextRegion(
   , currentBound({x, y, 0, 0})
   , previousBound({x, y, 0, 0})
   , size(size)
+  , background_color(background_color)
 { }
 
 TextRegion::~TextRegion() { }
