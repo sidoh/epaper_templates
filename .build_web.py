@@ -5,10 +5,7 @@ import sys
 import os
 import platform
 import subprocess
-from time import time
 from pathlib import Path
-
-#Import("env")
 
 def is_tool(name):
     cmd = "where" if platform.system() == "Windows" else "which"
@@ -34,12 +31,6 @@ def build_web():
                 os.mkdir("../dist")
 
             copyfile("build/web_assets.h", "../dist/web_assets.h")
-
-            generated_timestamp = "//-"+str(int(time()))+"-"
-            with open("../dist/web_assets.h", 'r+') as f:
-                content = f.read()
-                f.seek(0, 0)
-                f.write(generated_timestamp + '\n' + content)
                 
         except BaseException as e:
             raise BaseException("Error building web assets: " + e)
@@ -71,14 +62,8 @@ def should_build():
     if not os.path.exists(asset_path):
         return True
     else:
-        timestamp, start, end = "-", "-", "-"
-        with open(asset_path, 'r') as f:
-            timestamp = f.readline()
-        try:
-            timestamp = int(timestamp[timestamp.find(start)+len(start):timestamp.rfind(end)])
-        except ValueError:
-            print ("Bad timestamp in "+asset_path)
-            return True
+        timestamp = os.stat(asset_path).st_mtime
+
         for file in Path(directory).glob('**/*'):
             filename = str(file)
             if is_ignored(filename):
