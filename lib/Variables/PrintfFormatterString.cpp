@@ -27,14 +27,9 @@ std::shared_ptr<const PrintfFormatterString> PrintfFormatterString::build(JsonOb
 }
 
 String PrintfFormatterString::format(const String &value) const {
-  //String heyo = String(value);
-  //heyo.replace("hi", "bye");
-  //float parsedTime = value.toFloat();
-
   char buffer[120];
   memset(buffer, 0, sizeof(buffer));
 
-  //heyo.toCharArray(buffer, sizeof(buffer));
   sprintf(buffer, formatSchema.c_str(), value.c_str());
 
   return buffer;
