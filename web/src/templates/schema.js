@@ -152,7 +152,7 @@ const Definitions = {
   color: {
     title: "Color",
     type: "string",
-    enum: ["black", "dgrey", "lgrey", "white"]
+    enum: ["black", "white"]
   },
   storedBitmap: {
     type: "string"

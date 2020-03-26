@@ -517,13 +517,11 @@ const GFXfont* DisplayTemplateDriver::parseFont(const String& fontName) {
 const uint16_t DisplayTemplateDriver::parseColor(const String& colorName) {
   if (colorName.equalsIgnoreCase("black")) {
     return GxEPD_BLACK;
-  } else if (colorName.equalsIgnoreCase("dgrey")) {
-    return GxEPD_DARKGREY;
-  } else if (colorName.equalsIgnoreCase("lgrey")) {
-    return GxEPD_LIGHTGREY;
   } else if (colorName.equalsIgnoreCase("yellow")) {
     return GxEPD_YELLOW;
   } else if (colorName.equalsIgnoreCase("red")) {
+    return GxEPD_RED;
+  } else if (colorName.equalsIgnoreCase("color")) {
     return GxEPD_RED;
   } else {
     return GxEPD_WHITE;
