@@ -218,14 +218,16 @@ const Definitions = {
       type: {
         title: "Type",
         type: "string",
-        enum: ["ref", "identity", "time", "round", "cases", "ratio"],
+        enum: ["ref", "identity", "time", "round", "cases", "ratio", "pfstring", "pfnumeric"],
         enumNames: [
           "Pre-Defined Formatter",
           "Identity (No-Op)",
           "Time (strftime)",
           "Round",
           "Cases",
-          "Ratio"
+          "Ratio",
+          "Printf (String)",
+          "Printf (int)"
         ]
       },
       args: {
@@ -331,6 +333,38 @@ const Definitions = {
                   base: {
                     title: "Base value",
                     type: "number"
+                  }
+                }
+              }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["pfstring"]
+              },
+              args: {
+                type: "object",
+                properties: {
+                  format: {
+                    title: "Printf (String)",
+                    type: "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            properties: {
+              type: {
+                enum: ["pfnumeric"]
+              },
+              args: {
+                type: "object",
+                properties: {
+                  format: {
+                    title: "Printf (int)",
+                    type: "string"
                   }
                 }
               }

@@ -32,6 +32,28 @@ protected:
   Timezone& timezone;
 };
 
+class PrintfFormatterNumeric : public VariableFormatter {
+public:
+  PrintfFormatterNumeric(const String& formatSchema);
+
+  virtual String format(const String& value) const;
+  static std::shared_ptr<const PrintfFormatterNumeric> build(JsonObject args);
+
+protected:
+  String formatSchema;
+};
+
+class PrintfFormatterString : public VariableFormatter {
+public:
+  PrintfFormatterString(const String& formatSchema);
+
+  virtual String format(const String& value) const;
+  static std::shared_ptr<const PrintfFormatterString> build(JsonObject args);
+
+protected:
+  String formatSchema;
+};
+
 class CasesVariableFormatter : public VariableFormatter {
 public:
   CasesVariableFormatter(JsonObject args);

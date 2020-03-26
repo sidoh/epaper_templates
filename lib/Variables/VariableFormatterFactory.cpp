@@ -100,6 +100,10 @@ VariableFormatterFactory::_createInternal(
     }
 
     return std::make_shared<RatioVariableFormatter>(base);
+  } else if (formatterDef.equalsIgnoreCase("pfstring")) {
+    return PrintfFormatterString::build(formatterArgs);
+  } else if (formatterDef.equalsIgnoreCase("pfnumeric")) {
+    return PrintfFormatterNumeric::build(formatterArgs);
   } else {
     return defaultFormatter;
   }
