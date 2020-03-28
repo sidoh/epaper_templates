@@ -591,12 +591,16 @@ void EpaperWebServer::handleGetScreens(RequestContext& request) {
     JsonObject info = screens.createNestedObject();
     info[F("name")] = name;
 
-    auto elmt = DisplayTypeHelpers::PANEL_SIZES.find(type);
-
-    if (elmt != DisplayTypeHelpers::PANEL_SIZES.end()) {
-      auto dimensions = elmt->second;
+    auto panelSize = DisplayTypeHelpers::PANEL_SIZES.find(type);
+    if (panelSize != DisplayTypeHelpers::PANEL_SIZES.end()) {
+      auto dimensions = panelSize->second;
       info[F("width")] = dimensions.first;
       info[F("height")] = dimensions.second;
+    }
+
+    auto description = DisplayTypeHelpers::PANEL_DESCRIPTIONS.find(type);
+    if (description != DisplayTypeHelpers::PANEL_DESCRIPTIONS.end()) {
+      info[F("desc")] = description->second;
     }
   }
 }

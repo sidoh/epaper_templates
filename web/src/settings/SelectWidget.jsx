@@ -2,10 +2,13 @@ import React, { useMemo, useCallback } from "react";
 import Form from "react-bootstrap/Form";
 
 export function SelectWidget({ value, onChange, label, schema }) {
-  const options = useMemo(
-    () => schema.enum.map(x => ({ label: x, value: x })),
-    [schema]
-  );
+  const options = useMemo(() => {
+    if (schema.enum) {
+      return schema.enum.map(x => ({ label: x, value: x }));
+    } else if (schema.oneOf) {
+      return schema.oneOf.map(x => ({ label: x.title, value: x.const }));
+    }
+  }, [schema]);
 
   const _onChange = useCallback(e => onChange(e.target.value), [onChange]);
 

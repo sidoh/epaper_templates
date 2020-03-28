@@ -22,4 +22,5 @@ public:
 
   static const std::map<const GxEPD2::Panel, std::pair<uint16_t, uint16_t>> PANEL_SIZES;
   static const std::map<const char*, GxEPD2::Panel, cmp_str> PANELS_BY_NAME;
+  static const std::map<const GxEPD2::Panel, const char*> PANEL_DESCRIPTIONS;
 };
