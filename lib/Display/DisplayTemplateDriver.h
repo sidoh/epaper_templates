@@ -116,7 +116,8 @@ class DisplayTemplateDriver {
                         JsonArray lines);
   void renderTexts(VariableFormatterFactory& formatterFactory,
                    JsonObject updateRects,
-                   JsonArray text);
+                   JsonArray text,
+                   uint16_t background_color);
   void renderBitmaps(VariableFormatterFactory& formatterFactory,
                      JsonArray bitmaps);
   void renderBitmap(const String& filename,
@@ -130,6 +131,7 @@ class DisplayTemplateDriver {
       uint16_t x,
       uint16_t y,
       uint16_t color,
+      uint16_t background_color,
       const GFXfont* font,
       uint8_t textSize,
       std::shared_ptr<const VariableFormatter> formatter,
