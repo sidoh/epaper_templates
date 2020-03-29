@@ -23,12 +23,16 @@ void MqttClient::internalCallback(MqttClient* client) {
 }
 #endif
 
+const char* MqttClient::CONNECTED_STATUS = "connected";
+const char* MqttClient::DISCONNECTED_STATUS = "disconnected";
+
 MqttClient::MqttClient(
   String domain,
   uint16_t port,
   String variableTopicPattern,
   String username,
-  String password
+  String password,
+  String clientStatusTopic
 ) : port(port)
   , domain(domain)
   , username(username)
@@ -36,6 +40,7 @@ MqttClient::MqttClient(
   , lastConnectAttempt(0)
   , variableUpdateCallback(NULL)
   , topicPattern(variableTopicPattern)
+  , clientStatusTopic(clientStatusTopic)
 {
   this->topicPatternBuffer = new char[topicPattern.length() + 1];
   strcpy(this->topicPatternBuffer, this->topicPattern.c_str());
@@ -46,6 +51,7 @@ MqttClient::~MqttClient() {
   delete this->topicPatternTokens;
   delete this->topicPatternBuffer;
 
+  updateStatus(MqttClient::DISCONNECTED_STATUS);
   mqttClient.disconnect();
 
   #if defined(ESP32)
@@ -69,6 +75,17 @@ void MqttClient::begin() {
   );
   timersMap.insert(std::make_pair(reconnectTimer, this));
   #endif
+
+  if (this->clientStatusTopic.length() > 0) {
+    mqttClient.setWill(
+      this->clientStatusTopic.c_str(),
+      // QoS = 1 (at least once)
+      1,
+      // retain = true
+      true,
+      MqttClient::DISCONNECTED_STATUS
+    );
+  }
 
   // Setup callbacks
   mqttClient.onConnect(std::bind(&MqttClient::connectCallback, this, _1));
@@ -109,14 +126,31 @@ void MqttClient::disconnectCallback(AsyncMqttClientDisconnectReason reason) {
 }
 
 void MqttClient::connectCallback(bool sessionPresent) {
-  String topic = this->topicPattern;
-  topic.replace(String(":") + MQTT_TOPIC_VARIABLE_NAME_TOKEN, "+");
+  if (this->topicPattern.length() > 0) {
+    String topic = this->topicPattern;
+    topic.replace(String(":") + MQTT_TOPIC_VARIABLE_NAME_TOKEN, "+");
 
-  #ifdef MQTT_DEBUG
-    printf_P(PSTR("MqttClient - subscribing to topic: %s\n"), topic.c_str());
-  #endif
+    #ifdef MQTT_DEBUG
+      printf_P(PSTR("MqttClient - subscribing to topic: %s\n"), topic.c_str());
+    #endif
 
-  mqttClient.subscribe(topic.c_str(), 0);
+    mqttClient.subscribe(topic.c_str(), 0);
+  }
+
+  updateStatus(MqttClient::CONNECTED_STATUS);
+}
+
+void MqttClient::updateStatus(const char* status) {
+  if (this->clientStatusTopic.length() > 0) {
+    mqttClient.publish(
+      this->clientStatusTopic.c_str(),
+      // QoS = 1 (at least once)
+      1,
+      // retain = true
+      true,
+      status
+    );
+  }
 }
 
 void MqttClient::messageCallback(

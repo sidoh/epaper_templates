@@ -122,7 +122,8 @@ void applySettings() {
         settings.mqtt.serverPort(),
         settings.mqtt.variables_topic_pattern,
         settings.mqtt.username,
-        settings.mqtt.password);
+        settings.mqtt.password,
+        settings.mqtt.client_status_topic);
     mqttClient->onVariableUpdate(
         [](const String& variable, const String& value) {
           driver->updateVariable(variable, value);
