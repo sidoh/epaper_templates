@@ -139,7 +139,9 @@
             "time",
             "round",
             "cases",
-            "ratio"
+            "ratio",
+            "pfstring",
+            "pfnumeric"
           ],
           "enumNames": [
             "Pre-Defined Formatter",
@@ -147,7 +149,9 @@
             "Time (strftime)",
             "Round",
             "Cases",
-            "Ratio"
+            "Ratio",
+            "Printf (String)",
+            "Printf (int)"
           ]
         },
         "args": {
@@ -271,7 +275,43 @@
                   }
                 }
               }
-            }
+            },
+            {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "pfstring"
+                    ]
+                  },
+                  "args": {
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "title": "Printf (String)",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "pfnumeric"
+                    ]
+                  },
+                  "args": {
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "title": "Printf (int)",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
           ]
         }
       }
