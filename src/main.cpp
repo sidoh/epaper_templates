@@ -86,15 +86,6 @@ void initSleepSettings() {
     uint8_t overridePinMode =
         overrideValue == HIGH ? INPUT_PULLDOWN : INPUT_PULLUP;
     pinMode(settings.power.sleep_override_pin, overridePinMode);
-
-    if (digitalRead(settings.power.sleep_override_pin) == overrideValue) {
-      Serial.println(F("Sleep override pin was held.  Suspending deep sleep."));
-      sleepSuspendPinHeld = true;
-    } else {
-      Serial.printf_P(PSTR("Sleep override pin not detected.  Staying awake "
-                           "for %d seconds\n"),
-          settings.power.awake_duration);
-    }
   }
 }
 
@@ -145,10 +136,11 @@ void applySettings() {
     shouldRestart = true;
   }
 
+  initSleepSettings();
+
   // Only run this once.  Don't want to re-check this stuff when settings are
   // re-applied.
   if (!initialized) {
-    initSleepSettings();
     initialSleepMode = settings.power.sleep_mode;
   }
 
@@ -261,7 +253,10 @@ void loop() {
   }
 
   if (!sleepSuspendPinHeld && initialSleepMode == SleepMode::DEEP_SLEEP) {
-    if (millis() >= (settings.power.awake_duration * 1000)) {
+    if (digitalRead(settings.power.sleep_override_pin) == settings.power.sleep_override_value) {
+      Serial.println(F("Sleep override pin was held.  Suspending deep sleep."));
+      sleepSuspendPinHeld = true;
+    } else if (millis() >= (settings.power.awake_duration * 1000)) {
       Serial.printf_P(
           PSTR("Wake duration expired.  Going to sleep for %d seconds...\n"),
           settings.power.sleep_duration);
