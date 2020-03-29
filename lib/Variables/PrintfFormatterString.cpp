@@ -28,9 +28,7 @@ std::shared_ptr<const PrintfFormatterString> PrintfFormatterString::build(JsonOb
 
 String PrintfFormatterString::format(const String &value) const {
   char buffer[120];
-  memset(buffer, 0, sizeof(buffer));
-
-  sprintf(buffer, formatSchema.c_str(), value.c_str());
+  snprintf(buffer, sizeof(buffer), formatSchema.c_str(), value.c_str());
 
   return buffer;
 }

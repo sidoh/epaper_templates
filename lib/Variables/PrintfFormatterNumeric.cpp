@@ -30,13 +30,10 @@ std::shared_ptr<const PrintfFormatterNumeric> PrintfFormatterNumeric::build(Json
 }
 
 String PrintfFormatterNumeric::format(const String &value) const {
-  String copiedString = String(value);
-  int numericValue = copiedString.toInt();
+  int numericValue = value.toInt();
 
   char buffer[120];
-  memset(buffer, 0, sizeof(buffer));
-
-  sprintf(buffer, formatSchema.c_str(), numericValue);
+  snprintf(buffer, sizeof(buffer), formatSchema.c_str(), numericValue);
 
   return buffer;
 }
