@@ -1,12 +1,11 @@
 #include <Arduino.h>
-
 #include <WiFi.h>
 
 // Make sure TimeLib.h is included first so that Time.h doesn't get included.
 // This breaks builds on case-sensitive filesystems.
-#include <TimeLib.h>
-#include <EnvironmentConfig.h>
 #include <Bleeper.h>
+#include <EnvironmentConfig.h>
+#include <TimeLib.h>
 
 #if defined(ESP32)
 #include <WebServer.h>
@@ -14,27 +13,22 @@
 #include <ESP8266WebServer.h>
 #define WEBSERVER_H
 #endif
-#include <ESPAsyncWebServer.h>
-
-#include <WiFiManager.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
-#include <Timezone.h>
-
-#include <GxEPD2.h>
-#include <GxEPD2_EPD.h>
-#include <GxEPD2_BW.h>
-#include <GxEPD2_GFX.h>
-#include <DisplayTypeHelpers.h>
-
-#include <Settings.h>
 #include <DisplayTemplateDriver.h>
+#include <DisplayTypeHelpers.h>
+#include <ESPAsyncWebServer.h>
 #include <EpaperWebServer.h>
+#include <GxEPD2.h>
+#include <GxEPD2_BW.h>
+#include <GxEPD2_EPD.h>
+#include <GxEPD2_GFX.h>
 #include <MqttClient.h>
+#include <NTPClient.h>
+#include <Settings.h>
+#include <Timezone.h>
+#include <WiFiManager.h>
+#include <WiFiUdp.h>
 
-enum class WiFiState {
-  CONNECTED, DISCONNECTED
-};
+enum class WiFiState { CONNECTED, DISCONNECTED };
 
 Settings settings;
 GxEPD2_GFX* display = NULL;
@@ -51,18 +45,30 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 
 uint8_t lastSecond = 60;
 
+// Keep track of whether or not the system has already been
+// initialized.  We use this to distinguish between booting and
+// settings being re-applied at runtime.
+bool initialized = false;
+
+// We'll set this to true in applySettings if the sleep suspend pin
+// is held the the appropriate value.
+bool sleepSuspendPinHeld = false;
+
+// Store the sleep mode at initialization time.  If not done this
+// way, the system will likely immediately go into deep sleep after
+// settings are saved, which is confusing.
+SleepMode initialSleepMode = SleepMode::ALWAYS_ON;
+
 void initDisplay() {
   if (display) {
     delete display;
     display = NULL;
   }
 
-  display = DisplayTypeHelpers::buildDisplay(
-    settings.display.display_type,
-    settings.hardware.dc_pin,
-    settings.hardware.rst_pin,
-    settings.hardware.busy_pin
-  );
+  display = DisplayTypeHelpers::buildDisplay(settings.display.display_type,
+      settings.hardware.dc_pin,
+      settings.hardware.rst_pin,
+      settings.hardware.busy_pin);
 
   if (driver != NULL) {
     delete driver;
@@ -73,16 +79,37 @@ void initDisplay() {
   driver->init();
 }
 
+void initSleepSettings() {
+  if (settings.power.sleep_mode == SleepMode::DEEP_SLEEP) {
+    uint8_t overrideValue = settings.power.sleep_override_value;
+    // Use the internal pull-up/pull-down resistors
+    uint8_t overridePinMode =
+        overrideValue == HIGH ? INPUT_PULLDOWN : INPUT_PULLUP;
+    pinMode(settings.power.sleep_override_pin, overridePinMode);
+
+    if (digitalRead(settings.power.sleep_override_pin) == overrideValue) {
+      Serial.println(F("Sleep override pin was held.  Suspending deep sleep."));
+      sleepSuspendPinHeld = true;
+    } else {
+      Serial.printf_P(PSTR("Sleep override pin not detected.  Staying awake "
+                           "for %d seconds\n"),
+          settings.power.awake_duration);
+    }
+  }
+}
+
 void applySettings() {
   Serial.println(F("Applying settings"));
 
   Timezones.setDefaultTimezone(*settings.system.timezone);
 
-  if (hasConnected && settings.network.wifi_ssid.length() > 0 && settings.network.wifi_ssid != WiFi.SSID()) {
+  if (hasConnected && settings.network.wifi_ssid.length() > 0 &&
+      settings.network.wifi_ssid != WiFi.SSID()) {
     Serial.println(F("Switching WiFi networks"));
 
     WiFi.disconnect(true);
-    WiFi.begin(settings.network.wifi_ssid.c_str(), settings.network.wifi_password.c_str());
+    WiFi.begin(settings.network.wifi_ssid.c_str(),
+        settings.network.wifi_password.c_str());
   }
 
   if (mqttClient != NULL) {
@@ -91,16 +118,15 @@ void applySettings() {
   }
 
   if (settings.mqtt.serverHost().length() > 0) {
-    mqttClient = new MqttClient(
-      settings.mqtt.serverHost(),
-      settings.mqtt.serverPort(),
-      settings.mqtt.variables_topic_pattern,
-      settings.mqtt.username,
-      settings.mqtt.password
-    );
-    mqttClient->onVariableUpdate([](const String& variable, const String& value) {
-      driver->updateVariable(variable, value);
-    });
+    mqttClient = new MqttClient(settings.mqtt.serverHost(),
+        settings.mqtt.serverPort(),
+        settings.mqtt.variables_topic_pattern,
+        settings.mqtt.username,
+        settings.mqtt.password);
+    mqttClient->onVariableUpdate(
+        [](const String& variable, const String& value) {
+          driver->updateVariable(variable, value);
+        });
     mqttClient->begin();
   }
 
@@ -112,15 +138,26 @@ void applySettings() {
     webServer = new EpaperWebServer(driver, settings);
     webServer->onSettingsChange(applySettings);
     webServer->begin();
-  // Get stupid exceptions when trying to tear down old webserver.  Easier to just restart.
+    // Get stupid exceptions when trying to tear down old webserver.  Easier to
+    // just restart.
   } else if (settings.web.port != webServer->getPort()) {
     shouldRestart = true;
   }
+
+  // Only run this once.  Don't want to re-check this stuff when settings are
+  // re-applied.
+  if (!initialized) {
+    initSleepSettings();
+    initialSleepMode = settings.power.sleep_mode;
+  }
+
+  initialized = true;
 }
 
 void updateWiFiState(WiFiState state) {
   const char varName[] = "wifi_state";
-  const String varValue = state == WiFiState::CONNECTED ? "connected" : "disconnected";
+  const String varValue =
+      state == WiFiState::CONNECTED ? "connected" : "disconnected";
 
   driver->updateVariable(varName, varValue);
 }
@@ -167,15 +204,12 @@ void wifiManagerConfigSaved() {
 void setup() {
   Serial.begin(115200);
 
-  Bleeper
-    .verbose()
-    .configuration
-      .set(&settings)
+  Bleeper.verbose()
+      .configuration.set(&settings)
       .done()
-    .storage
-      .set(new SPIFFSStorage())
+      .storage.set(new SPIFFSStorage())
       .done()
-    .init();
+      .init();
 
   initDisplay();
 
@@ -195,10 +229,11 @@ void setup() {
   sprintf(setupSsid, "epaper_%d", ESP_CHIP_ID());
 
   wifiManager.setSaveConfigCallback(wifiManagerConfigSaved);
-  wifiManager.autoConnect(setupSsid, settings.network.setup_ap_password.c_str());
+  wifiManager.autoConnect(setupSsid,
+      settings.network.setup_ap_password.c_str());
 
   if (settings.network.mdns_name.length() > 0) {
-    if (! MDNS.begin(settings.network.mdns_name.c_str())) {
+    if (!MDNS.begin(settings.network.mdns_name.c_str())) {
       Serial.println(F("Error setting up MDNS responder"));
     } else {
       MDNS.addService("http", "tcp", 80);
@@ -222,6 +257,24 @@ void loop() {
 
   if (webServer) {
     webServer->handleClient();
+  }
+
+  if (!sleepSuspendPinHeld && initialSleepMode == SleepMode::DEEP_SLEEP) {
+    if (millis() >= (settings.power.awake_duration * 1000)) {
+      Serial.printf_P(
+          PSTR("Wake duration expired.  Going to sleep for %d seconds...\n"),
+          settings.power.sleep_duration);
+      Serial.flush();
+
+      // Make sure the display is off while we sleep
+      if (display) {
+        display->hibernate();
+      }
+
+      // Convert to microseconds
+      esp_sleep_enable_timer_wakeup(settings.power.sleep_duration * 1000000ULL);
+      esp_deep_sleep_start();
+    }
   }
 
   driver->loop();
