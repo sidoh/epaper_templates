@@ -1,3 +1,5 @@
+import React from "react";
+
 export default {
   "display.display_type": {
     "ui:help": "Model of the e-paper display you're using"
@@ -6,6 +8,29 @@ export default {
     "ui:help":
       "When enabled, update partial regions of the screen.  Only enable this if your display does not support partial updates.",
     transformer: x => x.toLowerCase() === "true"
+  },
+  "power.sleep_mode": {
+    "ui:help": (
+      <ul className="mt-2">
+        <li>
+          <b>Always On</b> &mdash; Normal operation. System stays powered at all
+          times
+        </li>
+        <li>
+          <b>Deep Sleep</b> &mdash; Conserve power. System continuously boots
+          for a configurable period waiting for updates, and then puts itself to
+          sleep for a configurable period.
+        </li>
+      </ul>
+    )
+  },
+  "power.sleep_override_pin": {
+    "ui:help":
+      "When this pin is held during boot, deep sleep will be disabled until the next restart.",
+    transformer: parseInt
+  },
+  "power.sleep_override_value": {
+    "ui:help": "The value Sleep Override Pin must be held to in order to suspend deep sleep."
   },
   "mqtt.password": {
     "ui:widget": "password"

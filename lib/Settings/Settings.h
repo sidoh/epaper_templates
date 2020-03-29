@@ -8,6 +8,7 @@
 #include <GxEPD2_GFX.h>
 #include <DisplayTypeHelpers.h>
 #include <AuthProviders.h>
+#include <types/SleepMode.h>
 
 #ifndef _SETTINGS_H
 #define _SETTINGS_H
@@ -147,6 +148,27 @@ public:
   );
 };
 
+class PowerSettings : public Configuration {
+public:
+  persistentVar(
+    SleepMode,
+    sleep_mode,
+    SleepModeHelpers::DEFAULT_SLEEP_MODE,
+    {
+      sleep_mode = SleepModeHelpers::parseName(sleep_modeString.c_str());
+    },
+    {
+      sleep_modeString = SleepModeHelpers::getName(sleep_mode);
+    }
+  );
+  persistentIntVar(sleep_override_pin, EPD_DEFAULT_SLEEP_OVERRIDE_PIN);
+  persistentIntVar(sleep_override_value, HIGH);
+  // in seconds
+  persistentIntVar(sleep_duration, 600);
+  // in seconds
+  persistentIntVar(awake_duration, 30);
+};
+
 class Settings : public RootConfiguration {
 public:
   subconfig(SystemSettings, system);
@@ -155,6 +177,7 @@ public:
   subconfig(HardwareSettings, hardware);
   subconfig(WebSettings, web);
   subconfig(MqttSettings, mqtt);
+  subconfig(PowerSettings, power);
 
   void save();
   void patch(JsonObject obj);
