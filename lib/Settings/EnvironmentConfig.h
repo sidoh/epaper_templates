@@ -42,5 +42,5 @@ extern "C" {
 #define EPD_DEFAULT_RST_PIN 16
 #define EPD_DEFAULT_BUSY_PIN 7
 // Pins 34-39 don't have internal pull-up or pull-down resistors
-#define EPD_DEFAULT_SLEEP_OVERRIDE_PIN 33
+#define EPD_DEFAULT_SLEEP_OVERRIDE_PIN 25
 #endif
