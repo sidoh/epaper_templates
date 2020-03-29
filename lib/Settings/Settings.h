@@ -60,6 +60,7 @@ public:
   persistentStringVar(password, "");
   persistentStringVar(server, "");
   persistentStringVar(variables_topic_pattern, "");
+  persistentStringVar(client_status_topic, "")
 
   String serverHost() const;
   uint16_t serverPort() const;

@@ -30,7 +30,14 @@ export default {
       $id: "#/properties/mqtt.variables_topic_pattern",
       type: "string",
       title: "Variables Topic Pattern",
-      examples: ["template-displays/my-display/:variable_name"],
+      examples: ["template-displays/my-display/variables/:variable_name"],
+      pattern: "^(.*)$"
+    },
+    "mqtt.client_status_topic": {
+      $id: "#/properties/mqtt.client_status_topic",
+      type: "string",
+      title: "Client Status Topic",
+      examples: ["template-displays/my-display/client_status"],
       pattern: "^(.*)$"
     }
   }

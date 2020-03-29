@@ -52,5 +52,8 @@ export default {
   },
   "web.port": {
     transformer: parseInt
+  },
+  "mqtt.client_status_topic": {
+    "ui:help": "If provided, MQTT birth and LWT messages will be published to this topic."
   }
 };
