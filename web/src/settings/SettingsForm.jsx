@@ -6,12 +6,13 @@ import Col from "react-bootstrap/Col";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 
-import schema from "./schema";
+import schemaBuilder from "./schema";
 import ui_schema from "./ui_schema";
 import api from "../util/api";
 import SiteLoader from "../util/SiteLoader";
 import { CheckboxWidget } from "./CheckboxWidget";
 import { SelectWidget } from "./SelectWidget";
+import useGlobalState from "../state/global_state";
 
 const CustomRjsfWidgets = {
   CheckboxWidget: CheckboxWidget,
@@ -19,9 +20,11 @@ const CustomRjsfWidgets = {
 };
 
 export default props => {
+  const [globalState, globalActions] = useGlobalState();
   const [formState, setFormState] = useState(null);
   const [isSaving, setSaving] = useState(false);
   const [errors, setErrors] = useState(null);
+  const [schema, setSchema] = useState([]);
 
   useEffect(() => {
     if (formState == null) {
@@ -38,6 +41,13 @@ export default props => {
       });
     }
   }, [ui_schema]);
+
+  useEffect(() => {
+    if (globalState.screenMetadata && globalState.screenMetadata.screens) {
+      let a = schemaBuilder;
+      setSchema(schemaBuilder({displayTypes: globalState.screenMetadata}));
+    }
+  }, [globalState])
 
   const onChange = useCallback(
     form => setFormState({ ...formState, ...form.formData }),

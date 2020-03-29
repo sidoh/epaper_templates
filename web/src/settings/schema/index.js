@@ -1,4 +1,4 @@
-const createSchema = (definition) => ({
+const createSchema = definition => ({
   $schema: "http://json-schema.org/draft-07/schema#",
   $id: "https://sidoh.org/epaper-display/settings.json",
   type: "object",
@@ -8,15 +8,18 @@ const createSchema = (definition) => ({
   definitions: definition.definitions
 });
 
-import display from './display'
-import hardware from './hardware'
-import mqtt from './mqtt'
-import network from './network'
-import system from './system'
-import web from './web'
+import display from "./display";
+import hardware from "./hardware";
+import mqtt from "./mqtt";
+import network from "./network";
+import system from "./system";
+import web from "./web";
 
-const schema = [
-  display, hardware, mqtt, network, system, web
-].map(x => ({...x, schema: createSchema(x)}))
+const schemaBuilder = ({ displayTypes }) => {
+  return [display(displayTypes), hardware, mqtt, network, system, web].map(x => ({
+    ...x,
+    schema: createSchema(x)
+  }));
+};
 
-export default schema
+export default schemaBuilder;
