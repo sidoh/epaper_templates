@@ -52,12 +52,16 @@ bool initialized = false;
 
 // We'll set this to true in applySettings if the sleep suspend pin
 // is held the the appropriate value.
-bool sleepSuspendPinHeld = false;
+bool suspendSleep = false;
 
 // Store the sleep mode at initialization time.  If not done this
 // way, the system will likely immediately go into deep sleep after
 // settings are saved, which is confusing.
 SleepMode initialSleepMode = SleepMode::ALWAYS_ON;
+
+void cancelSleep() {
+  suspendSleep = true;
+}
 
 void initDisplay() {
   if (display) {
@@ -129,6 +133,7 @@ void applySettings() {
   if (webServer == NULL) {
     webServer = new EpaperWebServer(driver, settings);
     webServer->onSettingsChange(applySettings);
+    webServer->onCancelSleep(cancelSleep);
     webServer->begin();
     // Get stupid exceptions when trying to tear down old webserver.  Easier to
     // just restart.
@@ -252,10 +257,10 @@ void loop() {
     webServer->handleClient();
   }
 
-  if (!sleepSuspendPinHeld && initialSleepMode == SleepMode::DEEP_SLEEP) {
+  if (!suspendSleep && initialSleepMode == SleepMode::DEEP_SLEEP) {
     if (digitalRead(settings.power.sleep_override_pin) == settings.power.sleep_override_value) {
       Serial.println(F("Sleep override pin was held.  Suspending deep sleep."));
-      sleepSuspendPinHeld = true;
+      suspendSleep = true;
     } else if (millis() >= (settings.power.awake_duration * 1000)) {
       Serial.printf_P(
           PSTR("Wake duration expired.  Going to sleep for %d seconds...\n"),
