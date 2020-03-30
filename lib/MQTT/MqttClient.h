@@ -21,12 +21,17 @@ public:
     uint16_t port,
     String variableTopicPattern,
     String username,
-    String password
+    String password,
+    String clientStatusTopic
   );
   ~MqttClient();
 
   void begin();
   void onVariableUpdate(TVariableUpdateFn fn);
+  void updateStatus(const char* status);
+
+  static const char* CONNECTED_STATUS;
+  static const char* DISCONNECTED_STATUS;
 
 private:
   AsyncMqttClient mqttClient;
@@ -52,6 +57,7 @@ private:
   String topicPattern;
   char* topicPatternBuffer;
   TokenIterator* topicPatternTokens;
+  String clientStatusTopic;
 
   void connect();
 

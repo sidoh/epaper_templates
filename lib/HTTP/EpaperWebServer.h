@@ -18,11 +18,14 @@ using RequestContext = RichHttpConfig::RequestContextType;
 class EpaperWebServer {
 public:
   using OnChangeFn = std::function<void()>;
+  using OnCancelSleepFn = std::function<void()>;
 
   EpaperWebServer(DisplayTemplateDriver*& driver, Settings& settings);
   ~EpaperWebServer();
 
   void onSettingsChange(OnChangeFn changeFn);
+  void onCancelSleep(OnCancelSleepFn cancelSleepFn);
+  void setDeepSleepActive(bool deepSleepActive);
   void begin();
   uint16_t getPort() const;
   void handleClient();
@@ -34,7 +37,13 @@ private:
   RichHttpServer<RichHttpConfig> server;
   uint16_t port;
   OnChangeFn changeFn;
+  OnCancelSleepFn cancelSleepFn;
   AsyncWebSocket wsServer;
+  bool deepSleepActive;
+
+  // firmware update handlers
+  void handleFirmwareUpdateUpload(RequestContext& request);
+  void handleFirmwareUpdateComplete(RequestContext& request);
 
   // Variable update observer
   void handleVariableUpdate(const String& name, const String& value);

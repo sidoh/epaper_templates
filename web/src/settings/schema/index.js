@@ -3,9 +3,10 @@ const createSchema = definition => ({
   $id: "https://sidoh.org/epaper-display/settings.json",
   type: "object",
   title: name,
-  required: [],
+  required: definition.required || [],
   properties: definition.properties,
-  definitions: definition.definitions
+  definitions: definition.definitions,
+  dependencies: definition.dependencies
 });
 
 import display from "./display";
@@ -14,9 +15,10 @@ import mqtt from "./mqtt";
 import network from "./network";
 import system from "./system";
 import web from "./web";
+import power from "./power";
 
 const schemaBuilder = ({ displayTypes }) => {
-  return [display(displayTypes), hardware, mqtt, network, system, web].map(x => ({
+  return [display(displayTypes), hardware, mqtt, network, power, system, web].map(x => ({
     ...x,
     schema: createSchema(x)
   }));

@@ -27,13 +27,20 @@ EpaperWebServer::EpaperWebServer(
           settings.web.port == 0 ? 80 : settings.web.port, authProvider))
     , port(settings.web.port)
     , changeFn(nullptr)
+    , cancelSleepFn(nullptr)
     , wsServer("/socket")
-{
-  driver->onVariableUpdate(std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
-  driver->onRegionUpdate(std::bind(&EpaperWebServer::handleRegionUpdate, this, _1, _2, _3));
+    , deepSleepActive(false) {
+  driver->onVariableUpdate(
+      std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
+  driver->onRegionUpdate(
+      std::bind(&EpaperWebServer::handleRegionUpdate, this, _1, _2, _3));
 }
 
 EpaperWebServer::~EpaperWebServer() { server.reset(); }
+
+void EpaperWebServer::setDeepSleepActive(bool deepSleepActive) {
+  this->deepSleepActive = deepSleepActive;
+}
 
 uint16_t EpaperWebServer::getPort() const { return port; }
 
@@ -119,9 +126,13 @@ void EpaperWebServer::begin() {
       .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetScreens, this, _1));
 
   server.buildHandler("/api/v1/resolve_variables")
-      .on(HTTP_GET, std::bind(&EpaperWebServer::handleResolveVariables, this, _1));
+      .on(HTTP_GET,
+          std::bind(&EpaperWebServer::handleResolveVariables, this, _1));
 
-  server.buildHandler("/firmware").handleOTA();
+  server.buildHandler("/firmware")
+      .on(HTTP_POST,
+          std::bind(&EpaperWebServer::handleFirmwareUpdateComplete, this, _1),
+          std::bind(&EpaperWebServer::handleFirmwareUpdateUpload, this, _1));
 
   server.onNotFound([this](AsyncWebServerRequest* request) {
     if (request->url() == "/" || request->url().startsWith("/app")) {
@@ -135,17 +146,19 @@ void EpaperWebServer::begin() {
   });
 
   wsServer.onEvent([this](AsyncWebSocket* server,
-    AsyncWebSocketClient* client,
-    AwsEventType type,
-    void* arg,
-    uint8_t* data,
-    size_t len
-  ) {
+                       AsyncWebSocketClient* client,
+                       AwsEventType type,
+                       void* arg,
+                       uint8_t* data,
+                       size_t len) {
     if (type == WS_EVT_DATA) {
       AwsFrameInfo* info = (AwsFrameInfo*)arg;
-      if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+      if (info->final && info->index == 0 && info->len == len &&
+          info->opcode == WS_TEXT) {
         StaticJsonDocument<1024> reqBuffer;
-        auto err = deserializeJson(reqBuffer, reinterpret_cast<const char*>(data), len);
+        auto err = deserializeJson(reqBuffer,
+            reinterpret_cast<const char*>(data),
+            len);
 
         if (err) {
           Serial.println(reinterpret_cast<const char*>(data));
@@ -163,7 +176,9 @@ void EpaperWebServer::begin() {
             size_t len = measureJson(responseBuffer);
 
             AsyncWebSocketMessageBuffer* buffer = server->makeBuffer(len);
-            serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
+            serializeJson(responseBuffer,
+                reinterpret_cast<char*>(buffer->get()),
+                len + 1);
             client->text(buffer);
           }
         }
@@ -176,7 +191,48 @@ void EpaperWebServer::begin() {
   server.begin();
 }
 
-void EpaperWebServer::handleVariableUpdate(const String& name, const String& value) {
+void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
+  if (request.upload.index == 0) {
+    if (request.rawRequest->contentLength() > 0) {
+      if (this->cancelSleepFn) {
+        this->cancelSleepFn();
+      }
+
+      Update.begin(request.rawRequest->contentLength());
+#if defined(ESP8266)
+      Update.runAsync(true);
+#endif
+    }
+  }
+
+  if (Update.size() > 0) {
+    if (Update.write(request.upload.data, request.upload.length) != request.upload.length) {
+      Update.printError(Serial);
+
+#if defined(ESP32)
+      Update.abort();
+#endif
+    }
+
+    if (request.upload.isFinal) {
+      if (! Update.end(true)) {
+        Update.printError(Serial);
+#if defined(ESP32)
+        Update.abort();
+#endif
+      }
+    }
+  }
+}
+
+void EpaperWebServer::handleFirmwareUpdateComplete(RequestContext& request) {
+  request.rawRequest->send(200, "text/plain", "success");
+  delay(1000);
+  ESP.restart();
+}
+
+void EpaperWebServer::handleVariableUpdate(
+    const String& name, const String& value) {
   StaticJsonDocument<128> responseBuffer;
   responseBuffer["type"] = "variable";
   JsonObject body = responseBuffer.createNestedObject("body");
@@ -185,12 +241,15 @@ void EpaperWebServer::handleVariableUpdate(const String& name, const String& val
 
   size_t len = measureJson(responseBuffer);
   AsyncWebSocketMessageBuffer* buffer = wsServer.makeBuffer(len);
-  serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
+  serializeJson(responseBuffer,
+      reinterpret_cast<char*>(buffer->get()),
+      len + 1);
 
   wsServer.textAll(buffer);
 }
 
-void EpaperWebServer::handleRegionUpdate(const String& regionId, const String& variableName, const String& value) {
+void EpaperWebServer::handleRegionUpdate(
+    const String& regionId, const String& variableName, const String& value) {
   StaticJsonDocument<128> responseBuffer;
   responseBuffer["type"] = "region";
   JsonObject body = responseBuffer.createNestedObject("body");
@@ -200,7 +259,9 @@ void EpaperWebServer::handleRegionUpdate(const String& regionId, const String& v
 
   size_t len = measureJson(responseBuffer);
   AsyncWebSocketMessageBuffer* buffer = wsServer.makeBuffer(len);
-  serializeJson(responseBuffer, reinterpret_cast<char*>(buffer->get()), len+1);
+  serializeJson(responseBuffer,
+      reinterpret_cast<char*>(buffer->get()),
+      len + 1);
 
   wsServer.textAll(buffer);
 }
@@ -225,9 +286,15 @@ void EpaperWebServer::handlePostSystem(RequestContext& request) {
   if (strCommand.equalsIgnoreCase("reboot")) {
     ESP.restart();
     request.response.json[F("success")] = true;
+  } else if (strCommand.equalsIgnoreCase("cancel_sleep")) {
+    if (this->cancelSleepFn != nullptr) {
+      this->cancelSleepFn();
+    }
+    request.response.json[F("success")] = true;
   } else {
     request.response.json[F("error")] = F("Unhandled command");
     request.response.setCode(400);
+    return;
   }
 }
 
@@ -239,6 +306,8 @@ void EpaperWebServer::handleGetSystem(RequestContext& request) {
   request.response.json["variant"] = QUOTE(FIRMWARE_VARIANT);
   request.response.json["free_heap"] = freeHeap;
   request.response.json["sdk_version"] = ESP.getSdkVersion();
+  request.response.json["uptime"] = millis();
+  request.response.json["deep_sleep_active"] = this->deepSleepActive;
 }
 
 void EpaperWebServer::handleDeleteVariable(RequestContext& request) {
@@ -579,6 +648,10 @@ void EpaperWebServer::handleGetSettings(RequestContext& request) {
 
 void EpaperWebServer::onSettingsChange(std::function<void()> changeFn) {
   this->changeFn = changeFn;
+}
+
+void EpaperWebServer::onCancelSleep(EpaperWebServer::OnCancelSleepFn cancelSleepFn) {
+  this->cancelSleepFn = cancelSleepFn;
 }
 
 void EpaperWebServer::handleGetScreens(RequestContext& request) {

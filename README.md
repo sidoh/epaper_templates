@@ -11,6 +11,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 - [Setup](#setup)
   - [Requirements](#requirements)
   - [Quickstart](#quickstart)
+  - [Deep Sleep](#deep-sleep)
 - [Concepts](#concepts)
   - [Variables](#variables)
   - [Regions](#regions)
@@ -60,6 +61,17 @@ The [examples directory](./examples) has a few sample templates.  Here are a few
    1. With PlatformIO: for example `pio run -e esp32 -t upload`.  You will need to have [nodejs](https://nodejs.org/en/) installed in order to buidl the web assets.
 1. Setup WiFi.  A setup AP will appear named `epaper_XXXXXX`.  The default password is **waveshare**.
 1. Visit the Web UI to configure further.
+
+## Deep Sleep
+
+e-paper templates can function in _deep sleep_ mode.  When configured, the system will continuously:
+
+1. Wake from sleep
+2. Check if a configurable GPIO pin is set.  If it is, stays awake until next reboot
+3. Otherwise, stay awake for a configurable period to receive updates and refresh the screen.
+4. Put both the ESP32 and the e-paper display into deep sleep mode.
+
+This is useful if trying to conserve power.  Deep sleep mode can be configured in the "Power" tab within the web UI.
 
 ## SPI Bus and Pin Selection
 
