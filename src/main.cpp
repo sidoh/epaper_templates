@@ -60,7 +60,14 @@ bool suspendSleep = false;
 SleepMode initialSleepMode = SleepMode::ALWAYS_ON;
 
 void cancelSleep() {
-  suspendSleep = true;
+  if (initialSleepMode == SleepMode::DEEP_SLEEP) {
+    Serial.println(F("Cancelling deep sleep mode"));
+    suspendSleep = true;
+
+    if (webServer) {
+      webServer->setDeepSleepActive(false);
+    }
+  }
 }
 
 void initDisplay() {
@@ -90,6 +97,7 @@ void initSleepSettings() {
     uint8_t overridePinMode =
         overrideValue == HIGH ? INPUT_PULLDOWN : INPUT_PULLUP;
     pinMode(settings.power.sleep_override_pin, overridePinMode);
+    webServer->setDeepSleepActive(true);
   }
 }
 

@@ -3,7 +3,7 @@ const styleMinify = require('@neutrinojs/style-minify')
 const GenerateHeaderFile = require("./util/generate-cpp-asset-index")
 const CompressionPlugin = require('compression-webpack-plugin')
 
-const API_SERVER_ADDRESS = 'epaper-display'
+const API_SERVER_ADDRESS = '10.133.8.197'
 
 module.exports = {
   options: {

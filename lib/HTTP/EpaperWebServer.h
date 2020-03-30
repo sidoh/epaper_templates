@@ -25,6 +25,7 @@ public:
 
   void onSettingsChange(OnChangeFn changeFn);
   void onCancelSleep(OnCancelSleepFn cancelSleepFn);
+  void setDeepSleepActive(bool deepSleepActive);
   void begin();
   uint16_t getPort() const;
   void handleClient();
@@ -38,6 +39,7 @@ private:
   OnChangeFn changeFn;
   OnCancelSleepFn cancelSleepFn;
   AsyncWebSocket wsServer;
+  bool deepSleepActive;
 
   // firmware update handlers
   void handleFirmwareUpdateUpload(RequestContext& request);

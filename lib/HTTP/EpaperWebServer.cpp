@@ -29,7 +29,7 @@ EpaperWebServer::EpaperWebServer(
     , changeFn(nullptr)
     , cancelSleepFn(nullptr)
     , wsServer("/socket")
-    , awakeMillis(0) {
+    , deepSleepActive(false) {
   driver->onVariableUpdate(
       std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
   driver->onRegionUpdate(
@@ -37,6 +37,10 @@ EpaperWebServer::EpaperWebServer(
 }
 
 EpaperWebServer::~EpaperWebServer() { server.reset(); }
+
+void EpaperWebServer::setDeepSleepActive(bool deepSleepActive) {
+  this->deepSleepActive = deepSleepActive;
+}
 
 uint16_t EpaperWebServer::getPort() const { return port; }
 
@@ -286,9 +290,11 @@ void EpaperWebServer::handlePostSystem(RequestContext& request) {
     if (this->cancelSleepFn != nullptr) {
       this->cancelSleepFn();
     }
+    request.response.json[F("success")] = true;
   } else {
     request.response.json[F("error")] = F("Unhandled command");
     request.response.setCode(400);
+    return;
   }
 }
 
@@ -300,6 +306,8 @@ void EpaperWebServer::handleGetSystem(RequestContext& request) {
   request.response.json["variant"] = QUOTE(FIRMWARE_VARIANT);
   request.response.json["free_heap"] = freeHeap;
   request.response.json["sdk_version"] = ESP.getSdkVersion();
+  request.response.json["uptime"] = millis();
+  request.response.json["deep_sleep_active"] = this->deepSleepActive;
 }
 
 void EpaperWebServer::handleDeleteVariable(RequestContext& request) {

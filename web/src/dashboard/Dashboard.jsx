@@ -14,10 +14,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPowerOff,
   faRedoAlt,
-  faCheck
+  faCheck,
+  faTimes
 } from "@fortawesome/free-solid-svg-icons";
 import { useInterval, useBoolean } from "react-use";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import { useMemo } from "react";
 
 const DisplayStatusCard = ({ settings }) => {
   return (
@@ -39,28 +41,114 @@ const DisplayStatusCard = ({ settings }) => {
   );
 };
 
-const SystemStatusCard = ({ systemStatus }) => {
-  const [isRebooting, toggleRebooting] = useBoolean(false);
+const SleepStatus = ({
+  deepSleepActive,
+  awakeSecondsLeft,
+  isCancelling,
+  onCancel,
+  isRebooting
+}) => {
+  return (
+    <>
+      {!isRebooting && deepSleepActive && awakeSecondsLeft !== null && (
+        <>
+          <h6>Deep Sleep</h6>
+          {awakeSecondsLeft > 0 && (
+            <>
+              <Container fluid className="p-0 m-0">
+                <Row>
+                  <Col lg={8} md={12}>
+                    System sleeping in {awakeSecondsLeft} seconds
+                  </Col>
+                  <Col lg={4} md={12}>
+                    {!isCancelling && (
+                      <a href="#" onClick={onCancel} className="text-success">
+                        <MemoizedFontAwesomeIcon
+                          icon={faTimes}
+                          className="fa-fw"
+                        />
+                        Cancel
+                      </a>
+                    )}
+                    {isCancelling && "Cancelling..."}
+                  </Col>
+                </Row>
+              </Container>
+            </>
+          )}
+          {awakeSecondsLeft !== null && awakeSecondsLeft <= 0 && (
+            <span>Going to sleep...</span>
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
+const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
+  const [isRebooting, setRebooting] = useState(false);
   const [isFormShowing, toggleFormShowing] = useBoolean(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [awakeSecondsLeft, setAwakeSecondsLeft] = useState(null);
+  const [isCancellingDeepSleep, setCancellingDeepSleep] = useState(false);
+
   const firmwareFile = useRef(null);
+  const deepSleepActive = systemStatus && systemStatus["deep_sleep_active"];
+
+  const onCancelSleep = useCallback(e => {
+    e.preventDefault();
+    setCancellingDeepSleep(true);
+
+    api.post("/system", { command: "cancel_sleep" }).then(
+      e => {
+        onReload();
+      },
+      e => {
+        setCancellingDeepSleep(false);
+      }
+    );
+  }, []);
 
   useInterval(
     () => {
       api
         .get("/system", { timeout: 1000 })
-        .then(() => toggleRebooting())
+        .then(() => {
+          onReload();
+          setRebooting(false)
+        })
         .catch(e => console.log("Caught exception", e));
     },
-    isRebooting ? 5000 : null
+    !!isRebooting ? 5000 : null
+  );
+
+  useInterval(
+    () => {
+      const awakeDuration = settings["power.awake_duration"];
+      const uptime = systemStatus["uptime"];
+      const loadedAt = systemStatus.__loaded_at;
+      const currentTime = new Date();
+
+      if (deepSleepActive) {
+        const awakeSeconds = Math.round(
+          (awakeDuration * 1000 - uptime - (currentTime - loadedAt)) / 1000
+        );
+        setAwakeSecondsLeft(awakeSeconds);
+
+        if (awakeSeconds <= 0) {
+          setRebooting("Sleeping...");
+        }
+      }
+    },
+    deepSleepActive ? 100 : null
   );
 
   const reboot = useCallback(e => {
     e.preventDefault();
 
     if (confirm("Are you sure you want to reboot?")) {
-      toggleRebooting();
+      setRebooting("Rebooting...");
       api.post("/system", { command: "reboot" }, { timeout: 1000 });
     }
   }, []);
@@ -84,7 +172,7 @@ const SystemStatusCard = ({ systemStatus }) => {
 
       api.post("/firmware", formData, config).then(e => {
         setUploadProgress(null);
-        toggleRebooting();
+        setRebooting(false);
         setSuccessMessage("Firmware updated successfully.");
       });
     }
@@ -103,11 +191,19 @@ const SystemStatusCard = ({ systemStatus }) => {
             <h6>Free Heap</h6>
             <p>{Math.round(systemStatus["free_heap"] / 1024)} KiB</p>
 
+            <SleepStatus
+              deepSleepActive={deepSleepActive}
+              awakeSecondsLeft={awakeSecondsLeft}
+              isCancelling={isCancellingDeepSleep}
+              onCancel={onCancelSleep}
+              isRebooting={!!isRebooting}
+            />
+
             {isRebooting && (
               <Alert variant="secondary" className="d-flex">
                 <SiteLoader size="sm" />
                 <span className="ml-2 text-bold">
-                  <b>Rebooting...</b>
+                  <b>{isRebooting}</b>
                 </span>
               </Alert>
             )}
@@ -125,7 +221,10 @@ const SystemStatusCard = ({ systemStatus }) => {
             {!isRebooting && successMessage && (
               <Alert variant="secondary">
                 <span className="text-success">
-                  <MemoizedFontAwesomeIcon icon={faCheck} className="fa-fw mr-1" />
+                  <MemoizedFontAwesomeIcon
+                    icon={faCheck}
+                    className="fa-fw mr-1"
+                  />
                 </span>
                 {successMessage}
               </Alert>
@@ -146,19 +245,27 @@ const SystemStatusCard = ({ systemStatus }) => {
               </Alert>
             )}
 
+            <hr className="bg-light" />
+
             <div className="d-flex">
               <Button
                 className="mr-2"
-                disabled={isRebooting}
+                disabled={!!isRebooting}
                 variant="primary"
                 onClick={toggleFormShowing}
               >
-                <MemoizedFontAwesomeIcon icon={faRedoAlt} className="fa-fw mr-1" />
+                <MemoizedFontAwesomeIcon
+                  icon={faRedoAlt}
+                  className="fa-fw mr-1"
+                />
                 Update Firmware
               </Button>
 
-              <Button disabled={isRebooting} variant="warning" onClick={reboot}>
-                <MemoizedFontAwesomeIcon icon={faPowerOff} className="fa-fw mr-1" />
+              <Button disabled={!!isRebooting} variant="warning" onClick={reboot}>
+                <MemoizedFontAwesomeIcon
+                  icon={faPowerOff}
+                  className="fa-fw mr-1"
+                />
                 Reboot
               </Button>
             </div>
@@ -172,14 +279,24 @@ const SystemStatusCard = ({ systemStatus }) => {
 export default props => {
   const [settings, setSettings] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
+  const [loadedAt, setLoadedAt] = useState(new Date());
+
+  const onReload = useCallback(() => {
+    setLoadedAt(new Date());
+  }, []);
 
   useEffect(() => {
     api.get("/settings").then(e => setSettings(e.data));
-  }, []);
+  }, [loadedAt]);
 
   useEffect(() => {
-    api.get("/system").then(e => setSystemStatus(e.data));
-  }, []);
+    api.get("/system").then(e =>
+      setSystemStatus({
+        __loaded_at: loadedAt,
+        ...e.data
+      })
+    );
+  }, [loadedAt]);
 
   return (
     <Container className="dashboard">
@@ -188,7 +305,11 @@ export default props => {
           <DisplayStatusCard settings={settings} />
         </Col>
         <Col sm={5}>
-          <SystemStatusCard systemStatus={systemStatus} />
+          <SystemStatusCard
+            settings={settings}
+            systemStatus={systemStatus}
+            onReload={onReload}
+          />
         </Col>
       </Row>
     </Container>
