@@ -77,6 +77,25 @@ public:
 
 class HardwareSettings : public Configuration {
 public:
+  persistentVar(
+    uint8_t,
+    spi_bus,
+    EPD_DEFAULT_SPI_BUS,
+    {
+      if (spi_busString.equalsIgnoreCase("vspi")) {
+        spi_bus = VSPI;
+      } else {
+        spi_bus = HSPI;
+      }
+    },
+    {
+      if (spi_bus == VSPI) {
+        spi_busString = "VSPI";
+      } else {
+        spi_busString = "HSPI";
+      }
+    }
+  );
   persistentIntVar(dc_pin, EPD_DEFAULT_DC_PIN);
   persistentIntVar(rst_pin, EPD_DEFAULT_RST_PIN);
   persistentIntVar(busy_pin, EPD_DEFAULT_BUSY_PIN);
