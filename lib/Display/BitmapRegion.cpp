@@ -8,6 +8,7 @@ BitmapRegion::BitmapRegion(
   uint16_t w,
   uint16_t h,
   uint16_t color,
+  uint16_t background_color,
   std::shared_ptr<const VariableFormatter> formatter,
   uint16_t index
 ) : Region(variable, {x, y, w, h}, color, formatter, "b-" + String(index))
@@ -27,7 +28,7 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
 
     file.close();
 
-    display->fillRect(boundingBox.x, boundingBox.y, boundingBox.w, boundingBox.h, GxEPD_WHITE);
+    display->fillRect(boundingBox.x, boundingBox.y, boundingBox.w, boundingBox.h, background_color);
     display->drawBitmap(boundingBox.x, boundingBox.y, bits, boundingBox.w, boundingBox.h, color);
   }
 }

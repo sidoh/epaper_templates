@@ -104,6 +104,7 @@ class DisplayTemplateDriver {
 #endif
 
   const uint16_t defaultColor = GxEPD_BLACK;
+  const uint16_t defaultBackgroundColor = GxEPD_WHITE;
   const GFXfont* defaultFont = &FreeSans9pt7b;
 
   void flushDirtyRegions(bool screenUpdates);
@@ -113,19 +114,22 @@ class DisplayTemplateDriver {
 
   void renderLines(JsonArray lines);
   void renderRectangles(VariableFormatterFactory& formatterFactory,
-                        JsonArray lines);
+                        JsonArray lines,
+                        uint16_t background_color);
   void renderTexts(VariableFormatterFactory& formatterFactory,
                    JsonObject updateRects,
                    JsonArray text,
                    uint16_t background_color);
   void renderBitmaps(VariableFormatterFactory& formatterFactory,
-                     JsonArray bitmaps);
+                     JsonArray bitmaps,
+                     uint16_t template_background);
   void renderBitmap(const String& filename,
                     uint16_t x,
                     uint16_t y,
                     uint16_t w,
                     uint16_t h,
-                    uint16_t color);
+                    uint16_t color,
+                    uint16_t background_color);
 
   std::shared_ptr<Region> addTextRegion(
       uint16_t x,
@@ -144,17 +148,20 @@ class DisplayTemplateDriver {
       uint16_t w,
       uint16_t h,
       uint16_t color,
+      uint16_t background_color,
       VariableFormatterFactory& formatterFactory,
       JsonObject spec,
       uint16_t index);
   std::shared_ptr<Region> addRectangleRegion(
       VariableFormatterFactory& formatterFactory,
       JsonObject spec,
-      uint16_t index);
+      uint16_t index,
+      uint16_t background_color);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);
   const uint16_t extractColor(JsonObject spec);
+  const uint16_t extractBackgroundColor(JsonObject spec, uint16_t template_background);
   const uint8_t extractTextSize(JsonObject spec);
 
   static bool regionContainedIn(Rectangle& r,

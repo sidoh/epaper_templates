@@ -18,6 +18,7 @@ public:
     uint16_t w,
     uint16_t h,
     uint16_t color,
+    uint16_t background_color,
     std::shared_ptr<const VariableFormatter> formatter,
     uint16_t index
   );

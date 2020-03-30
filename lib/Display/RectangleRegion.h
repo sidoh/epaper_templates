@@ -31,6 +31,7 @@ class RectangleRegion : public Region {
       Dimension width,
       Dimension height,
       uint16_t color,
+      uint16_t background_color,
       std::shared_ptr<const VariableFormatter> formatter,
       FillStyle fillStyle,
       uint16_t index
@@ -43,4 +44,5 @@ class RectangleRegion : public Region {
   const FillStyle fillStyle;
   const Dimension w, h;
   Rectangle previousBoundingBox;
+  uint16_t background_color;
 };
