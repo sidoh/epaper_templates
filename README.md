@@ -55,7 +55,7 @@ The [examples directory](./examples) has a few sample templates.  Here are a few
 
 ## Quickstart
 
-1. Connect display to MCU.  (see [waveshare site](https://www.waveshare.com/wiki/1.54inch_e-Paper_Module) for more information)
+1. Connect display to MCU.  (see [waveshare site](https://www.waveshare.com/wiki/1.54inch_e-Paper_Module) and **SPI Bus and Pin Selection** below for more information)
 1. Flash your MCU.
    1. Use a pre-compiled binary from the [releases page](https://github.com/sidoh/epaper_templates/releases).  You can use [esptool](https://github.com/espressif/esptool) or the [ESP32 flash tool](https://www.espressif.com/en/support/download/other-tools).
    1. With PlatformIO: for example `pio run -e esp32 -t upload`.  You will need to have [nodejs](https://nodejs.org/en/) installed in order to buidl the web assets.
@@ -72,6 +72,22 @@ e-paper templates can function in _deep sleep_ mode.  When configured, the syste
 4. Put both the ESP32 and the e-paper display into deep sleep mode.
 
 This is useful if trying to conserve power.  Deep sleep mode can be configured in the "Power" tab within the web UI.
+
+## SPI Bus and Pin Selection
+
+The ESP32 has 4 SPI busses, however, one is reserved for the chips Flash. (SPI0) and another is often used by PSRAM (SP1).
+
+In the **Hardware** tab of the settings page, you can select one of the two free SPI busses on the ESP32. (HSPI and VSPI)
+
+|           | VSPI | HSPI (default) |
+|-----------|------|----------------|
+| DI (MOSI) | 19   | 12             |
+| CLK       | 18   | 14             |
+| CS (SS)   | 5    | 15             |
+
+Additionally, the displays will require extra pins to be configured to work properly. These are also selectable in the **Hardware** tab.
+
+Please ensure that you do not select pins that conflict with the your SPI Bus/Deep Sleep configurations.
 
 # Concepts
 

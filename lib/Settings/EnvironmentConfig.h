@@ -38,6 +38,7 @@ extern "C" {
 #define EPD_DEFAULT_BUSY_PIN 4
 #define EPD_DEFAULT_SLEEP_OVERRIDE_PIN D1
 #elif defined(ESP32)
+#define EPD_DEFAULT_SPI_BUS HSPI // HSPI == 2 | VSPI == 3
 #define EPD_DEFAULT_DC_PIN 17
 #define EPD_DEFAULT_RST_PIN 16
 #define EPD_DEFAULT_BUSY_PIN 7

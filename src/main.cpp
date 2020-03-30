@@ -71,6 +71,13 @@ void cancelSleep() {
 }
 
 void initDisplay() {
+  #if defined(ESP32)
+  if (settings.hardware.spi_bus == VSPI){
+    SPI.end();
+    SPI.begin(18, 23, 19, 5);
+  }
+  #endif
+
   if (display) {
     delete display;
     display = NULL;

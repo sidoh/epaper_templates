@@ -24,6 +24,16 @@ export default {
       $id: "#/properties/hardware.rst_pin",
       title: "RST Pin",
       $ref: "#/definitions/pin"
+    },
+    "hardware.spi_bus": {
+      $id: "#/properties/hardware.spi_bus",
+      title: "SPI Bus",
+      oneOf: [
+        { const: "HSPI", title: "HSPI (default)" },
+        { const: "VSPI", title: "VSPI" }
+      ],
+      type: "string",
+      default: "HSPI"
     }
   }
 };
