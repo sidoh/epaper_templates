@@ -53,13 +53,12 @@ uint8_t lastSecond = 60;
 
 void initDisplay() {
   #if defined(ESP32)
-    if(settings.hardware.spi_bus != HSPI){
-        if (settings.hardware.spi_bus == VSPI){
-            SPI.end();
-            SPI.begin(18, 23, 19, 5);
-        }
-    }
+  if (settings.hardware.spi_bus == VSPI){
+    SPI.end();
+    SPI.begin(18, 23, 19, 5);
+  }
   #endif
+
   if (display) {
     delete display;
     display = NULL;
