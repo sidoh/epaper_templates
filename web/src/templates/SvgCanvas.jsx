@@ -146,11 +146,17 @@ const SvgRectangle = React.memo(
       return [className, style === "filled" ? "filled" : "outline"];
     }, [style, className]);
 
+    // The color prop for "filled" rectangles should define the color of the whole rectangle
+    // (appropriate prop is "fill").  For outline rectangles, should it's "stroke".
+    const colorProps = {
+      [style === "filled" ? "fill" : "stroke"]: color
+    };
+
     return (
       <rect
         ref={ref}
         {...{ x, y, width, height }}
-        stroke={color}
+        {...colorProps}
         className={classes.join(" ")}
         onClick={onClick}
       />
