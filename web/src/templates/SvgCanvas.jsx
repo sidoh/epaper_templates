@@ -167,6 +167,7 @@ const SvgBitmap = React.memo(
         w: width = 0,
         h: height = 0,
         color = "black",
+        background_color: backgroundColor = "white",
         value: valueDef
       },
       static: _static,
@@ -191,12 +192,13 @@ const SvgBitmap = React.memo(
               binData: x,
               width,
               height,
-              color
+              color,
+              backgroundColor
             })
           );
         });
       }
-    }, [file, color]);
+    }, [file, color, backgroundColor]);
 
     return (
       <>
