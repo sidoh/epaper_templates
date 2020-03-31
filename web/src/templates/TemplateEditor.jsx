@@ -25,6 +25,7 @@ import { useUndoableMap } from "../util/use-undo-reducer";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import useGlobalState from "../state/global_state";
 import { useLocation, useBoolean } from "react-use";
+import { useRef } from "react";
 
 const RawJsonEditor = ({ value, onChange, setSubNav, isHidden }) => {
   const [internalValue, setInternalValue] = useState("{}");
@@ -180,6 +181,11 @@ export default ({ isActive, path, template, triggerReload }) => {
   const isNew = path === "new";
   const history = useHistory();
   const location = useLocation();
+  const currentJson = useRef(null);
+
+  useEffect(() => {
+    currentJson.current = json;
+  }, [json])
 
   useEffect(() => {
     if (template) {
@@ -221,7 +227,7 @@ export default ({ isActive, path, template, triggerReload }) => {
       const filename = name.endsWith(".json") ? name : `${name}.json`;
 
       // Filter out items that were marked for deletion
-      const updated = produce(json, draft => {
+      const updated = produce(currentJson.current, draft => {
         ["formatters", ...Object.keys(FieldTypeDefinitions)].forEach(
           fieldType => {
             if (draft[fieldType]) {
@@ -260,7 +266,7 @@ export default ({ isActive, path, template, triggerReload }) => {
         }
       );
     },
-    [triggerReload, path, name, json]
+    [triggerReload, path, name]
   );
 
   const onDelete = useCallback(
@@ -394,7 +400,8 @@ export default ({ isActive, path, template, triggerReload }) => {
                     <SwitchableJsonEditor
                       value={json}
                       onChange={setJson}
-                      {...{ undo, redo, collapse, markForCollapse, onSave: onSubmit, isActive }}
+                      onSave={onSubmit}
+                      {...{ undo, redo, collapse, markForCollapse, isActive }}
                     />
                   </Col>
                 </Row>
