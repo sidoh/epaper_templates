@@ -31,3 +31,10 @@ for file in $(ls ${firmware_prefix}/**/firmware.bin); do
 
   cp "$file" "dist/${PROJECT_NAME}_${env}-${VERSION}.bin"
 done
+
+for file in $(ls ${firmware_prefix}/**/firmware-full.bin); do
+  env_dir=$(dirname "$file")
+  env=$(basename "$env_dir")
+
+  cp "$file" "dist/INITIALIZER_${PROJECT_NAME}_${env}-${VERSION}.bin"
+done

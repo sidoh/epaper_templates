@@ -26,6 +26,7 @@ module.exports = {
         },
         proxy: {
           '/api': `http://${API_SERVER_ADDRESS}`,
+          '/firmware': `http://${API_SERVER_ADDRESS}`,
           '/socket': {
             target: `ws://${API_SERVER_ADDRESS}`,
             ws: true

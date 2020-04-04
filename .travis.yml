@@ -4,7 +4,7 @@ python:
 sudo: false
 cache:
   directories:
-    - "~/.platformio"
+    - "~/.pio"
 env:
   - NODE_VERSION="10"
 before_install:
@@ -17,7 +17,7 @@ before_script:
 script:
   - platformio run
 before_deploy:
-  - ./.prepare_release
+  - ./scripts/travis/prepare_release
 deploy:
   provider: releases
   prerelease: true
