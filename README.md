@@ -299,10 +299,13 @@ The following RESTful routes are available:
 
 1. `/api/v1/variables` - GET, PUT.
 1. `/api/v1/templates` - GET, POST.
-1. `/api/v1/templates/:template_name` - GET, DELETE, PUT
+1. `/api/v1/templates/:template_name` - GET, DELETE, PUT.
 1. `/api/v1/bitmaps` - GET, POST.
 1. `/api/v1/bitmaps/:bitmap_name` - GET, DELETE.
 1. `/api/v1/settings` - GET, PUT.
+1. `/api/v1/system` - GET, POST.
+1. `/api/v1/resolve_variables` - GET. (For debugging)
+1. `/api/v1/screens` - GET. (For debugging)
 1. `/api/v1/about` - GET.
 1. `/firmware` - POST.
 1. `/` - GET.
