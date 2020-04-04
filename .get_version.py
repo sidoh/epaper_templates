@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from subprocess import check_output
 import sys
 import os
