@@ -15,11 +15,12 @@ import {
   faPowerOff,
   faRedoAlt,
   faCheck,
-  faTimes
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { useInterval, useBoolean } from "react-use";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import { useMemo } from "react";
+import useGlobalState from "../state/global_state";
 
 const DisplayStatusCard = ({ settings }) => {
   return (
@@ -46,7 +47,7 @@ const SleepStatus = ({
   awakeSecondsLeft,
   isCancelling,
   onCancel,
-  isRebooting
+  isRebooting,
 }) => {
   return (
     <>
@@ -92,19 +93,20 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [awakeSecondsLeft, setAwakeSecondsLeft] = useState(null);
   const [isCancellingDeepSleep, setCancellingDeepSleep] = useState(false);
+  const [globalState, globalActions] = useGlobalState();
 
   const firmwareFile = useRef(null);
   const deepSleepActive = systemStatus && systemStatus["deep_sleep_active"];
 
-  const onCancelSleep = useCallback(e => {
+  const onCancelSleep = useCallback((e) => {
     e.preventDefault();
     setCancellingDeepSleep(true);
 
     api.post("/system", { command: "cancel_sleep" }).then(
-      e => {
+      (e) => {
         onReload();
       },
-      e => {
+      (e) => {
         setCancellingDeepSleep(false);
       }
     );
@@ -116,9 +118,9 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
         .get("/system", { timeout: 1000 })
         .then(() => {
           onReload();
-          setRebooting(false)
+          setRebooting(false);
         })
-        .catch(e => console.log("Caught exception", e));
+        .catch((e) => console.log("Caught exception", e));
     },
     !!isRebooting ? 5000 : null
   );
@@ -144,7 +146,7 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
     deepSleepActive ? 100 : null
   );
 
-  const reboot = useCallback(e => {
+  const reboot = useCallback((e) => {
     e.preventDefault();
 
     if (confirm("Are you sure you want to reboot?")) {
@@ -153,7 +155,7 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
     }
   }, []);
 
-  const onFirmwareSubmit = useCallback(e => {
+  const onFirmwareSubmit = useCallback((e) => {
     e.preventDefault();
 
     if (firmwareFile.current.files.length > 0) {
@@ -165,16 +167,25 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
 
       const config = {
         baseURL: "/",
-        onUploadProgress: e => {
+        onUploadProgress: (e) => {
           setUploadProgress(Math.floor((100 * e.loaded) / e.total));
-        }
+        },
       };
 
-      api.post("/firmware", formData, config).then(e => {
-        setUploadProgress(null);
-        setRebooting(false);
-        setSuccessMessage("Firmware updated successfully.");
-      });
+      api.post("/firmware", formData, config).then(
+        (e) => {
+          setUploadProgress(null);
+          setRebooting(false);
+          setSuccessMessage("Firmware updated successfully.");
+        },
+        (e) => {
+          setUploadProgress(null);
+          setRebooting(false);
+          globalActions.addError(
+            "Error updating firmware - " + e.response.data.error
+          );
+        }
+      );
     }
   });
 
@@ -261,7 +272,11 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
                 Update Firmware
               </Button>
 
-              <Button disabled={!!isRebooting} variant="warning" onClick={reboot}>
+              <Button
+                disabled={!!isRebooting}
+                variant="warning"
+                onClick={reboot}
+              >
                 <MemoizedFontAwesomeIcon
                   icon={faPowerOff}
                   className="fa-fw mr-1"
@@ -276,7 +291,7 @@ const SystemStatusCard = ({ settings, systemStatus, onReload }) => {
   );
 };
 
-export default props => {
+export default (props) => {
   const [settings, setSettings] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
   const [loadedAt, setLoadedAt] = useState(new Date());
@@ -286,14 +301,14 @@ export default props => {
   }, []);
 
   useEffect(() => {
-    api.get("/settings").then(e => setSettings(e.data));
+    api.get("/settings").then((e) => setSettings(e.data));
   }, [loadedAt]);
 
   useEffect(() => {
-    api.get("/system").then(e =>
+    api.get("/system").then((e) =>
       setSystemStatus({
         __loaded_at: loadedAt,
-        ...e.data
+        ...e.data,
       })
     );
   }, [loadedAt]);

@@ -206,7 +206,8 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
             "INITIALIZER_"));
       request.response.setCode(400);
       request.response.json[F("error")] =
-          F("Invalid firmware image.  This is an initializer binary.");
+          F("Invalid firmware image.  This is an initializer binary.  Please "
+            "choose the firmware image without the INITIALIZER_ prefix.");
       return;
     }
 

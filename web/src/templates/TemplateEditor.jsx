@@ -283,17 +283,6 @@ export default ({ isActive, path, template, triggerReload }) => {
 
   return (
     <>
-      {globalState.errors.map((msg, i) => {
-        return (
-          <Alert
-            variant="danger"
-            onClose={() => globalActions.dismissError(i)}
-            dismissible
-          >
-            {msg}
-          </Alert>
-        );
-      })}
       <Prompt
         when={!isSaved}
         message={

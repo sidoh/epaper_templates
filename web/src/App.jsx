@@ -12,6 +12,7 @@ import Dashboard from "./dashboard/Dashboard";
 import BitmapsIndex from "./bitmaps/BitmapsIndex";
 import useGlobalState from "./state/global_state";
 import ErrorBoundary from "./util/ErrorBoundary";
+import { Alert } from "react-bootstrap";
 
 const App = () => {
   const [globalState, globalActions] = useGlobalState();
@@ -27,6 +28,17 @@ const App = () => {
 
         <Container className="main-content">
           <ErrorBoundary>
+            {globalState.errors.map((msg, i) => {
+              return (
+                <Alert
+                  variant="danger"
+                  onClose={() => globalActions.dismissError(i)}
+                  dismissible
+                >
+                  {msg}
+                </Alert>
+              );
+            })}
             <Switch>
               <Route path="/templates">
                 <TemplatesIndex />
