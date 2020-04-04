@@ -4,7 +4,7 @@ python:
 sudo: false
 cache:
   directories:
-    - "~/.platformio"
+    - "~/.pio"
 env:
   - NODE_VERSION="10"
 before_install:
