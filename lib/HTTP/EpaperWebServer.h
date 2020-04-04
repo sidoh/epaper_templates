@@ -40,6 +40,7 @@ private:
   OnCancelSleepFn cancelSleepFn;
   AsyncWebSocket wsServer;
   bool deepSleepActive;
+  bool updateSuccessful;
 
   // firmware update handlers
   void handleFirmwareUpdateUpload(RequestContext& request);

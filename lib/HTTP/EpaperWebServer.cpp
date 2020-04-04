@@ -29,7 +29,8 @@ EpaperWebServer::EpaperWebServer(
     , changeFn(nullptr)
     , cancelSleepFn(nullptr)
     , wsServer("/socket")
-    , deepSleepActive(false) {
+    , deepSleepActive(false)
+    , updateSuccessful(false) {
   driver->onVariableUpdate(
       std::bind(&EpaperWebServer::handleVariableUpdate, this, _1, _2));
   driver->onRegionUpdate(
@@ -193,6 +194,22 @@ void EpaperWebServer::begin() {
 
 void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
   if (request.upload.index == 0) {
+    // Give up if the filename starts with "INITIALIZER_".  These binary images
+    // are built by custom platformio tooling that includes all parts of flash
+    // necessary get started (including bootloader and partition table).
+    //
+    // OTA updates _only_ have the firmware part of this image, and trying to
+    // include the other parts will corrupt flash.
+    if (request.upload.filename.startsWith("INITIALIZER_")) {
+      Serial.println(
+          F("Refusing to process OTA update with filename beginning with "
+            "INITIALIZER_"));
+      request.response.setCode(400);
+      request.response.json[F("error")] =
+          F("Invalid firmware image.  This is an initializer binary.");
+      return;
+    }
+
     if (request.rawRequest->contentLength() > 0) {
       if (this->cancelSleepFn) {
         this->cancelSleepFn();
@@ -206,7 +223,8 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
   }
 
   if (Update.size() > 0) {
-    if (Update.write(request.upload.data, request.upload.length) != request.upload.length) {
+    if (Update.write(request.upload.data, request.upload.length) !=
+        request.upload.length) {
       Update.printError(Serial);
 
 #if defined(ESP32)
@@ -215,20 +233,26 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
     }
 
     if (request.upload.isFinal) {
-      if (! Update.end(true)) {
+      if (!Update.end(true)) {
         Update.printError(Serial);
 #if defined(ESP32)
         Update.abort();
 #endif
+      } else {
+        this->updateSuccessful = true;
       }
     }
   }
 }
 
 void EpaperWebServer::handleFirmwareUpdateComplete(RequestContext& request) {
-  request.rawRequest->send(200, "text/plain", "success");
-  delay(1000);
-  ESP.restart();
+  // Upload handler can decide that there was something wrong with the upload.
+  // Don't reset if that's the case
+  if (this->updateSuccessful) {
+    request.rawRequest->send(200, "text/plain", "success");
+    delay(1000);
+    ESP.restart();
+  }
 }
 
 void EpaperWebServer::handleVariableUpdate(
@@ -650,7 +674,8 @@ void EpaperWebServer::onSettingsChange(std::function<void()> changeFn) {
   this->changeFn = changeFn;
 }
 
-void EpaperWebServer::onCancelSleep(EpaperWebServer::OnCancelSleepFn cancelSleepFn) {
+void EpaperWebServer::onCancelSleep(
+    EpaperWebServer::OnCancelSleepFn cancelSleepFn) {
   this->cancelSleepFn = cancelSleepFn;
 }
 
