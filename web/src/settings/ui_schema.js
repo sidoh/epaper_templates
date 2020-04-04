@@ -59,7 +59,7 @@ export default {
     </div>
     <div>
       <MemoizedFontAwesomeIcon icon={faExclamationTriangle} className="text-warning fa-fw mr-1" />
-      <b>Changing this setting requires a reboot!</b>
+      <b>Changing any of these settings requires a reboot!</b>
     </div>
     </>
   },
