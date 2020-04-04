@@ -94,6 +94,10 @@ const BitmapFields = {
     y: { $ref: "#/definitions/verticalPosition" },
     w: { title: "Width", $ref: "#/definitions/horizontalPosition" },
     h: { title: "Height", $ref: "#/definitions/verticalPosition" },
+    background_color: {
+        title: "Background Color",
+        $ref: "#/definitions/color"
+    },
     color: { $ref: "#/definitions/color" },
     value: {
       title: "Value",

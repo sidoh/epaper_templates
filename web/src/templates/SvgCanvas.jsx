@@ -146,11 +146,17 @@ const SvgRectangle = React.memo(
       return [className, style === "filled" ? "filled" : "outline"];
     }, [style, className]);
 
+    // The color prop for "filled" rectangles should define the color of the whole rectangle
+    // (appropriate prop is "fill").  For outline rectangles, should it's "stroke".
+    const colorProps = {
+      [style === "filled" ? "fill" : "stroke"]: color
+    };
+
     return (
       <rect
         ref={ref}
         {...{ x, y, width, height }}
-        stroke={color}
+        {...colorProps}
         className={classes.join(" ")}
         onClick={onClick}
       />
@@ -167,6 +173,7 @@ const SvgBitmap = React.memo(
         w: width = 0,
         h: height = 0,
         color = "black",
+        background_color: backgroundColor = "white",
         value: valueDef
       },
       static: _static,
@@ -191,12 +198,13 @@ const SvgBitmap = React.memo(
               binData: x,
               width,
               height,
-              color
+              color,
+              backgroundColor
             })
           );
         });
       }
-    }, [file, color]);
+    }, [file, color, backgroundColor]);
 
     return (
       <>

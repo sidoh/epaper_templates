@@ -7,6 +7,7 @@ RectangleRegion::RectangleRegion(const String& variable,
     RectangleRegion::Dimension w,
     RectangleRegion::Dimension h,
     uint16_t color,
+    uint16_t background_color,
     std::shared_ptr<const VariableFormatter> formatter,
     FillStyle fillStyle,
     uint16_t index
@@ -16,6 +17,7 @@ RectangleRegion::RectangleRegion(const String& variable,
     , w(w)
     , h(h)
     , previousBoundingBox({x, y, 0, 0})
+    , background_color(background_color)
  {}
 
 RectangleRegion::~RectangleRegion() {}
@@ -34,7 +36,7 @@ void RectangleRegion::render(GxEPD2_GFX* display) {
       boundingBox.y,
       boundingBox.w,
       boundingBox.h,
-      GxEPD_WHITE);
+      background_color);
 
   if (fillStyle == FillStyle::FILLED) {
     display->writeFillRect(boundingBox.x, boundingBox.y, width, height, color);

@@ -77,6 +77,7 @@ protected:
   String variableValue;
   Rectangle boundingBox;
   uint16_t color;
+  uint16_t background_color;
   bool dirty;
   std::shared_ptr<const VariableFormatter> formatter;
   String id;
