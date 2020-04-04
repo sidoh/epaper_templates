@@ -18,13 +18,15 @@ public:
     uint16_t w,
     uint16_t h,
     uint16_t color,
-    uint16_t background_color,
+    uint16_t backgroundColor,
     std::shared_ptr<const VariableFormatter> formatter,
     uint16_t index
   );
   ~BitmapRegion();
 
   virtual void render(GxEPD2_GFX* display);
+private:
+  uint16_t backgroundColor;
 };
 
 #endif

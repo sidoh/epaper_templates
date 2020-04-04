@@ -184,7 +184,9 @@ void DisplayTemplateDriver::updateVariable(
         this->dirty = true;
 
         if (this->onRegionUpdateFn) {
-          this->onRegionUpdateFn(region->getId(), key, region->getVariableValue(key));
+          this->onRegionUpdateFn(region->getId(),
+              key,
+              region->getVariableValue(key));
         }
       }
     }
@@ -244,9 +246,10 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
     return;
   }
 
-  uint16_t background_color = extractBackgroundColor(tmpl, defaultBackgroundColor);
+  uint16_t backgroundColor =
+      extractBackgroundColor(tmpl, defaultBackgroundColor);
 
-  display->fillScreen(background_color);
+  display->fillScreen(backgroundColor);
 
   if (tmpl.containsKey("rotation")) {
     display->setRotation(tmpl["rotation"]);
@@ -262,20 +265,28 @@ void DisplayTemplateDriver::loadTemplate(const String& templateFilename) {
   }
 
   if (tmpl.containsKey("bitmaps")) {
-    renderBitmaps(formatterFactory, tmpl["bitmaps"], background_color);
+    renderBitmaps(formatterFactory, tmpl["bitmaps"], backgroundColor);
   }
 
   if (tmpl.containsKey("text")) {
-    renderTexts(formatterFactory, updateRects, tmpl["text"].as<JsonArray>(), background_color);
+    renderTexts(formatterFactory,
+        updateRects,
+        tmpl["text"].as<JsonArray>(),
+        backgroundColor);
   }
 
   if (tmpl.containsKey("rectangles")) {
-    renderRectangles(formatterFactory, tmpl["rectangles"].as<JsonArray>(), background_color);
+    renderRectangles(formatterFactory,
+        tmpl["rectangles"].as<JsonArray>(),
+        backgroundColor);
   }
 }
 
 std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
-    VariableFormatterFactory& formatterFactory, JsonObject spec, uint16_t index, uint16_t background_color) {
+    VariableFormatterFactory& formatterFactory,
+    JsonObject spec,
+    uint16_t index,
+    uint16_t backgroundColor) {
   String variable = RectangleRegion::Dimension::extractVariable(spec);
 
   RectangleRegion::Dimension w =
@@ -292,7 +303,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
       w,
       h,
       extractColor(spec),
-      background_color,
+      backgroundColor,
       formatterFactory.create(formatterDefinition),
       fillStyleFromString(spec["style"]),
       index);
@@ -303,10 +314,12 @@ std::shared_ptr<Region> DisplayTemplateDriver::addRectangleRegion(
 }
 
 void DisplayTemplateDriver::renderRectangles(
-    VariableFormatterFactory& formatterFactory, JsonArray rectangles, uint16_t background_color) {
+    VariableFormatterFactory& formatterFactory,
+    JsonArray rectangles,
+    uint16_t backgroundColor) {
   size_t ix = 0;
   for (JsonObject rect : rectangles) {
-    addRectangleRegion(formatterFactory, rect, ix++, background_color);
+    addRectangleRegion(formatterFactory, rect, ix++, backgroundColor);
   }
 }
 
@@ -316,14 +329,19 @@ void DisplayTemplateDriver::renderBitmap(const String& filename,
     uint16_t w,
     uint16_t h,
     uint16_t color,
-    uint16_t background_color) {
+    uint16_t backgroundColor) {
   if (!SPIFFS.exists(filename)) {
     Serial.print(F("WARN - tried to render bitmap file that doesn't exist: "));
     Serial.println(filename);
     return;
   }
 
-  Serial.printf_P(PSTR("Rendering bitmap: %s\n"), filename.c_str());
+  Serial.printf_P(PSTR("Rendering bitmap: %s, x=%d, y=%d, w=%d, h=%d\n"),
+      filename.c_str(),
+      x,
+      y,
+      w,
+      h);
 
   File file = SPIFFS.open(filename, "r");
   size_t size = w * h / 8;
@@ -332,12 +350,49 @@ void DisplayTemplateDriver::renderBitmap(const String& filename,
 
   file.close();
 
-  display->fillRect(x, y, w, h, background_color);
-  display->drawBitmap(x, y, bits, w, h, color);
+  DisplayTemplateDriver::drawBitmap(display,
+      bits,
+      x,
+      y,
+      w,
+      h,
+      color,
+      backgroundColor);
+}
+
+void DisplayTemplateDriver::drawBitmap(GxEPD2_GFX* display,
+    uint8_t* bitmap,
+    size_t x,
+    size_t y,
+    size_t w,
+    size_t h,
+    uint16_t color,
+    uint16_t backgroundColor) {
+  size_t size = (w * h) / 8;
+  size_t _x = x;
+  size_t _y = y;
+  size_t widthBoundary = x + w;
+
+  for (size_t ix = 0; ix < size; ++ix) {
+    uint8_t b = bitmap[ix];
+
+    for (size_t i = 0; i < 8; ++i) {
+      display->writePixel(_x++, _y, (b & 0x80) ? color : backgroundColor);
+
+      b <<= 1;
+
+      if (_x == widthBoundary) {
+        _x = x;
+        ++_y;
+      }
+    }
+  }
 }
 
 void DisplayTemplateDriver::renderBitmaps(
-    VariableFormatterFactory& formatterFactory, JsonArray bitmaps, uint16_t template_background) {
+    VariableFormatterFactory& formatterFactory,
+    JsonArray bitmaps,
+    uint16_t templateBackground) {
   for (size_t i = 0; i < bitmaps.size(); i++) {
     JsonObject bitmap = bitmaps[i];
 
@@ -346,29 +401,49 @@ void DisplayTemplateDriver::renderBitmaps(
     const uint16_t w = bitmap["w"];
     const uint16_t h = bitmap["h"];
     const uint16_t color = extractColor(bitmap);
-    const uint16_t background_color = extractBackgroundColor(bitmap, template_background);
+    const uint16_t backgroundColor =
+        extractBackgroundColor(bitmap, templateBackground);
 
     // v2 format where there is an explicit "value" key
     if (bitmap.containsKey("value")) {
       bitmap = bitmap["value"];
 
       if (bitmap["type"] == "static") {
-        renderBitmap(bitmap["value"].as<const char*>(), x, y, w, h, color, background_color);
+        renderBitmap(bitmap["value"].as<const char*>(),
+            x,
+            y,
+            w,
+            h,
+            color,
+            backgroundColor);
         continue;
       }
       // fall back on v1 format where "static" and "variable" are inline with
       // the definition
     } else {
       if (bitmap.containsKey("static")) {
-        renderBitmap(bitmap["static"].as<const char*>(), x, y, w, h, color, background_color);
+        renderBitmap(bitmap["static"].as<const char*>(),
+            x,
+            y,
+            w,
+            h,
+            color,
+            backgroundColor);
         continue;
       }
     }
 
     if (bitmap.containsKey("variable")) {
       const String& variable = bitmap["variable"];
-      std::shared_ptr<Region> region =
-          addBitmapRegion(x, y, w, h, color, background_color, formatterFactory, bitmap, i);
+      std::shared_ptr<Region> region = addBitmapRegion(x,
+          y,
+          w,
+          h,
+          color,
+          backgroundColor,
+          formatterFactory,
+          bitmap,
+          i);
       region->updateValue(vars.get(variable));
     }
   }
@@ -378,7 +453,7 @@ void DisplayTemplateDriver::renderTexts(
     VariableFormatterFactory& formatterFactory,
     JsonObject updateRects,
     JsonArray texts,
-    uint16_t background_color) {
+    uint16_t backgroundColor) {
   for (size_t i = 0; i < texts.size(); i++) {
     JsonObject text = texts[i];
 
@@ -416,7 +491,7 @@ void DisplayTemplateDriver::renderTexts(
       std::shared_ptr<Region> region = addTextRegion(x,
           y,
           color,
-          background_color,
+          backgroundColor,
           font,
           textSize,
           formatter,
@@ -445,21 +520,20 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
     uint16_t w,
     uint16_t h,
     uint16_t color,
-    uint16_t background_color,
+    uint16_t backgroundColor,
     VariableFormatterFactory& formatterFactory,
     JsonObject spec,
     uint16_t index) {
-  std::shared_ptr<Region> region = std::make_shared<BitmapRegion>(
-    spec["variable"].as<const char*>(),
-    x,
-    y,
-    w,
-    h,
-    color,
-    background_color,
-    formatterFactory.create(spec),
-    index
-  );
+  std::shared_ptr<Region> region =
+      std::make_shared<BitmapRegion>(spec["variable"].as<const char*>(),
+          x,
+          y,
+          w,
+          h,
+          color,
+          backgroundColor,
+          formatterFactory.create(spec),
+          index);
   regions.add(region);
 
   return region;
@@ -468,7 +542,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
 std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
     uint16_t y,
     uint16_t color,
-    uint16_t background_color,
+    uint16_t backgroundColor,
     const GFXfont* font,
     uint8_t textSize,
     std::shared_ptr<const VariableFormatter> formatter,
@@ -480,7 +554,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addTextRegion(uint16_t x,
       y,
       nullptr,  // fixed bound -- deprecated
       color,
-      background_color,
+      backgroundColor,
       font,
       formatter,
       textSize,
@@ -552,11 +626,12 @@ const uint16_t DisplayTemplateDriver::extractColor(JsonObject spec) {
   }
 }
 
-const uint16_t DisplayTemplateDriver::extractBackgroundColor(JsonObject spec, uint16_t template_background) {
+const uint16_t DisplayTemplateDriver::extractBackgroundColor(
+    JsonObject spec, uint16_t templateBackground) {
   if (spec.containsKey("background_color")) {
     return parseColor(spec["background_color"]);
   } else {
-    return template_background;
+    return templateBackground;
   }
 }
 

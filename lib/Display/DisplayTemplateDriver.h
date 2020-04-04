@@ -36,16 +36,18 @@ extern "C" {
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
-#include <memory>
 #include <functional>
+#include <memory>
 
-typedef std::function<void(const String&, const String&)> VariableUpdateObserverFn;
+typedef std::function<void(const String&, const String&)>
+    VariableUpdateObserverFn;
 
 typedef const String& TRegionId;
 typedef const String& TVariableName;
 typedef const String& TVariableValue;
 
-typedef std::function<void(TRegionId, TVariableName, TVariableValue)> RegionUpdateObserverFn;
+typedef std::function<void(TRegionId, TVariableName, TVariableValue)>
+    RegionUpdateObserverFn;
 
 class DisplayTemplateDriver {
  public:
@@ -83,6 +85,17 @@ class DisplayTemplateDriver {
   // Registers fn as an observer when a region changes
   void onRegionUpdate(RegionUpdateObserverFn fn);
 
+  // Renders a bitmap.  Using this instead of AdafruitGFX#renderBitmap to remove
+  // the restriction that widths be a multiple of 8.
+  static void drawBitmap(GxEPD2_GFX* display,
+      uint8_t* bitmap,
+      size_t x,
+      size_t y,
+      size_t w,
+      size_t h,
+      uint16_t color,
+      uint16_t backgroundColor);
+
   void init();
 
  private:
@@ -115,41 +128,42 @@ class DisplayTemplateDriver {
 
   void renderLines(JsonArray lines);
   void renderRectangles(VariableFormatterFactory& formatterFactory,
-                        JsonArray lines,
-                        uint16_t background_color);
+      JsonArray lines,
+      uint16_t backgroundColor);
   void renderTexts(VariableFormatterFactory& formatterFactory,
-                   JsonObject updateRects,
-                   JsonArray text,
-                   uint16_t background_color);
+      JsonObject updateRects,
+      JsonArray text,
+      uint16_t backgroundColor);
   void renderBitmaps(VariableFormatterFactory& formatterFactory,
-                     JsonArray bitmaps,
-                     uint16_t template_background);
+      JsonArray bitmaps,
+      uint16_t templateBackground);
   void renderBitmap(const String& filename,
-                    uint16_t x,
-                    uint16_t y,
-                    uint16_t w,
-                    uint16_t h,
-                    uint16_t color,
-                    uint16_t background_color);
-
-  std::shared_ptr<Region> addTextRegion(
       uint16_t x,
       uint16_t y,
+      uint16_t w,
+      uint16_t h,
       uint16_t color,
-      uint16_t background_color,
+      uint16_t backgroundColor);
+
+  std::shared_ptr<Region> addTextRegion(
+      JsonArray bitmaps, uint16_t backgroundColor);
+
+  std::shared_ptr<Region> addTextRegion(uint16_t x,
+      uint16_t y,
+      uint16_t color,
+      uint16_t backgroundColor,
       const GFXfont* font,
       uint8_t textSize,
       std::shared_ptr<const VariableFormatter> formatter,
       JsonObject updateRects,
       JsonObject spec,
       uint16_t index);
-  std::shared_ptr<Region> addBitmapRegion(
-      uint16_t x,
+  std::shared_ptr<Region> addBitmapRegion(uint16_t x,
       uint16_t y,
       uint16_t w,
       uint16_t h,
       uint16_t color,
-      uint16_t background_color,
+      uint16_t backgroundColor,
       VariableFormatterFactory& formatterFactory,
       JsonObject spec,
       uint16_t index);
@@ -157,16 +171,17 @@ class DisplayTemplateDriver {
       VariableFormatterFactory& formatterFactory,
       JsonObject spec,
       uint16_t index,
-      uint16_t background_color);
+      uint16_t backgroundColor);
 
   const uint16_t parseColor(const String& colorName);
   const GFXfont* parseFont(const String& fontName);
   const uint16_t extractColor(JsonObject spec);
-  const uint16_t extractBackgroundColor(JsonObject spec, uint16_t template_background);
+  const uint16_t extractBackgroundColor(
+      JsonObject spec, uint16_t templateBackground);
   const uint8_t extractTextSize(JsonObject spec);
 
-  static bool regionContainedIn(Rectangle& r,
-                                DoublyLinkedList<Rectangle>& others);
+  static bool regionContainedIn(
+      Rectangle& r, DoublyLinkedList<Rectangle>& others);
 };
 
 #endif
