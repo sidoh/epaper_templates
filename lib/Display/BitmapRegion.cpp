@@ -1,23 +1,23 @@
-#include <FS.h>
 #include <BitmapRegion.h>
+#include <DisplayTemplateDriver.h>
+#include <FS.h>
 
-BitmapRegion::BitmapRegion(
-  const String& variable,
-  uint16_t x,
-  uint16_t y,
-  uint16_t w,
-  uint16_t h,
-  uint16_t color,
-  uint16_t background_color,
-  std::shared_ptr<const VariableFormatter> formatter,
-  uint16_t index
-) : Region(variable, {x, y, w, h}, color, formatter, "b-" + String(index))
-{ }
+BitmapRegion::BitmapRegion(const String& variable,
+    uint16_t x,
+    uint16_t y,
+    uint16_t w,
+    uint16_t h,
+    uint16_t color,
+    uint16_t backgroundColor,
+    std::shared_ptr<const VariableFormatter> formatter,
+    uint16_t index)
+    : Region(variable, {x, y, w, h}, color, formatter, "b-" + String(index))
+    , backgroundColor(backgroundColor) {}
 
-BitmapRegion::~BitmapRegion() { }
+BitmapRegion::~BitmapRegion() {}
 
 void BitmapRegion::render(GxEPD2_GFX* display) {
-  if (! SPIFFS.exists(variableValue)) {
+  if (!SPIFFS.exists(variableValue)) {
     Serial.print(F("WARN - tried to render bitmap file that doesn't exist: "));
     Serial.println(variableValue);
   } else {
@@ -28,7 +28,13 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
 
     file.close();
 
-    display->fillRect(boundingBox.x, boundingBox.y, boundingBox.w, boundingBox.h, background_color);
-    display->drawBitmap(boundingBox.x, boundingBox.y, bits, boundingBox.w, boundingBox.h, color);
+    DisplayTemplateDriver::drawBitmap(display,
+        bits,
+        boundingBox.x,
+        boundingBox.y,
+        boundingBox.w,
+        boundingBox.h,
+        color,
+        backgroundColor);
   }
 }
