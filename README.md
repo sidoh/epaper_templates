@@ -288,6 +288,11 @@ You can resize a bitmap by clicking on the totally-intuitive-and-definitely-not-
 
 You can download a copy of the image by clicking on the "Download" icon (1st icon under "File" section).
 
+
+#### Colors
+
+A recent update [(v2.4.0)](https://github.com/sidoh/epaper_templates/releases/tag/v2.4.0) brought a way to bring very simple coloring to bitmaps. The 2 color limitation still applies, but you can change the "on" and "off" pixel colors to any color your display supports.
+
 # REST API
 
 The following RESTful routes are available:
