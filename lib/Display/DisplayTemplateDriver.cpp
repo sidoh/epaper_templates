@@ -506,6 +506,8 @@ const GFXfont* DisplayTemplateDriver::parseFont(const String& fontName) {
     return &FreeMonoBold24pt7b;
   } else if (fontName.equalsIgnoreCase("FreeSans18pt7b")) {
     return &FreeSans18pt7b;
+  } else if (fontName.equalsIgnoreCase("FreeSans12pt7b")) {
+    return &FreeSans12pt7b;
   } else if (fontName.equalsIgnoreCase("FreeSans9pt7b")) {
     return &FreeSans9pt7b;
   } else if (fontName.equalsIgnoreCase("FreeSansBold9pt7b")) {

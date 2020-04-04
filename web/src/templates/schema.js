@@ -19,6 +19,14 @@ const FontDefinitions = {
       fontFamily: "FreeSans, sans-serif"
     }
   },
+  FreeSans12pt7b: {
+    title: "Free Sans",
+    style: {
+      fontSize: 12,
+      fontWeight: 100,
+      fontFamily: "FreeSans, sans-serif"
+    }
+  },
   FreeSans9pt7b: {
     title: "Free Sans",
     style: {
