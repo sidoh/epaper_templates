@@ -31,9 +31,6 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
 
     // In case it's a new bitmap with a different size.
     Rectangle clearingBounds = getBoundingBox();
-    Serial.println("sup");
-    Serial.println(clearingBounds.w);
-    Serial.println(clearingBounds.h);
     
     display->fillRect(
       clearingBounds.x,
