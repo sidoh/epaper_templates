@@ -12,6 +12,7 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
   - [Requirements](#requirements)
   - [Quickstart](#quickstart)
   - [Deep Sleep](#deep-sleep)
+  - [SPI Bus and Pin Selection](#spi-bus-and-pin-selection)
 - [Concepts](#concepts)
   - [Variables](#variables)
   - [Regions](#regions)
@@ -23,9 +24,26 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
   - [MQTT](#mqtt)
 - [Web UI](#web-ui)
   - [Template Editor](#template-editor)
+      - [Canvas preview](#canvas-preview)
+      - [Adding regions](#adding-regions)
+      - [Selecting and moving existing regions](#selecting-and-moving-existing-regions)
+      - [Keyboard Shortcuts](#keyboard-shortcuts)
+      - [Sidebar](#sidebar)
+      - [Region fields editor](#region-fields-editor)
+      - [Formatters](#formatters-1)
+      - [Raw mode](#raw-mode)
   - [Variables](#variables-1)
   - [Images](#images)
+      - [Index](#index)
+      - [Editor](#editor)
+      - [Importing images](#importing-images)
+      - [Resize](#resize)
+      - [Downloading](#downloading)
+      - [Colors](#colors)
 - [REST API](#rest-api-1)
+- [Development](#development)
+  - [Compiling from source](#compiling-from-source)
+  - [Local webserver](#local-webserver)
 
 <!-- /code_chunk_output -->
 
@@ -312,6 +330,31 @@ The following RESTful routes are available:
 1. `/api/v1/about` - GET.
 1. `/firmware` - POST.
 1. `/` - GET.
+
+# Development
+
+A complete develop environment requires the following:
+
+* `platformio` to build the Arduino C++ sources.  Installable via pip.
+* `nodejs` to build the web sources.  Install with [`nvm`](https://github.com/nvm-sh/nvm).
+
+## Compiling from source
+
+Compile the project from source using PlatformIO:
+
+```
+platformio run -e esp32 --target buildprog
+```
+
+## Local webserver
+
+To iterate on the web assets locally, update the `API_SERVER_ADDRESS` constant in `./web/.neutrinorc.js` to point the address of an ESP32 running epaper_templates, and start a local webserver with this command:
+
+```
+cd ./web && npm install && npm run start
+```
+
+This will start a local webserver on `localhost:5000` and open a browser window.
 
 [info-license]:   https://github.com/sidoh/epaper_templates/blob/master/LICENSE
 [shield-license]: https://img.shields.io/badge/license-MIT-blue.svg
