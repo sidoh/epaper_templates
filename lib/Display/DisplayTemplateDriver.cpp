@@ -396,8 +396,6 @@ void DisplayTemplateDriver::renderBitmaps(
 
     const uint16_t x = bitmap["x"];
     const uint16_t y = bitmap["y"];
-    //const uint16_t w = bitmap["w"];
-    //const uint16_t h = bitmap["h"];
     const uint16_t color = extractColor(bitmap);
     const uint16_t backgroundColor =
         extractBackgroundColor(bitmap, templateBackground);

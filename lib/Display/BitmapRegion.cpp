@@ -69,22 +69,17 @@ Rectangle BitmapRegion::getBoundingBox() {
 
 bool BitmapRegion::getBitmapDimensions(const String& bitmapName, uint16_t *width, uint16_t *height){
   String metadata_filename = bitmapName.c_str();
-  Serial.println("AAAAAAAAAAAA");
   
   metadata_filename.replace("/b/", "/m/");
-  Serial.println(F("getting dimensions of bitmap:"));
-    Serial.println(bitmapName);
-    Serial.println(metadata_filename);
   if (!SPIFFS.exists(bitmapName) || !SPIFFS.exists(metadata_filename)) {
     Serial.println(F("WARN - tried to get dimensions from bitmap that doesn't exist: "));
     Serial.println(bitmapName);
-    Serial.println(metadata_filename);
     return false;
   }
 
   File metadata_file = SPIFFS.open(metadata_filename, "r");
 
-  DynamicJsonDocument jsonBuffer(2048);
+  StaticJsonDocument<100> jsonBuffer;
   deserializeJson(jsonBuffer, metadata_file);
   metadata_file.close();
   JsonObject metadata = jsonBuffer.as<JsonObject>();
@@ -93,12 +88,8 @@ bool BitmapRegion::getBitmapDimensions(const String& bitmapName, uint16_t *width
     return false;
   }
 
-  //uint16_t w = *width;
-  //uint16_t h = *height;
 
   *width = metadata["width"];
   *height = metadata["height"];
-  //Serial.println(w);
-  //Serial.println(h);
   return true;
 }
