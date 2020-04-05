@@ -514,15 +514,7 @@ std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
     JsonObject spec,
     uint16_t index) {
     uint16_t w, h;
-    Serial.println(__LINE__);
-    Serial.println(__LINE__);
-    //String bitmap = formatterFactory.create(spec)->format(spec["variable"].as<const char*>());
-    String variable = spec["variable"].as<const char*>();
-    //
-    Serial.println();
-    BitmapRegion::getBitmapDimensions(vars.get(variable), &w, &h);
-    Serial.println(__LINE__);
-    Serial.println(__LINE__);
+
   std::shared_ptr<Region> region =
       std::make_shared<BitmapRegion>(spec["variable"].as<const char*>(),
           x,
