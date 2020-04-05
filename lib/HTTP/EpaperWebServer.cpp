@@ -220,6 +220,7 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
 #if defined(ESP8266)
       Update.runAsync(true);
 #endif
+      Serial.println(F("Downloading Firmware Update!"));
     }
   }
 
@@ -242,6 +243,9 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
       } else {
         this->updateSuccessful = true;
       }
+    } else {
+      Serial.print(request.upload.index / (Update.size() / 100) + 1);
+      Serial.println(F("%"));
     }
   }
 }
