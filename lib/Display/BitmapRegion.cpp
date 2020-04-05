@@ -23,10 +23,10 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
     Serial.println(variableValue);
   } else {
     this->previousBound = this->boundingBox;
-    uint16_t new_width, new_height;
-    if(getBitmapDimensions(variableValue, &new_width, &new_height)){
-      this->boundingBox.w = new_width;
-      this->boundingBox.h = new_height;
+    uint16_t newWidth, newHeight;
+    if(getBitmapDimensions(variableValue, &newWidth, &newHeight)){
+      this->boundingBox.w = newWidth;
+      this->boundingBox.h = newHeight;
     }
 
     // In case it's a new bitmap with a different size.
@@ -37,7 +37,7 @@ void BitmapRegion::render(GxEPD2_GFX* display) {
       clearingBounds.y,
       clearingBounds.w,
       clearingBounds.h,
-      this->background_color
+      this->backgroundColor
     );
 
     File file = SPIFFS.open(variableValue, "r");
@@ -68,16 +68,16 @@ Rectangle BitmapRegion::getBoundingBox() {
 }
 
 bool BitmapRegion::getBitmapDimensions(const String& bitmapName, uint16_t *width, uint16_t *height){
-  String metadata_filename = bitmapName.c_str();
+  String metadataFilename = bitmapName.c_str();
   
-  metadata_filename.replace("/b/", "/m/");
-  if (!SPIFFS.exists(bitmapName) || !SPIFFS.exists(metadata_filename)) {
+  metadataFilename.replace("/b/", "/m/");
+  if (!SPIFFS.exists(bitmapName) || !SPIFFS.exists(metadataFilename)) {
     Serial.println(F("WARN - tried to get dimensions from bitmap that doesn't exist: "));
     Serial.println(bitmapName);
     return false;
   }
 
-  File metadata_file = SPIFFS.open(metadata_filename, "r");
+  File metadata_file = SPIFFS.open(metadataFilename, "r");
 
   StaticJsonDocument<100> jsonBuffer;
   deserializeJson(jsonBuffer, metadata_file);
