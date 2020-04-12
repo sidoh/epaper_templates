@@ -73,6 +73,8 @@ void EpaperWebServer::begin() {
       .on(HTTP_GET, std::bind(&EpaperWebServer::handleListVariables, this, _1));
 
   server.buildHandler("/api/v1/variables/:variable_name")
+      .on(HTTP_GET,
+          std::bind(&EpaperWebServer::handleGetVariable, this, _1))
       .on(HTTP_DELETE,
           std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
 
@@ -358,6 +360,18 @@ void EpaperWebServer::handleGetSystem(RequestContext& request) {
   request.response.json["sdk_version"] = ESP.getSdkVersion();
   request.response.json["uptime"] = millis();
   request.response.json["deep_sleep_active"] = this->deepSleepActive;
+}
+
+void EpaperWebServer::handleGetVariable(RequestContext& request) {
+  const char* variableName = request.pathVariables.get("variable_name");
+  String value = driver->getVariable(variableName);
+  bool found = value.length() > 0;
+
+  request.response.json[F("found")] = found;
+
+  if (found) {
+    request.response.json[F("variable")] = value;
+  }
 }
 
 void EpaperWebServer::handleDeleteVariable(RequestContext& request) {
