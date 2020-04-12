@@ -12,3 +12,4 @@ data
 .vscode/launch.json
 /dist
 *.directory
+*.code-workspace

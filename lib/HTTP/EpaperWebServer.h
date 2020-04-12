@@ -52,6 +52,7 @@ private:
   void handleRegionUpdate(const String& regionId, const String& variableKey, const String& variableValue);
 
   // Variables CRUD
+  void handleListVariables(RequestContext& request);
   void handleUpdateVariables(RequestContext& request);
   void handleDeleteVariable(RequestContext& request);
   void handleGetFormattedVariables(RequestContext& request);

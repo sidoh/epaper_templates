@@ -1,3 +1,5 @@
+#ifndef UNIT_TEST
+
 #include <Arduino.h>
 #include <WiFi.h>
 
@@ -295,3 +297,5 @@ void loop() {
 
   driver->loop();
 }
+
+#endif // UNIT_TEST

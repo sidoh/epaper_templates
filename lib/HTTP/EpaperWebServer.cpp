@@ -1,5 +1,6 @@
 #include <DisplayTypeHelpers.h>
 #include <EpaperWebServer.h>
+#include <KeyValueDatabase.h>
 #include <web_assets.h>
 
 #if defined(ESP8266)
@@ -15,6 +16,8 @@ static const char APPLICATION_JSON[] = "application/json";
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 static const char METADATA_FILENAME[] = "metadata.json";
 static const char TMP_DIRECTORY[] = "/x";
+
+static const size_t MAX_VARIABLES_PER_PAGE = 20;
 
 using namespace std::placeholders;
 
@@ -67,13 +70,7 @@ void EpaperWebServer::begin() {
   server.buildHandler("/api/v1/variables")
       .on(HTTP_PUT,
           std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
-      .on(HTTP_GET,
-          std::bind(&EpaperWebServer::handleServeFile,
-              this,
-              VariableDictionary::FILENAME,
-              APPLICATION_JSON,
-              "",
-              _1));
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleListVariables, this, _1));
 
   server.buildHandler("/api/v1/variables/:variable_name")
       .on(HTTP_DELETE,
@@ -190,6 +187,34 @@ void EpaperWebServer::begin() {
 
   server.clearBuilders();
   server.begin();
+}
+
+void EpaperWebServer::handleListVariables(RequestContext& request) {
+  if (request.rawRequest->getParam("raw")) {
+    serveFile(VariableDictionary::FILENAME, "application/octet-stream", request);
+    return;
+  }
+
+  KeyValueDatabase readDb;
+  readDb.open(SPIFFS.open(VariableDictionary::FILENAME, "r"));
+  readDb.beginRead();
+
+  auto pageParam = request.rawRequest->getParam("page");
+  size_t page = pageParam ? pageParam->value().toInt() : 0;
+
+  char key[256];
+  char value[256];
+
+  request.response.json[F("page")] = page;
+  request.response.json[F("count")] = readDb.size();
+  JsonObject vars = request.response.json.createNestedObject(F("variables"));
+
+  readDb.skipRead(page * MAX_VARIABLES_PER_PAGE);
+  size_t i = 0;
+
+  while (i++ < MAX_VARIABLES_PER_PAGE && readDb.readEntry(key, 256, value, 256)) {
+    vars[key] = value;
+  }
 }
 
 void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {

@@ -14,6 +14,7 @@ import SiteLoader from "../util/SiteLoader";
 import { useTimeoutFn } from "react-use";
 import "./VariablesIndex.scss";
 import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
+import useGlobalState from "../state/global_state";
 
 const UpdatedRecentlyBadge = ({ lastUpdated }) => {
   const [isHidden, setHidden] = useState(false);
@@ -162,25 +163,24 @@ const VariablesEditor = ({
 
 export default props => {
   const [variables, setVariables] = useState(null);
+  const [globalState, globalActions] = useGlobalState();
   const onChangeRef = useRef(null);
 
   useEffect(() => {
-    if (!variables) {
-      api.get("/variables").then(x => {
-        const fields = {};
+    const fields = {};
 
-        Object.entries(x.data).forEach(([variableKey, variableValue], id) => {
-          fields[id] = {
-            variableKey,
-            variableValue,
-            isNew: false,
-            id
-          };
-        });
-        setVariables(fields);
-      });
-    }
-  }, [variables]);
+    Object.entries(globalState.variables).forEach(([variableKey, variableValue], id) => {
+      fields[id] = {
+        variableKey,
+        variableValue,
+        isNew: false,
+        id
+      };
+    });
+
+    setVariables(fields);
+  }, [globalState.variables]);
+
 
   const onChange = useCallback(
     (id, fields) => {
