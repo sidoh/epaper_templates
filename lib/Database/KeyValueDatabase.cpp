@@ -166,7 +166,6 @@ uint32_t KeyValueDatabase::readUint32() {
 
   for (int8_t i = 3; i >= 0; --i) {
     uint8_t byte = db.read();
-    Serial.printf_P(PSTR("Read byte: %02X\n"), byte);
     val |= (byte << (i * 8));
   }
 
