@@ -85,7 +85,7 @@ const actions = {
   loadScreenMetadata: createLoadFunction("/screens", "screenMetadata"),
   loadSettings: createLoadFunction("/settings", "settings"),
   loadBitmaps: createLoadFunction("/bitmaps", "bitmaps", x =>
-    groupBy(x, v => v.name, { groupReducer: lastValueGroupReducer })
+    groupBy(x.bitmaps, v => v.name, { groupReducer: lastValueGroupReducer })
   ),
   addError: (store, error) => {
     const updated = produce(store.state, draft => {

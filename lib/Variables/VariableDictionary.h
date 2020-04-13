@@ -17,6 +17,7 @@ public:
   String get(const String& key);
   void set(const String& key, const String& value);
   void erase(const String& key);
+  void clear();
 
   void save();
   void load();

@@ -70,11 +70,11 @@ void EpaperWebServer::begin() {
   server.buildHandler("/api/v1/variables")
       .on(HTTP_PUT,
           std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
+      .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleClearVariables, this, _1))
       .on(HTTP_GET, std::bind(&EpaperWebServer::handleListVariables, this, _1));
 
   server.buildHandler("/api/v1/variables/:variable_name")
-      .on(HTTP_GET,
-          std::bind(&EpaperWebServer::handleGetVariable, this, _1))
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetVariable, this, _1))
       .on(HTTP_DELETE,
           std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
 
@@ -191,9 +191,16 @@ void EpaperWebServer::begin() {
   server.begin();
 }
 
+void EpaperWebServer::handleClearVariables(RequestContext& request) {
+  driver->clearVariables();
+  request.response.json[F("success")] = true;
+}
+
 void EpaperWebServer::handleListVariables(RequestContext& request) {
   if (request.rawRequest->getParam("raw")) {
-    serveFile(VariableDictionary::FILENAME, "application/octet-stream", request);
+    serveFile(VariableDictionary::FILENAME,
+        "application/octet-stream",
+        request);
     return;
   }
 
@@ -214,7 +221,8 @@ void EpaperWebServer::handleListVariables(RequestContext& request) {
   readDb.skipRead(page * MAX_VARIABLES_PER_PAGE);
   size_t i = 0;
 
-  while (i++ < MAX_VARIABLES_PER_PAGE && readDb.readEntry(key, 256, value, 256)) {
+  while (
+      i++ < MAX_VARIABLES_PER_PAGE && readDb.readEntry(key, 256, value, 256)) {
     vars[key] = value;
   }
 }
@@ -336,8 +344,10 @@ void EpaperWebServer::handlePostSystem(RequestContext& request) {
   String strCommand = command.as<String>();
 
   if (strCommand.equalsIgnoreCase("reboot")) {
+    request.rawRequest->send(200, TEXT_PLAIN);
+    request.rawRequest->client()->close(true);
+
     ESP.restart();
-    request.response.json[F("success")] = true;
   } else if (strCommand.equalsIgnoreCase("cancel_sleep")) {
     if (this->cancelSleepFn != nullptr) {
       this->cancelSleepFn();
@@ -370,7 +380,10 @@ void EpaperWebServer::handleGetVariable(RequestContext& request) {
   request.response.json[F("found")] = found;
 
   if (found) {
-    request.response.json[F("variable")] = value;
+    JsonObject variable = request.response.json.createNestedObject(F("variable"));
+
+    variable[F("key")] = variableName;
+    variable[F("value")] = value;
   }
 }
 
@@ -486,7 +499,7 @@ void EpaperWebServer::handleCreateBitmapFinish(RequestContext& request) {
 }
 
 void EpaperWebServer::handleListBitmaps(RequestContext& request) {
-  JsonArray responseObj = request.response.json.to<JsonArray>();
+  JsonArray responseObj = request.response.json.createNestedArray(F("bitmaps"));
   listDirectory(BITMAPS_DIRECTORY, responseObj);
   char buffer[32];
   StaticJsonDocument<1024> metadataBuffer;
@@ -568,7 +581,7 @@ void EpaperWebServer::listDirectory(const char* dirName, JsonArray result) {
 
 void EpaperWebServer::handleListDirectory(
     const char* dirName, RequestContext& request) {
-  JsonArray responseObj = request.response.json.to<JsonArray>();
+  JsonArray responseObj = request.response.json.createNestedArray(F("templates"));
   listDirectory(dirName, responseObj);
 }
 

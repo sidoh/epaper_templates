@@ -55,6 +55,7 @@ private:
   void handleListVariables(RequestContext& request);
   void handleUpdateVariables(RequestContext& request);
   void handleDeleteVariable(RequestContext& request);
+  void handleClearVariables(RequestContext& request);
   void handleGetVariable(RequestContext& request);
   void handleGetFormattedVariables(RequestContext& request);
 

@@ -9,10 +9,26 @@ public:
   static const uint8_t NEW_ROW_PADDING = 10;
   static const uint8_t MAX_COLUMN_SIZE = 255;
   static const uint8_t HEADER_SIZE = 16;
+  static const uint16_t MAGIC_NUMBER = 0xFAFA;
 
   KeyValueDatabase();
 
+  /**
+   * Opens the given file for reading
+   *
+   * @param File db
+   */
   void open(File db);
+
+  /**
+   * Close database
+   */
+  void close();
+
+  /**
+   * Initializes an open file with the appriopriate header and metadata
+   */
+  void initialize();
 
   /**
    * Find the value corresponding to the provided key and copy it into the provided buffer.

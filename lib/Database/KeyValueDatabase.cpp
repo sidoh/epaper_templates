@@ -1,27 +1,48 @@
 #include <KeyValueDatabase.h>
 #include <SPIFFS.h>
 
-KeyValueDatabase::KeyValueDatabase() : _size(0) {}
+KeyValueDatabase::KeyValueDatabase() : db(nullptr), _size(0) {}
 
-void KeyValueDatabase::open(File db) {
-  this->db = db;
+void KeyValueDatabase::open(File _db) {
+  if (this->db) {
+    this->db.close();
+  }
+
+  this->_size = 0;
+  this->db = _db;
 
   // Initialize if necessary
-  if (!db.size()) {
-    db.seek(0);
-    for (size_t i = db.size(); i < HEADER_SIZE; ++i) {
-      db.write(0);
-    }
-    db.flush();
+  if (!_db.size()) {
+    initialize();
   }
 
   readSize();
 }
 
-bool KeyValueDatabase::get(const char* key, size_t keyLength, char* valueBuffer, size_t valueBufferLen) {
+void KeyValueDatabase::close() { db.close(); }
+
+void KeyValueDatabase::initialize() {
+  db.seek(0);
+
+  db.write(MAGIC_NUMBER >> 8);
+  db.write(MAGIC_NUMBER & 0xFF);
+
+  writeUint32(0);
+
+  for (size_t i = 6; i < HEADER_SIZE; ++i) {
+    db.write(0);
+  }
+
+  db.flush();
+}
+
+bool KeyValueDatabase::get(const char* key,
+    size_t keyLength,
+    char* valueBuffer,
+    size_t valueBufferLen) {
   size_t rowSize = seekToRow(key, keyLength);
 
-  if (! rowSize) {
+  if (!rowSize) {
     return false;
   }
 
@@ -37,7 +58,8 @@ bool KeyValueDatabase::get(const char* key, size_t keyLength, char* valueBuffer,
   return true;
 }
 
-void KeyValueDatabase::set(const char* key, size_t keyLength, const char* value, size_t valueLength) {
+void KeyValueDatabase::set(
+    const char* key, size_t keyLength, const char* value, size_t valueLength) {
   size_t existingRowSize = seekToRow(key, keyLength);
   size_t newRowSize = keyLength + valueLength;
 
@@ -79,7 +101,11 @@ void KeyValueDatabase::erase(const char* key, size_t keyLength) {
   db.flush();
 }
 
-void KeyValueDatabase::writeRow(const char* key, size_t keyLength, const char* value, size_t valueLength, size_t rowLength) {
+void KeyValueDatabase::writeRow(const char* key,
+    size_t keyLength,
+    const char* value,
+    size_t valueLength,
+    size_t rowLength) {
   uint8_t valueColLength = rowLength - keyLength;
 
   db.write(keyLength);
@@ -95,12 +121,18 @@ void KeyValueDatabase::writeRow(const char* key, size_t keyLength, const char* v
 }
 
 size_t KeyValueDatabase::seekToRow(const char* key, size_t keyLength) {
-  char buffer[keyLength+1];
+  char buffer[keyLength + 1];
   db.seek(HEADER_SIZE, SeekSet);
 
   while (db.available()) {
-    uint8_t readKeyLength = db.read();
-    db.read(reinterpret_cast<uint8_t*>(buffer), std::min(keyLength, static_cast<size_t>(readKeyLength)));
+    int readKeyLength = db.read();
+
+    if (readKeyLength == -1) {
+      break;
+    }
+
+    db.read(reinterpret_cast<uint8_t*>(buffer),
+        std::min(keyLength, static_cast<size_t>(readKeyLength)));
 
     // If only read part of the key, skip over the rest.
     if (keyLength < readKeyLength) {
@@ -130,7 +162,7 @@ size_t KeyValueDatabase::seekToEmptyRow(size_t rowLength) {
     // Only need to check if the first byte is cleared (== \x0) to know if
     // this is an empty row.  Read it and skip over the rest
     uint8_t keyStart = db.read();
-    db.seek(readKeyLen-1, SeekCur);
+    db.seek(readKeyLen - 1, SeekCur);
 
     uint8_t readValueLen = db.read();
     uint8_t rowCapacity = readKeyLen + readValueLen;
@@ -150,7 +182,7 @@ size_t KeyValueDatabase::seekToEmptyRow(size_t rowLength) {
   uint8_t rowCapacity = rowLength + NEW_ROW_PADDING;
 
   // Fill the row to account for padding
-  for (uint8_t i = 0; i < rowCapacity+2; ++i) {
+  for (uint8_t i = 0; i < rowCapacity + 2; ++i) {
     db.write(0);
   }
   db.flush();
@@ -164,9 +196,8 @@ size_t KeyValueDatabase::seekToEmptyRow(size_t rowLength) {
 uint32_t KeyValueDatabase::readUint32() {
   uint32_t val = 0;
 
-  for (int8_t i = 3; i >= 0; --i) {
-    uint8_t byte = db.read();
-    val |= (byte << (i * 8));
+  for (int8_t i = 3; i >= 0 && db.available(); --i) {
+    val |= ((db.read() & 0xFF) << (i * 8));
   }
 
   return val;
@@ -180,24 +211,19 @@ void KeyValueDatabase::writeUint32(uint32_t val) {
 }
 
 void KeyValueDatabase::flushSize() {
-  db.seek(4);
+  db.seek(4, SeekSet);
   writeUint32(_size);
   db.flush();
 }
 
 void KeyValueDatabase::readSize() {
-  db.seek(4);
+  db.seek(4, SeekSet);
   this->_size = readUint32();
 }
 
-uint32_t KeyValueDatabase::size() {
-  return this->_size;
-}
+uint32_t KeyValueDatabase::size() { return this->_size; }
 
-void KeyValueDatabase::beginRead() {
-  db.seek(HEADER_SIZE);
-}
-
+void KeyValueDatabase::beginRead() { db.seek(HEADER_SIZE); }
 
 bool KeyValueDatabase::skipRead(size_t count) {
   for (size_t n = 0; n < count && db.available(); ++n) {
@@ -210,7 +236,8 @@ bool KeyValueDatabase::skipRead(size_t count) {
   return db.available();
 }
 
-bool KeyValueDatabase::readEntry(char* key, size_t keyLength, char* value, size_t valueLength) {
+bool KeyValueDatabase::readEntry(
+    char* key, size_t keyLength, char* value, size_t valueLength) {
   while (db.available()) {
     readColumn(key, keyLength);
     readColumn(value, valueLength);
@@ -225,7 +252,7 @@ bool KeyValueDatabase::readEntry(char* key, size_t keyLength, char* value, size_
 
 void KeyValueDatabase::readColumn(char* buffer, size_t bufferLength) {
   uint8_t columnSize = db.read();
-  size_t readSize = std::min(static_cast<size_t>(columnSize), bufferLength-1);
+  size_t readSize = std::min(static_cast<size_t>(columnSize), bufferLength - 1);
   size_t i;
 
   for (i = 0; i < readSize; ++i) {

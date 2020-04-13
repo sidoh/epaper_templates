@@ -37,6 +37,13 @@ String VariableDictionary::get(const String &key) {
   }
 }
 
+void VariableDictionary::clear() {
+  SPIFFS.open(VariableDictionary::FILENAME, "w").close();
+
+  db.open(SPIFFS.open(VariableDictionary::FILENAME, "r+"));
+  db.initialize();
+}
+
 void VariableDictionary::loop() {
 }
 
