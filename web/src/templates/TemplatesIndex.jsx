@@ -73,7 +73,7 @@ export default props => {
   const [activeTemplate, setActiveTemplate] = useState(null);
 
   const triggerReload = useCallback(() => {
-    api.get("/templates").then(x => setTemplates(x.data));
+    api.get("/templates").then(x => setTemplates(x.data.templates));
     globalActions.loadSettings({forceReload: true}).then(settings => {
       setActiveTemplate(settings["display.template_name"]);
     });

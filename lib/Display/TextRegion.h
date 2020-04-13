@@ -17,7 +17,7 @@ public:
     uint16_t y,
     std::shared_ptr<Rectangle> fixedBoundingBox,
     uint16_t color,
-    uint16_t background_color,
+    uint16_t backgroundColor,
     const GFXfont* font,
     std::shared_ptr<const VariableFormatter> formatter,
     uint8_t size,
@@ -31,8 +31,6 @@ public:
 protected:
   const GFXfont* font;
 
-  uint16_t background_color;
-
   // Users can optionally manually specify a bounding rectangle.
   std::shared_ptr<Rectangle> fixedBound;
 
@@ -44,6 +42,7 @@ protected:
   Rectangle previousBound;
 
   uint8_t size;
+  uint16_t backgroundColor;
 };
 
 #endif

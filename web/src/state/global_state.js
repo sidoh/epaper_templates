@@ -13,12 +13,15 @@ const initialState = {
   bitmaps: {},
   cachedBitmaps: {},
   errors: [],
-  loadedPages: {},
+  loadedPages: {}
 };
 
 function createLoadFunction(apiPath, stateVariable, fn = x => x) {
-  return (store, {forceReload = false} = {}) => {
-    if (!forceReload && store.state[stateVariable] !== initialState[stateVariable]) {
+  return (store, { forceReload = false } = {}) => {
+    if (
+      !forceReload &&
+      store.state[stateVariable] !== initialState[stateVariable]
+    ) {
       return Promise.resolve(store.state[stateVariable]);
     } else {
       return api.get(apiPath).then(x => {
@@ -38,12 +41,51 @@ function createLoadFunction(apiPath, stateVariable, fn = x => x) {
   };
 }
 
+function createPaginatedLoadFunction(
+  apiPath,
+  stateVariable,
+  fn = x => x
+) {
+  const fetchFn = (store, { forceReload = false, page = 0, others = {} } = {}) => {
+    if (
+      !forceReload &&
+      store.state[stateVariable] !== initialState[stateVariable]
+    ) {
+      return Promise.resolve(store.state[stateVariable]);
+    } else {
+      const path = `${apiPath}?page=${page}`;
+
+      return api.get(path).then(x => {
+        const count = x.data.count;
+        const value = fn(x.data);
+        const newOthers = {...others, ...value};
+
+        if (Object.keys(newOthers).length < count) {
+          return fetchFn(store, { forceReload, page: page+1, others: newOthers });
+        } else {
+          store.setState({
+            ...store.state,
+            [stateVariable]: newOthers,
+            loadedPages: {
+              ...store.state.loadedPages,
+              [stateVariable]: true
+            }
+          })
+          return newOthers;
+        }
+      })
+    }
+  };
+
+  return fetchFn;
+}
+
 const actions = {
-  loadVariables: createLoadFunction("/variables", "variables"),
+  loadVariables: createPaginatedLoadFunction("/variables", "variables", x => x.variables),
   loadScreenMetadata: createLoadFunction("/screens", "screenMetadata"),
   loadSettings: createLoadFunction("/settings", "settings"),
   loadBitmaps: createLoadFunction("/bitmaps", "bitmaps", x =>
-    groupBy(x, v => v.name, { groupReducer: lastValueGroupReducer })
+    groupBy(x.bitmaps, v => v.name, { groupReducer: lastValueGroupReducer })
   ),
   addError: (store, error) => {
     const updated = produce(store.state, draft => {

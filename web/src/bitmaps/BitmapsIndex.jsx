@@ -198,7 +198,7 @@ export default props => {
         e => {
           doneLoading.current = true;
 
-          const list = e.data.map(x => {
+          const list = e.data.bitmaps.map(x => {
             const filename = x.name.split("/").slice(-1)[0];
             return { ...x, filename };
           });

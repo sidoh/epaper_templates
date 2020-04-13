@@ -57,6 +57,8 @@ class DisplayTemplateDriver {
   // that variable as dirty.
   void updateVariable(const String& name, const String& value);
   void deleteVariable(const String& name);
+  String getVariable(const String& name);
+  void clearVariables();
 
   // Helper to resolve variable values (used in REST API)
   void resolveVariables(JsonArray toResolve, JsonArray response);

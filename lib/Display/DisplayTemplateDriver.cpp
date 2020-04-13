@@ -209,6 +209,14 @@ void DisplayTemplateDriver::deleteVariable(const String& key) {
   vars.erase(key);
 }
 
+String DisplayTemplateDriver::getVariable(const String& key) {
+  return vars.get(key);
+}
+
+void DisplayTemplateDriver::clearVariables() {
+  vars.clear();
+}
+
 void DisplayTemplateDriver::setTemplate(const String& templateFilename) {
   this->newTemplate = templateFilename;
 }

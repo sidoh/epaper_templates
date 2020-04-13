@@ -1,5 +1,6 @@
 #include <DisplayTypeHelpers.h>
 #include <EpaperWebServer.h>
+#include <KeyValueDatabase.h>
 #include <web_assets.h>
 
 #if defined(ESP8266)
@@ -15,6 +16,8 @@ static const char APPLICATION_JSON[] = "application/json";
 static const char CONTENT_TYPE_HEADER[] = "Content-Type";
 static const char METADATA_FILENAME[] = "metadata.json";
 static const char TMP_DIRECTORY[] = "/x";
+
+static const size_t MAX_VARIABLES_PER_PAGE = 20;
 
 using namespace std::placeholders;
 
@@ -67,15 +70,11 @@ void EpaperWebServer::begin() {
   server.buildHandler("/api/v1/variables")
       .on(HTTP_PUT,
           std::bind(&EpaperWebServer::handleUpdateVariables, this, _1))
-      .on(HTTP_GET,
-          std::bind(&EpaperWebServer::handleServeFile,
-              this,
-              VariableDictionary::FILENAME,
-              APPLICATION_JSON,
-              "",
-              _1));
+      .on(HTTP_DELETE, std::bind(&EpaperWebServer::handleClearVariables, this, _1))
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleListVariables, this, _1));
 
   server.buildHandler("/api/v1/variables/:variable_name")
+      .on(HTTP_GET, std::bind(&EpaperWebServer::handleGetVariable, this, _1))
       .on(HTTP_DELETE,
           std::bind(&EpaperWebServer::handleDeleteVariable, this, _1));
 
@@ -190,6 +189,42 @@ void EpaperWebServer::begin() {
 
   server.clearBuilders();
   server.begin();
+}
+
+void EpaperWebServer::handleClearVariables(RequestContext& request) {
+  driver->clearVariables();
+  request.response.json[F("success")] = true;
+}
+
+void EpaperWebServer::handleListVariables(RequestContext& request) {
+  if (request.rawRequest->getParam("raw")) {
+    serveFile(VariableDictionary::FILENAME,
+        "application/octet-stream",
+        request);
+    return;
+  }
+
+  KeyValueDatabase readDb;
+  readDb.open(SPIFFS.open(VariableDictionary::FILENAME, "r"));
+  readDb.beginRead();
+
+  auto pageParam = request.rawRequest->getParam("page");
+  size_t page = pageParam ? pageParam->value().toInt() : 0;
+
+  char key[256];
+  char value[256];
+
+  request.response.json[F("page")] = page;
+  request.response.json[F("count")] = readDb.size();
+  JsonObject vars = request.response.json.createNestedObject(F("variables"));
+
+  readDb.skipRead(page * MAX_VARIABLES_PER_PAGE);
+  size_t i = 0;
+
+  while (
+      i++ < MAX_VARIABLES_PER_PAGE && readDb.readEntry(key, 256, value, 256)) {
+    vars[key] = value;
+  }
 }
 
 void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
@@ -309,8 +344,10 @@ void EpaperWebServer::handlePostSystem(RequestContext& request) {
   String strCommand = command.as<String>();
 
   if (strCommand.equalsIgnoreCase("reboot")) {
+    request.rawRequest->send(200, TEXT_PLAIN);
+    request.rawRequest->client()->close(true);
+
     ESP.restart();
-    request.response.json[F("success")] = true;
   } else if (strCommand.equalsIgnoreCase("cancel_sleep")) {
     if (this->cancelSleepFn != nullptr) {
       this->cancelSleepFn();
@@ -333,6 +370,21 @@ void EpaperWebServer::handleGetSystem(RequestContext& request) {
   request.response.json["sdk_version"] = ESP.getSdkVersion();
   request.response.json["uptime"] = millis();
   request.response.json["deep_sleep_active"] = this->deepSleepActive;
+}
+
+void EpaperWebServer::handleGetVariable(RequestContext& request) {
+  const char* variableName = request.pathVariables.get("variable_name");
+  String value = driver->getVariable(variableName);
+  bool found = value.length() > 0;
+
+  request.response.json[F("found")] = found;
+
+  if (found) {
+    JsonObject variable = request.response.json.createNestedObject(F("variable"));
+
+    variable[F("key")] = variableName;
+    variable[F("value")] = value;
+  }
 }
 
 void EpaperWebServer::handleDeleteVariable(RequestContext& request) {
@@ -447,7 +499,7 @@ void EpaperWebServer::handleCreateBitmapFinish(RequestContext& request) {
 }
 
 void EpaperWebServer::handleListBitmaps(RequestContext& request) {
-  JsonArray responseObj = request.response.json.to<JsonArray>();
+  JsonArray responseObj = request.response.json.createNestedArray(F("bitmaps"));
   listDirectory(BITMAPS_DIRECTORY, responseObj);
   char buffer[32];
   StaticJsonDocument<1024> metadataBuffer;
@@ -529,7 +581,7 @@ void EpaperWebServer::listDirectory(const char* dirName, JsonArray result) {
 
 void EpaperWebServer::handleListDirectory(
     const char* dirName, RequestContext& request) {
-  JsonArray responseObj = request.response.json.to<JsonArray>();
+  JsonArray responseObj = request.response.json.createNestedArray(F("templates"));
   listDirectory(dirName, responseObj);
 }
 
