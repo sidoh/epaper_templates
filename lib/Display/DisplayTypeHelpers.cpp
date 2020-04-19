@@ -69,6 +69,32 @@ const std::map<const GxEPD2::Panel, const char*> DisplayTypeHelpers::PANEL_DESCR
   { GxEPD2::Panel::GDEW075Z08, "7.5\" B/W/R 800X480" }
 };
 
+const std::map<const GxEPD2::Panel, const char*> DisplayTypeHelpers::PANEL_COLOR_SUPPORT = {
+  { GxEPD2::Panel::GDEP015OC1, "BW" },
+  { GxEPD2::Panel::GDEW0154Z04, "BWR"},
+  { GxEPD2::Panel::GDE0213B1, "BW"},
+  { GxEPD2::Panel::GDEH0213B72, "BW"},
+  { GxEPD2::Panel::GDEH0213B73, "BW"},
+  { GxEPD2::Panel::GDEW0213I5F, "BW"},
+  { GxEPD2::Panel::GDEW0213Z16, "BWR"},
+  { GxEPD2::Panel::GDEH029A1, "BW"},
+  { GxEPD2::Panel::GDEW029T5, "BW"},
+  { GxEPD2::Panel::GDEW029Z10, "BWR"},
+  { GxEPD2::Panel::GDEW026T0, "BW"},
+  { GxEPD2::Panel::GDEW027C44, "BWR"},
+  { GxEPD2::Panel::GDEW027W3, "BW"},
+  { GxEPD2::Panel::GDEW0371W7, "BW"},
+  { GxEPD2::Panel::GDEW042T2, "BW"},
+  { GxEPD2::Panel::GDEW042Z15, "BWR"},
+  { GxEPD2::Panel::GDEW0583T7, "BW"},
+  { GxEPD2::Panel::GDEW0583Z21, "BWR"},
+  { GxEPD2::Panel::ED060SCT, "BW"},
+  { GxEPD2::Panel::GDEW075T8, "BW"},
+  { GxEPD2::Panel::GDEW075T7, "BW"},
+  { GxEPD2::Panel::GDEW075Z09, "BWR"},
+  { GxEPD2::Panel::GDEW075Z08, "BWR"}
+};
+
 // Data generated with:
 // ls src/{epd,epd3c}/*.h | xargs -I % bash -c 'grep -Eo "GxEPD2::[^;]+;" % | cut -d":" -f5 | tr -d "\n" && grep -Eo "(WIDTH|HEIGHT)[ ]*=[ ]*\d+" % | grep -Eo "[0-9]+" | tr "\n" "," && echo'
 const std::map<const GxEPD2::Panel, std::pair<uint16_t, uint16_t>> DisplayTypeHelpers::PANEL_SIZES = {

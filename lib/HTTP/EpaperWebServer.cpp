@@ -753,6 +753,11 @@ void EpaperWebServer::handleGetScreens(RequestContext& request) {
     if (description != DisplayTypeHelpers::PANEL_DESCRIPTIONS.end()) {
       info[F("desc")] = description->second;
     }
+
+    auto colors = DisplayTypeHelpers::PANEL_COLOR_SUPPORT.find(type);
+    if (colors != DisplayTypeHelpers::PANEL_COLOR_SUPPORT.end()) {
+      info[F("colors")] = colors->second;
+    }
   }
 }
 
