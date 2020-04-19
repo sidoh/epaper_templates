@@ -171,7 +171,8 @@ export function SvgFieldEditor({
       screenMetadata,
       selectedFields: activeElements,
       allBitmaps: Object.keys(allBitmaps),
-      allFormatters: formatters
+      allFormatters: formatters,
+      rotation: value.rotation || 0
     });
   }, [value.formatters, screenMetadata, activeElements, allBitmaps]);
 

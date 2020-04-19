@@ -537,9 +537,15 @@ export default function createSchema({
   screenMetadata,
   selectedFields,
   allBitmaps,
-  allFormatters
+  allFormatters,
+  rotation
 }) {
   const uniqueTypes = Array.from(new Set(selectedFields.map(x => x[0])));
+
+  // If screen is rotated 90 or 270 deg, x and y bounds are flipped.
+  const xMax = (rotation % 2 == 0) ? screenMetadata.width : screenMetadata.height;
+  const yMax = (rotation % 2 == 0) ? screenMetadata.height : screenMetadata.width;
+
   let enabledFields = {};
 
   uniqueTypes.forEach(x => {
@@ -566,12 +572,12 @@ export default function createSchema({
       horizontalPosition: {
         type: "integer",
         minimum: 0,
-        maximum: screenMetadata.width
+        maximum: xMax
       },
       verticalPosition: {
         type: "integer",
         minimum: 0,
-        maximum: screenMetadata.height
+        maximum: yMax
       },
       storedBitmap: {
         type: "string",
