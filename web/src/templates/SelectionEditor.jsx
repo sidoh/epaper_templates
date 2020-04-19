@@ -1,7 +1,7 @@
 import {
   faMinusSquare,
   faPlusSquare,
-  faWindowClose
+  faWindowClose,
 } from "@fortawesome/free-regular-svg-icons";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import produce from "immer";
@@ -17,10 +17,12 @@ import {
   FieldTypeDefinitions,
   MarkedForDeletion,
   Schema,
-  ScreenSettingsSchema
+  ScreenSettingsSchema,
+  createScreenSettingsSchema,
 } from "./schema";
 import "./SelectionEditor.scss";
 import Form from "react-jsonschema-form";
+import { withColorPicker } from "./ColorPicker";
 
 const valueTitleGenerator = (el = {}) => {
   const { value } = el;
@@ -40,12 +42,12 @@ const valueTitleGenerator = (el = {}) => {
   return <i>Unrecognized format</i>;
 };
 
-const fieldTitleGenerator = fields => {
+const fieldTitleGenerator = (fields) => {
   return (el = {}) => {
     return (
       <span>
         {Object.entries(el)
-          .filter(([k]) => fields.some(f => f === k))
+          .filter(([k]) => fields.some((f) => f === k))
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([k, v]) => (
             <BadgedText className="mr-2" key={k} badge={k}>
@@ -57,7 +59,7 @@ const fieldTitleGenerator = fields => {
   };
 };
 
-const defaultTitleGenerator = el => {
+const defaultTitleGenerator = (el) => {
   return JSON.stringify(el);
 };
 
@@ -65,7 +67,7 @@ const SectionListItemTitleGenerators = {
   text: valueTitleGenerator,
   bitmaps: valueTitleGenerator,
   lines: fieldTitleGenerator(["x1", "x2", "y1", "y2"]),
-  rectangles: fieldTitleGenerator(["x", "y", "style"])
+  rectangles: fieldTitleGenerator(["x", "y", "style"]),
 };
 
 function SectionListItem({
@@ -74,13 +76,13 @@ function SectionListItem({
   value,
   onClick,
   onDelete,
-  onToggleSelect
+  onToggleSelect,
 }) {
   const titleGenerator =
     SectionListItemTitleGenerators[type] || defaultTitleGenerator;
 
   const _onDelete = useCallback(
-    e => {
+    (e) => {
       e.preventDefault();
 
       if (confirm("Are you sure you want to delete this element?")) {
@@ -91,7 +93,7 @@ function SectionListItem({
   );
 
   const _onClick = useCallback(
-    e => {
+    (e) => {
       onClick(e, id);
     },
     [id, onClick]
@@ -124,10 +126,10 @@ const SectionList = React.memo(
     activeElements,
     toggleActiveElement,
     setActiveElements,
-    onAdd
+    onAdd,
   }) => {
     const _onAdd = useCallback(
-      e => {
+      (e) => {
         onAdd(type);
       },
       [onAdd, type]
@@ -141,7 +143,7 @@ const SectionList = React.memo(
           toggleActiveElement(...id);
         } else if (e.shiftKey) {
           const [type, index] = id;
-          const first = activeElements.find(x => x[0] === type);
+          const first = activeElements.find((x) => x[0] === type);
 
           if (!first || first[1] == index) {
             setActiveElements([id]);
@@ -149,9 +151,9 @@ const SectionList = React.memo(
             const [, anchorId] = first;
             const start = Math.min(index, anchorId);
             const end = Math.max(index, anchorId);
-            const range = [...Array(end - start + 1).keys()].map(x => [
+            const range = [...Array(end - start + 1).keys()].map((x) => [
               type,
-              start + x
+              start + x,
             ]);
 
             setActiveElements(range);
@@ -169,7 +171,7 @@ const SectionList = React.memo(
         onActionButtonClick={_onAdd}
       >
         <ul className="block-list">
-          {items.map(x => (
+          {items.map((x) => (
             <li key={x.id} className={x.isActive ? "active" : ""}>
               <SectionListItem
                 {...x}
@@ -191,11 +193,11 @@ const CollapsibleSection = ({
   children,
   onActionButtonClick,
   actionButtonVariant = "outline-success",
-  actionButtonIcon = faPlus
+  actionButtonIcon = faPlus,
 }) => {
   const [isCollapsed, toggleCollapse] = useBoolean(false);
 
-  const _toggleClick = useCallback(e => {
+  const _toggleClick = useCallback((e) => {
     e.preventDefault();
     toggleCollapse();
   }, []);
@@ -232,18 +234,34 @@ const CollapsibleSection = ({
   );
 };
 
-const PropertiesForm = ({ value, onChange }) => {
+const ScreenPropertiesUiSchema = {
+    background_color: {
+      "ui:widget": "colorPicker"
+    }
+}
+
+const PropertiesForm = ({ value, onChange, screenMetadata }) => {
   const _onChange = useCallback(
-    e => {
+    (e) => {
       onChange({ ...value, ...e.formData });
     },
     [onChange, value]
   );
 
+  const schema = useMemo(() => {
+    return createScreenSettingsSchema({ screenMetadata })
+  }, [screenMetadata]);
+
+  const widgets = useMemo(() => ({
+    colorPicker: withColorPicker({ colors: schema.definitions.color.enum })
+  }), [screenMetadata])
+
   return (
     <CollapsibleSection title="Properties">
       <Form
-        schema={ScreenSettingsSchema}
+        schema={schema}
+        uiSchema={ScreenPropertiesUiSchema}
+        widgets={widgets}
         formData={value}
         onChange={_onChange}
         omitExtraData={true}
@@ -266,21 +284,23 @@ export function SelectionEditor({
   setActiveElements,
   setSubNavMode,
   toggleActiveElement,
-  setCreatingElement
+  setCreatingElement,
 }) {
   const elementsByType = useMemo(() => {
-    const active = groupBy(activeElements, x => x[0], {
-      valueFn: x => x[1],
-      groupReducer: setGroupReducer
+    const active = groupBy(activeElements, (x) => x[0], {
+      valueFn: (x) => x[1],
+      groupReducer: setGroupReducer,
     });
 
     return Object.keys(FieldTypeDefinitions)
       .sort()
-      .map(type => {
+      .map((type) => {
         let def = value[type] || [];
 
-        if (! Array.isArray(def)) {
-          console.error(`Definitions for ${type} are invalid.  Expected array, was: ${def}`);
+        if (!Array.isArray(def)) {
+          console.error(
+            `Definitions for ${type} are invalid.  Expected array, was: ${def}`
+          );
           def = [];
         }
 
@@ -291,9 +311,9 @@ export function SelectionEditor({
               id: [type, i],
               type,
               value: x,
-              isActive: !!(active[type] && active[type].has(i))
+              isActive: !!(active[type] && active[type].has(i)),
             }))
-            .filter(x => x.value !== MarkedForDeletion)
+            .filter((x) => x.value !== MarkedForDeletion),
         ];
       });
   }, [value, activeElements]);
@@ -313,10 +333,10 @@ export function SelectionEditor({
   }, [activeElements]);
 
   const onAdd = useCallback(
-    type => {
-      const updated = produce(value, draft => {
+    (type) => {
+      const updated = produce(value, (draft) => {
         const value = {
-          __creating: type
+          __creating: type,
         };
 
         if (!draft[type]) {
@@ -337,10 +357,10 @@ export function SelectionEditor({
   );
 
   const onDeselect = useCallback(
-    id => {
-      const updated = produce(activeElements, draft => {
+    (id) => {
+      const updated = produce(activeElements, (draft) => {
         draft.splice(
-          activeElements.findIndex(x => x === id),
+          activeElements.findIndex((x) => x === id),
           1
         );
       });
@@ -374,7 +394,11 @@ export function SelectionEditor({
         )}
       </div>
 
-      <PropertiesForm value={value} onChange={onUpdate} />
+      <PropertiesForm
+        value={value}
+        onChange={onUpdate}
+        screenMetadata={screenMetadata}
+      />
 
       <>
         {elementsByType.map(([type, elements]) => {

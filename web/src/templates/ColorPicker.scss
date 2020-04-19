@@ -1,0 +1,24 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootstrap/scss/mixins/_breakpoints";
+@import "~bootswatch/dist/darkly/bootswatch";
+
+.color-picker {
+  padding: 0.7em;
+  background-color: lighten($dark, 8%);
+
+  .color-choice {
+    width: 30px;
+    height: 30px;
+    margin: 0 0.7em;
+    cursor: pointer;
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &.active {
+      outline: 2px solid $success;
+    }
+  }
+}

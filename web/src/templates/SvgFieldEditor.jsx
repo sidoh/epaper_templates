@@ -18,9 +18,11 @@ import MemoizedFontAwesomeIcon from "../util/MemoizedFontAwesomeIcon";
 import Button from "react-bootstrap/Button";
 import useGlobalState from "../state/global_state";
 import { VariableAutocompleteField } from "./VariableAutocompleteField";
+import { withColorPicker } from "./ColorPicker";
 
 const VisualEditor = ({ schema, value, onChange }) => {
   const [globalState, globalActions] = useGlobalState();
+  const validColors = schema.definitions.color.enum;
 
   const _onChange = useCallback(
     e => {
@@ -45,7 +47,13 @@ const VisualEditor = ({ schema, value, onChange }) => {
     return {
       value: {...variableDef},
       w: {...variableDef},
-      h: { ...variableDef}
+      h: { ...variableDef},
+      color: {
+        "ui:widget": "colorPicker"
+      },
+      background_color: {
+        "ui:widget": "colorPicker"
+      }
     };
   }, [globalState.variables]);
 
@@ -57,6 +65,7 @@ const VisualEditor = ({ schema, value, onChange }) => {
       formData={value}
       onChange={_onChange}
       fields={{ typeahead: VariableAutocompleteField }}
+      widgets={{ colorPicker: withColorPicker({ colors: validColors })}}
       idPrefix="root"
       tagName="div"
     >
