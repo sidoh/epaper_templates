@@ -236,7 +236,7 @@ RSpec.describe 'API Server' do
         expect(screens).to_not be_empty
 
         screens.each do |screen|
-          expect(screen).to include('name', 'width', 'height', 'desc')
+          expect(screen).to include('name', 'width', 'height', 'desc', 'colors')
         end
       end
     end
