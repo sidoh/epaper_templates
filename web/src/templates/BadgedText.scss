@@ -1,5 +1,11 @@
+@import "~bootswatch/dist/darkly/variables";
+@import "~bootstrap/scss/bootstrap";
+@import "~bootstrap/scss/mixins/_breakpoints";
+@import "~bootswatch/dist/darkly/bootswatch";
+
 .list-item-badge {
   min-width: 4em;
   margin-right: 0.5em;
   display: inline-block;
+  color: $light;
 }
