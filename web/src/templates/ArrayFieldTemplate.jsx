@@ -24,7 +24,8 @@ export function ArrayFieldTemplate(props) {
           <Col className="p-0">
             <div>{x.children}</div>
             <Button
-              variant="danger"
+              variant="link"
+              className="d-block ml-auto text-danger"
               onClick={x.onDropIndexClick(x.index)}
               size="sm"
             >
@@ -38,10 +39,10 @@ export function ArrayFieldTemplate(props) {
       <Row>
         <Col>
           <Button
-            variant="success"
+            variant="link"
             onClick={onAddClick}
             size="sm"
-            className="ml-2 mt-2 w-100"
+            className="text-success mt-2"
           >
             <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
             Add

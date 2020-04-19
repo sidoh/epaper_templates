@@ -2,6 +2,15 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~bootswatch/dist/darkly/bootswatch";
 
+.btn.btn-link {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+    filter: brightness(150%);
+  }
+}
+
 .button-list {
   button, a {
     &:not(:last-child) {

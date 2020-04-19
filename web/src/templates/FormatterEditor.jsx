@@ -202,8 +202,6 @@ export function FormatterEditor({ value, onUpdate }) {
             onDelete={onDelete}
           />
           <div className="d-flex button-list mt-2">
-            <div className="ml-auto" />
-
             <Button size="sm" variant="outline-success" onClick={onNew}>
               <MemoizedFontAwesomeIcon icon={faPlus} className="fa-fw mr-2" />
               New Formatter
