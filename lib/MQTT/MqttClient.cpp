@@ -25,6 +25,7 @@ void MqttClient::internalCallback(MqttClient* client) {
 
 const char* MqttClient::CONNECTED_STATUS = "connected";
 const char* MqttClient::DISCONNECTED_STATUS = "disconnected";
+const char* MqttClient::STATUS_VARIABLE = "mqtt_state";
 
 MqttClient::MqttClient(
   String domain,
@@ -118,6 +119,10 @@ void MqttClient::disconnectCallback(AsyncMqttClientDisconnectReason reason) {
     Serial.println(F("MqttClient - disconnected"));
   #endif
 
+  if (variableUpdateCallback != nullptr) {
+    this->variableUpdateCallback(STATUS_VARIABLE, DISCONNECTED_STATUS);
+  }
+
   #if defined(ESP8266)
   reconnectTimer.once(2, internalCallback, this);
   #elif defined(ESP32)
@@ -138,6 +143,10 @@ void MqttClient::connectCallback(bool sessionPresent) {
   }
 
   updateStatus(MqttClient::CONNECTED_STATUS);
+
+  if (variableUpdateCallback != nullptr) {
+    this->variableUpdateCallback(STATUS_VARIABLE, CONNECTED_STATUS);
+  }
 }
 
 void MqttClient::updateStatus(const char* status) {

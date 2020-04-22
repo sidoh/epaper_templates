@@ -107,6 +107,8 @@ Variables are named values that power dynamic portions of your display (for exam
 #### Special Variables
 
 * The `timestamp` variable contains the current unix timestamp.  You can use the `time` formatter (more on formatters below) to coerce it into the format you want.  Time is synchronized using NTP.
+* `wifi_state` will be set to `connected` or `disconnected`.
+* `mqtt_state` will be set to `disconnected` or `connected` when MQTT is configured.
 
 ## Regions
 

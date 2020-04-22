@@ -32,6 +32,7 @@ public:
 
   static const char* CONNECTED_STATUS;
   static const char* DISCONNECTED_STATUS;
+  static const char* STATUS_VARIABLE;
 
 private:
   AsyncMqttClient mqttClient;
