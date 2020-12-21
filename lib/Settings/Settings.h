@@ -79,6 +79,8 @@ public:
 
 class HardwareSettings : public Configuration {
 public:
+  static const uint8_t WAVESHARE_SPI = VSPI + HSPI;
+
   persistentVar(
     uint8_t,
     spi_bus,
@@ -86,6 +88,8 @@ public:
     {
       if (spi_busString.equalsIgnoreCase("vspi")) {
         spi_bus = VSPI;
+      } else if (spi_busString.equalsIgnoreCase("waveshare")) {
+        spi_bus = WAVESHARE_SPI;
       } else {
         spi_bus = HSPI;
       }
@@ -93,6 +97,8 @@ public:
     {
       if (spi_bus == VSPI) {
         spi_busString = "VSPI";
+      } else if (spi_bus == WAVESHARE_SPI) {
+        spi_busString = "waveshare";
       } else {
         spi_busString = "HSPI";
       }

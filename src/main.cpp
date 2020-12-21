@@ -77,6 +77,9 @@ void initDisplay() {
   if (settings.hardware.spi_bus == VSPI){
     SPI.end();
     SPI.begin(18, 23, 19, 5);
+  } else if (settings.hardware.spi_bus == HardwareSettings::WAVESHARE_SPI) {
+    SPI.end();
+    SPI.begin(13, 12, 14, 15);
   }
   #endif
 

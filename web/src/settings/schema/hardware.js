@@ -30,7 +30,8 @@ export default {
       title: "SPI Bus",
       oneOf: [
         { const: "HSPI", title: "HSPI (default)" },
-        { const: "VSPI", title: "VSPI" }
+        { const: "VSPI", title: "VSPI" },
+        { const: "waveshare", title: "Waveshare ESP32 Driver (custom)" },
       ],
       type: "string",
       default: "HSPI"
