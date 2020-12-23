@@ -70,3 +70,14 @@ void SettingsCallbackObserver::onConfigurationChanged(const ConfigurationPropert
     this->callback(value);
   }
 }
+
+const uint8_t HardwareSettings::getSsPin() const {
+  switch (this->spi_bus) {
+    case HSPI:
+    case WAVESHARE_SPI:
+      return 15;
+    case VSPI:
+    default:
+      return 5;
+  }
+}
