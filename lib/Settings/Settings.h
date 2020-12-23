@@ -80,6 +80,7 @@ public:
 class HardwareSettings : public Configuration {
 public:
   static const uint8_t WAVESHARE_SPI = VSPI + HSPI;
+  static const uint8_t WAVESHARE_SS_PIN = 15;
 
   persistentVar(
     uint8_t,
@@ -107,6 +108,8 @@ public:
   persistentIntVar(dc_pin, EPD_DEFAULT_DC_PIN);
   persistentIntVar(rst_pin, EPD_DEFAULT_RST_PIN);
   persistentIntVar(busy_pin, EPD_DEFAULT_BUSY_PIN);
+
+  const uint8_t getSsPin() const;
 };
 
 class NetworkSettings : public Configuration {

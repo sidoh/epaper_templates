@@ -73,16 +73,6 @@ void cancelSleep() {
 }
 
 void initDisplay() {
-  #if defined(ESP32)
-  if (settings.hardware.spi_bus == VSPI){
-    SPI.end();
-    SPI.begin(18, 23, 19, 5);
-  } else if (settings.hardware.spi_bus == HardwareSettings::WAVESHARE_SPI) {
-    SPI.end();
-    SPI.begin(13, 12, 14, 15);
-  }
-  #endif
-
   if (display) {
     delete display;
     display = NULL;
@@ -91,7 +81,8 @@ void initDisplay() {
   display = DisplayTypeHelpers::buildDisplay(settings.display.display_type,
       settings.hardware.dc_pin,
       settings.hardware.rst_pin,
-      settings.hardware.busy_pin);
+      settings.hardware.busy_pin,
+      settings.hardware.getSsPin());
 
   if (driver != NULL) {
     delete driver;
