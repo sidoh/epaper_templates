@@ -107,6 +107,7 @@ class NetworkSettings : public Configuration {
 public:
   persistentStringVar(hostname, DEFAULT_DISPLAY_NAME);
   persistentStringVar(mdns_name, DEFAULT_DISPLAY_NAME);
+  persistentStringVar(ntp_server, "pool.ntp.org");
   persistentStringVar(setup_ap_password, "waveshare");
   persistentStringVar(wifi_ssid, "");
   persistentStringVar(wifi_password, "");
