@@ -30,10 +30,10 @@ void DisplayTemplateDriver::init() {
   #if defined(ESP32)
   if (settings.hardware.spi_bus == VSPI){
     SPI.end();
-    SPI.begin(18, 23, 19, 5);
+    SPI.begin(18, 23, 19, settings.hardware.getSsPin());
   } else if (settings.hardware.spi_bus == HardwareSettings::WAVESHARE_SPI) {
     SPI.end();
-    SPI.begin(13, 12, 14, 15);
+    SPI.begin(13, 12, 14, settings.hardware.getSsPin());
   }
   #endif
 

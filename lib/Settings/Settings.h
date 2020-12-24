@@ -108,6 +108,7 @@ public:
   persistentIntVar(dc_pin, EPD_DEFAULT_DC_PIN);
   persistentIntVar(rst_pin, EPD_DEFAULT_RST_PIN);
   persistentIntVar(busy_pin, EPD_DEFAULT_BUSY_PIN);
+  persistentIntVar(ss_pin_override, -1);
 
   const uint8_t getSsPin() const;
 };
