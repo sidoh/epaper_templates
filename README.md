@@ -11,8 +11,8 @@ Template-oriented driver for e-paper displays using Arduino.  Define a layout wi
 - [Setup](#setup)
   - [Requirements](#requirements)
   - [Quickstart](#quickstart)
+  - [Hardware Setup](#hardware-setup)
   - [Deep Sleep](#deep-sleep)
-  - [SPI Bus and Pin Selection](#spi-bus-and-pin-selection)
 - [Concepts](#concepts)
   - [Variables](#variables)
   - [Regions](#regions)
@@ -59,7 +59,7 @@ The [examples directory](./examples) has a few sample templates.  Here are a few
 
 ## Quickstart
 
-1. Connect display to MCU.  (see [waveshare site](https://www.waveshare.com/wiki/1.54inch_e-Paper_Module) and **SPI Bus and Pin Selection** below for more information)
+1. Connect display to MCU. See [Hardware Setup](#hardware-setup) below for more information.
 1. Flash your MCU.
    1. Use a pre-compiled binary from the [releases page](https://github.com/sidoh/epaper_templates/releases).  **Make sure to select the file starting with `INITIALIZER_`**.  You can use [esptool](https://github.com/espressif/esptool) or the [ESP32 flash tool](https://www.espressif.com/en/support/download/other-tools).  Example command:
       ```
@@ -67,7 +67,36 @@ The [examples directory](./examples) has a few sample templates.  Here are a few
       ```
    2. With PlatformIO: for example `pio run -e esp32 -t upload`.  You will need to have [nodejs](https://nodejs.org/en/) installed in order to buidl the web assets.
 2. Setup WiFi.  A setup AP will appear named `epaper_XXXXXX`.  The default password is **waveshare**.
-3. Visit the Web UI to configure further.
+3. Visit the Web UI to configure further. If you used custom pins, make sure to configure those.
+
+## Hardware Setup
+
+Waveshare SPI modules have six total data pins that needs to be mapped onto your ESP32. There are **3x SPI pins** and **3x configurable non-SPI pins** you'll need to connect:
+
+|Pin Name|Description|Default pin|
+|-|-|-|
+|DIN|SPI MOSI|GPIO 13 (HSPI MOSI)|
+|CLK|SPI clock|GPIO 14 (HSPI CLK)|
+|CS|SPI chip select|GPIO 15 (HSPI SS)
+|DC|Data/Command control pin (configurable)|GPIO 17|
+|RST|External reset|GPIO 16|
+|BUSY|Busy state output pin|GPIO 7|
+
+If you wish to use different data (non-SPI) pins, those are all configurable in the UI.
+
+#### Custom SPI bus
+
+The ESP32 has two available SPI busses. The default is HSPI, but you can select VSPI in the settings page. Some driver boards like the [Waveshare ESP32 Driver](https://www.waveshare.com/wiki/E-Paper_ESP32_Driver_Board) use custom SPI pins.
+
+In the **Hardware** tab of the settings page, you can select one of the two free SPI busses on the ESP32. (HSPI and VSPI)
+
+|           | VSPI | HSPI (default) | Waveshare Custom |
+|-----------|------|----------------|-|
+| DI (MOSI) | 19   | 12             |14|
+| CLK       | 18   | 14             |13|
+| CS (SS)   | 5    | 15             |15|
+
+Ensure that you do not select pins that conflict with the your SPI Bus/Deep Sleep configurations.
 
 ## Deep Sleep
 
@@ -79,22 +108,6 @@ e-paper templates can function in _deep sleep_ mode.  When configured, the syste
 4. Put both the ESP32 and the e-paper display into deep sleep mode.
 
 This is useful if trying to conserve power.  Deep sleep mode can be configured in the "Power" tab within the web UI.
-
-## SPI Bus and Pin Selection
-
-The ESP32 has 4 SPI busses, however, one is reserved for the chips Flash. (SPI0) and another is often used by PSRAM (SP1).
-
-In the **Hardware** tab of the settings page, you can select one of the two free SPI busses on the ESP32. (HSPI and VSPI)
-
-|           | VSPI | HSPI (default) |
-|-----------|------|----------------|
-| DI (MOSI) | 19   | 12             |
-| CLK       | 18   | 14             |
-| CS (SS)   | 5    | 15             |
-
-Additionally, the displays will require extra pins to be configured to work properly. These are also selectable in the **Hardware** tab.
-
-Please ensure that you do not select pins that conflict with the your SPI Bus/Deep Sleep configurations.
 
 # Concepts
 
