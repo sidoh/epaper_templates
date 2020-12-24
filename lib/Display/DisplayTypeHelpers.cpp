@@ -9,12 +9,12 @@
 
 template <class Display>
 inline static GxEPD2_GFX* __gxepd2_build_bw_driver(const uint8_t dc, const uint8_t rst, const uint8_t busy, const uint8_t ssPin) {
-  return new GxEPD2_BW<Display, Display::HEIGHT>(Display(SS, dc, rst, busy));
+  return new GxEPD2_BW<Display, Display::HEIGHT>(Display(ssPin, dc, rst, busy));
 }
 
 template <class Display>
 inline static GxEPD2_GFX* __gxepd2_build_3c_driver(const uint8_t dc, const uint8_t rst, const uint8_t busy, const uint8_t ssPin) {
-  return new GxEPD2_3C<Display, Display::HEIGHT>(Display(SS, dc, rst, busy));
+  return new GxEPD2_3C<Display, Display::HEIGHT>(Display(ssPin, dc, rst, busy));
 }
 
 const std::map<const char*, GxEPD2::Panel, cmp_str> DisplayTypeHelpers::PANELS_BY_NAME = {
