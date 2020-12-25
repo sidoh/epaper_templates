@@ -38,6 +38,7 @@ String VariableDictionary::get(const String &key) {
 }
 
 void VariableDictionary::clear() {
+  SPIFFS.remove(VariableDictionary::FILENAME);
   SPIFFS.open(VariableDictionary::FILENAME, "w").close();
 
   db.open(SPIFFS.open(VariableDictionary::FILENAME, "r+"));

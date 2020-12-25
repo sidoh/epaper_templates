@@ -9,6 +9,14 @@ export default {
       examples: ["epaper-display"],
       pattern: "^(.*)$"
     },
+    "network.ntp_server": {
+      $id: "#/properties/network.ntp_server",
+      type: "string",
+      title: "NTP Server",
+      default: "pool.ntp.org",
+      examples: ["pool.ntp.org"],
+      pattern: "^(.*)$"
+    },
     "network.mdns_name": {
       $id: "#/properties/network.mdns_name",
       type: "string",

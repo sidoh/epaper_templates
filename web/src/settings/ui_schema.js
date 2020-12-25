@@ -52,7 +52,8 @@ export default {
   "hardware.rst_pin": {
     transformer: parseInt
   },
-  "hardware.spi_bus": {
+  "hardware.ss_pin_override": {
+    transformer: parseInt,
     "ui:help": <>
     <div>
       SPI bus to use.  HSPI uses GPIOs 12, 14, 15.  VSPI uses 5, 18, 19.  See README for more details.
@@ -62,6 +63,8 @@ export default {
       <b>Changing any of these settings requires a reboot!</b>
     </div>
     </>
+  },
+  "hardware.spi_bus": {
   },
   "web.port": {
     transformer: parseInt

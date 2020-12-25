@@ -79,6 +79,9 @@ public:
 
 class HardwareSettings : public Configuration {
 public:
+  static const uint8_t WAVESHARE_SPI = VSPI + HSPI;
+  static const uint8_t WAVESHARE_SS_PIN = 15;
+
   persistentVar(
     uint8_t,
     spi_bus,
@@ -86,6 +89,8 @@ public:
     {
       if (spi_busString.equalsIgnoreCase("vspi")) {
         spi_bus = VSPI;
+      } else if (spi_busString.equalsIgnoreCase("waveshare")) {
+        spi_bus = WAVESHARE_SPI;
       } else {
         spi_bus = HSPI;
       }
@@ -93,6 +98,8 @@ public:
     {
       if (spi_bus == VSPI) {
         spi_busString = "VSPI";
+      } else if (spi_bus == WAVESHARE_SPI) {
+        spi_busString = "waveshare";
       } else {
         spi_busString = "HSPI";
       }
@@ -101,12 +108,16 @@ public:
   persistentIntVar(dc_pin, EPD_DEFAULT_DC_PIN);
   persistentIntVar(rst_pin, EPD_DEFAULT_RST_PIN);
   persistentIntVar(busy_pin, EPD_DEFAULT_BUSY_PIN);
+  persistentIntVar(ss_pin_override, -1);
+
+  const uint8_t getSsPin() const;
 };
 
 class NetworkSettings : public Configuration {
 public:
   persistentStringVar(hostname, DEFAULT_DISPLAY_NAME);
   persistentStringVar(mdns_name, DEFAULT_DISPLAY_NAME);
+  persistentStringVar(ntp_server, "pool.ntp.org");
   persistentStringVar(setup_ap_password, "waveshare");
   persistentStringVar(wifi_ssid, "");
   persistentStringVar(wifi_password, "");

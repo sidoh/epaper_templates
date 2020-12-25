@@ -37,13 +37,13 @@ GxEPD2_GFX* display = NULL;
 DisplayTemplateDriver* driver = NULL;
 EpaperWebServer* webServer = NULL;
 MqttClient* mqttClient = NULL;
+NTPClient* timeClient;
 
 // Don't attempt to reconnect to wifi if we've never connected
 volatile bool hasConnected = false;
 volatile bool shouldRestart = false;
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 
 uint8_t lastSecond = 60;
 
@@ -73,13 +73,6 @@ void cancelSleep() {
 }
 
 void initDisplay() {
-  #if defined(ESP32)
-  if (settings.hardware.spi_bus == VSPI){
-    SPI.end();
-    SPI.begin(18, 23, 19, 5);
-  }
-  #endif
-
   if (display) {
     delete display;
     display = NULL;
@@ -88,7 +81,8 @@ void initDisplay() {
   display = DisplayTypeHelpers::buildDisplay(settings.display.display_type,
       settings.hardware.dc_pin,
       settings.hardware.rst_pin,
-      settings.hardware.busy_pin);
+      settings.hardware.busy_pin,
+      settings.hardware.getSsPin());
 
   if (driver != NULL) {
     delete driver;
@@ -114,6 +108,14 @@ void applySettings() {
   Serial.println(F("Applying settings"));
 
   Timezones.setDefaultTimezone(*settings.system.timezone);
+
+  if (timeClient != NULL) {
+    delete timeClient;
+    timeClient = NULL;
+  }
+
+  timeClient = new NTPClient(ntpUDP, settings.network.ntp_server.c_str(), 0, 60000);
+  timeClient->begin();
 
   if (hasConnected && settings.network.wifi_ssid.length() > 0 &&
       settings.network.wifi_ssid != WiFi.SSID()) {
@@ -255,8 +257,6 @@ void setup() {
     }
   }
 
-  timeClient.begin();
-
   applySettings();
 }
 
@@ -265,9 +265,9 @@ void loop() {
     ESP.restart();
   }
 
-  if (timeClient.update() && lastSecond != second()) {
+  if (timeClient != NULL && timeClient->update() && lastSecond != second()) {
     lastSecond = second();
-    driver->updateVariable("timestamp", String(timeClient.getEpochTime()));
+    driver->updateVariable("timestamp", String(timeClient->getEpochTime()));
   }
 
   if (webServer) {
