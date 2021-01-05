@@ -17,7 +17,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@fortawesome/react-fontawesome": "^0.1.9",
     "@neutrinojs/style-minify": "^8.3.0",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "axios-concurrency": "^1.0.3",
     "base64-js": "^1.3.1",
     "bootstrap": "^4.4.1",
