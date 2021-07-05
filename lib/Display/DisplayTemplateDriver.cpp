@@ -345,15 +345,13 @@ void DisplayTemplateDriver::renderRectangles(
 void DisplayTemplateDriver::renderBitmap(const String& filename,
     uint16_t x,
     uint16_t y,
-    uint16_t w,
-    uint16_t h,
     uint16_t color,
     uint16_t backgroundColor) {
-  if (!SPIFFS.exists(filename)) {
-    Serial.print(F("WARN - tried to render bitmap file that doesn't exist: "));
-    Serial.println(filename);
-    return;
-  }
+
+
+  uint16_t w, h;
+    
+  BitmapRegion::getBitmapDimensions(filename, &w, &h);
 
   Serial.printf_P(PSTR("Rendering bitmap: %s, x=%d, y=%d, w=%d, h=%d\n"),
       filename.c_str(),
@@ -417,8 +415,6 @@ void DisplayTemplateDriver::renderBitmaps(
 
     const uint16_t x = bitmap["x"];
     const uint16_t y = bitmap["y"];
-    const uint16_t w = bitmap["w"];
-    const uint16_t h = bitmap["h"];
     const uint16_t color = extractColor(bitmap);
     const uint16_t backgroundColor =
         extractBackgroundColor(bitmap, templateBackground);
@@ -431,8 +427,6 @@ void DisplayTemplateDriver::renderBitmaps(
         renderBitmap(bitmap["value"].as<const char*>(),
             x,
             y,
-            w,
-            h,
             color,
             backgroundColor);
         continue;
@@ -444,8 +438,6 @@ void DisplayTemplateDriver::renderBitmaps(
         renderBitmap(bitmap["static"].as<const char*>(),
             x,
             y,
-            w,
-            h,
             color,
             backgroundColor);
         continue;
@@ -454,10 +446,9 @@ void DisplayTemplateDriver::renderBitmaps(
 
     if (bitmap.containsKey("variable")) {
       const String& variable = bitmap["variable"];
-      std::shared_ptr<Region> region = addBitmapRegion(x,
+      std::shared_ptr<Region> region = addBitmapRegion(
+          x,
           y,
-          w,
-          h,
           color,
           backgroundColor,
           formatterFactory,
@@ -536,13 +527,13 @@ void DisplayTemplateDriver::renderLines(JsonArray lines) {
 
 std::shared_ptr<Region> DisplayTemplateDriver::addBitmapRegion(uint16_t x,
     uint16_t y,
-    uint16_t w,
-    uint16_t h,
     uint16_t color,
     uint16_t backgroundColor,
     VariableFormatterFactory& formatterFactory,
     JsonObject spec,
     uint16_t index) {
+    uint16_t w, h;
+
   std::shared_ptr<Region> region =
       std::make_shared<BitmapRegion>(spec["variable"].as<const char*>(),
           x,

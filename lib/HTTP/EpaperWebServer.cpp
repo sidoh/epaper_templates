@@ -228,7 +228,11 @@ void EpaperWebServer::handleListVariables(RequestContext& request) {
 }
 
 void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
+  // Keep track of upload progress so we can print throttled updates to Serial
+  static uint8_t uploadProgress;
   if (request.upload.index == 0) {
+    uploadProgress = 0;
+
     // Give up if the filename starts with "INITIALIZER_".  These binary images
     // are built by custom platformio tooling that includes all parts of flash
     // necessary get started (including bootloader and partition table).
@@ -255,6 +259,7 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
 #if defined(ESP8266)
       Update.runAsync(true);
 #endif
+      Serial.println(F("Downloading Firmware Update!"));
     }
   }
 
@@ -276,6 +281,14 @@ void EpaperWebServer::handleFirmwareUpdateUpload(RequestContext& request) {
 #endif
       } else {
         this->updateSuccessful = true;
+      }
+    } else {
+      const uint8_t newProgress =
+          (request.upload.index / (Update.size() / 100) + 1);
+
+      if (newProgress != uploadProgress) {
+        Serial.printf_P(PSTR("%d%%\n"), newProgress);
+        uploadProgress = newProgress;
       }
     }
   }

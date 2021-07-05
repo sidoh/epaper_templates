@@ -142,8 +142,6 @@ class DisplayTemplateDriver {
   void renderBitmap(const String& filename,
       uint16_t x,
       uint16_t y,
-      uint16_t w,
-      uint16_t h,
       uint16_t color,
       uint16_t backgroundColor);
 
@@ -162,8 +160,6 @@ class DisplayTemplateDriver {
       uint16_t index);
   std::shared_ptr<Region> addBitmapRegion(uint16_t x,
       uint16_t y,
-      uint16_t w,
-      uint16_t h,
       uint16_t color,
       uint16_t backgroundColor,
       VariableFormatterFactory& formatterFactory,

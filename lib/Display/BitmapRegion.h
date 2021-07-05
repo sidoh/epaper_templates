@@ -25,8 +25,17 @@ public:
   ~BitmapRegion();
 
   virtual void render(GxEPD2_GFX* display);
+  virtual Rectangle getBoundingBox();
+  static bool getBitmapDimensions(
+    const String& bitmapName,
+    uint16_t *width, 
+    uint16_t *height);
+
 private:
   uint16_t backgroundColor;
+protected:
+  // Previous bounding box coordinates
+  Rectangle previousBound;
 };
 
 #endif
