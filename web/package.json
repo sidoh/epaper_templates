@@ -47,7 +47,7 @@
   "devDependencies": {
     "@neutrinojs/react": "^9.1.0",
     "neutrino": "^9.1.0",
-    "node-sass": "^4.13.1",
+    "node-sass": "^7.0.0",
     "sass-loader": "^8.0.2",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
