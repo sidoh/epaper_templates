@@ -32,7 +32,7 @@
     "react-bootstrap-typeahead": "^3.4.7",
     "react-dom": "^16.13.1",
     "react-dropzone": "^10.2.2",
-    "react-hot-loader": "^4.12.20",
+    "react-hot-loader": "^4.13.1",
     "react-json-view": "^1.19.1",
     "react-jsonschema-form": "^1.8.1",
     "react-loader-spinner": "^3.1.5",
@@ -45,12 +45,12 @@
     "use-global-hook": "^0.1.12"
   },
   "devDependencies": {
-    "@neutrinojs/react": "^9.1.0",
+    "@neutrinojs/react": "^9.5.0",
     "neutrino": "^9.1.0",
     "node-sass": "^4.13.1",
-    "sass-loader": "^8.0.2",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11",
+    "sass-loader": "^13.2.0",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^3.10.3"
   }
 }
